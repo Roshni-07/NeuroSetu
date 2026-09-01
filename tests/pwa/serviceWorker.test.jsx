@@ -90,14 +90,14 @@ describe('Task 3 & 4: PWA, Service Worker & Offline Shell Verification', () => {
     render(<App />);
 
     // Verify default patient surface
-    expect(screen.getByText(/Patient Interface — High Contrast Design/i)).toBeInTheDocument();
-    expect(screen.getByText(/Primary Action Button/i)).toBeInTheDocument();
+    expect(screen.getByText(/Patient UI/i)).toBeInTheDocument();
+    expect(screen.getByText(/নমস্কাৰ! \(Welcome to NeuroSetu\)/i)).toBeInTheDocument();
 
     // Switch to marketing surface
     const marketingTabBtn = screen.getByRole('button', { name: /Marketing Surface/i });
     fireEvent.click(marketingTabBtn);
 
     expect(screen.getByText(/Cognitive Games That Speak Your Language/i)).toBeInTheDocument();
-    expect(screen.getByText(/01 — Voice-First/i)).toBeInTheDocument();
+    expect(screen.getByText(/Voice-First Bhashini AI/i)).toBeInTheDocument();
   });
 });

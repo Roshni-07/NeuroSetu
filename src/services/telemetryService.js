@@ -23,10 +23,16 @@ export async function recordBiomarkerEvent({
   latencyMs = 0,
   errorCount = 0,
   prosodyScore = null,
-  ddaAdjustment = 'none'
+  ddaAdjustment = 'none',
+  alertFlag = null
 }) {
   const safeLatency = Math.max(0, Number(latencyMs) || 0);
   const safeErrorCount = Math.max(0, Number(errorCount) || 0);
+
+  const isEmergencyOrAlert = alertFlag === true ||
+    taskType === 'sos_emergency' ||
+    safeLatency >= LATENCY_ALERT_THRESHOLD_MS ||
+    safeErrorCount >= 2;
 
   const logEntry = {
     id: `bio_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -39,7 +45,7 @@ export async function recordBiomarkerEvent({
     ddaAdjustment, // 'decreased' | 'increased' | 'maintained'
     timestamp: new Date().toISOString(),
     isSynced: false,
-    alertFlag: safeLatency >= LATENCY_ALERT_THRESHOLD_MS || safeErrorCount >= 2
+    alertFlag: isEmergencyOrAlert
   };
 
   // 1. Save to local IndexedDB telemetry store
