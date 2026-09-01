@@ -1,22 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { CULINARY_SEQUENCING_TASKS } from '../../data/reminiscenceContent.js';
+import {
+  CULINARY_SEQUENCING_TASKS,
+  getSequencingTaskByOccupation
+} from '../../data/reminiscenceContent.js';
 import { recordBiomarkerEvent } from '../../services/telemetryService.js';
 import { saveGameSession } from '../../db/indexedDb.js';
+import GameTutorialOverlay from './GameTutorialOverlay.jsx';
 import { synthesizeSpeech } from '../../services/bhashiniService.js';
 
 export default function SequencingGame({
   profileId = 'default_patient',
+  patientProfile = null,
   initialTier = 2,
   onComplete = null,
   onExit = null
 }) {
-  const task = CULINARY_SEQUENCING_TASKS[0]; // Assam tea routine
+  const isEn = patientProfile?.language === 'en';
+
+  // Dynamically map task to patient's stated occupation or fallback to tea routine
+  const task = patientProfile?.formerOccupation
+    ? getSequencingTaskByOccupation(patientProfile.formerOccupation)
+    : CULINARY_SEQUENCING_TASKS[0];
+
   const [selectedSteps, setSelectedSteps] = useState([]);
   const [availableSteps, setAvailableSteps] = useState([]);
   const [gentleHint, setGentleHint] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const [consecutiveErrors, setConsecutiveErrors] = useState(0);
   const [startTime, setStartTime] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try {
+      return !localStorage.getItem('neurosetu_tutorial_sequencing_seen');
+    } catch (e) {
+      return false;
+    }
+  });
 
   useEffect(() => {
     // Shuffle steps initially so patient can order them
@@ -26,7 +44,7 @@ export default function SequencingGame({
     setGentleHint('');
     setIsCompleted(false);
     setStartTime(Date.now());
-  }, []);
+  }, [task.id]);
 
   const handleSelectStep = async (step) => {
     const expectedOrder = selectedSteps.length + 1;
@@ -48,7 +66,7 @@ export default function SequencingGame({
         // Record telemetry and session
         await recordBiomarkerEvent({
           profileId,
-          taskType: 'daily_tea_sequencing',
+          taskType: task.id,
           latencyMs,
           errorCount: consecutiveErrors,
           ddaAdjustment: 'maintained'
@@ -66,47 +84,50 @@ export default function SequencingGame({
         if (onComplete) onComplete();
       }
     } else {
-      // Incorrect step sequence
-      const errors = consecutiveErrors + 1;
-      setConsecutiveErrors(errors);
+      // Incorrect order tapped
+      const newErrors = consecutiveErrors + 1;
+      setConsecutiveErrors(newErrors);
 
-      setGentleHint(`আহক আমি আকৌ ভাবোঁ: ${task.hint}`);
+      // Gentle guidance prompt
+      const hintText = isEn
+        ? (task.steps.find(s => s.order === expectedOrder)?.textEn || 'Think carefully about what comes next.')
+        : (task.steps.find(s => s.order === expectedOrder)?.textAs || task.gentlePrompt);
 
-      await recordBiomarkerEvent({
-        profileId,
-        taskType: 'daily_tea_sequencing',
-        latencyMs,
-        errorCount: errors,
-        ddaAdjustment: errors >= 2 ? 'decreased' : 'none'
-      });
+      setGentleHint(hintText);
     }
   };
 
-  const handleResetSequence = () => {
-    const shuffled = [...task.steps].sort(() => Math.random() - 0.5);
-    setAvailableSteps(shuffled);
-    setSelectedSteps([]);
-    setGentleHint('');
-  };
+  const primaryPrompt = isEn ? task.promptEn : task.promptAs;
+  const secondaryPrompt = isEn ? task.promptAs : task.promptEn;
 
   const handleSpeakPrompt = () => {
-    synthesizeSpeech(task.promptAs, 'as');
+    if (primaryPrompt) {
+      synthesizeSpeech(primaryPrompt, isEn ? 'en' : 'as');
+    }
   };
 
+  // Completion Screen
   if (isCompleted) {
     return (
-      <div className="bg-white rounded-3xl p-8 border-2 border-patient-border shadow-lg text-center max-w-lg mx-auto animate-fade-in">
-        <div className="w-20 h-20 bg-green-100 text-patient-success text-4xl rounded-full flex items-center justify-center mx-auto mb-4 border border-green-300">
+      <div className="bg-white rounded-3xl p-8 border-2 border-patient-border shadow-lg text-center max-w-lg mx-auto animate-fade-in space-y-6">
+        <div className="w-20 h-20 bg-green-100 text-patient-success text-4xl rounded-full flex items-center justify-center mx-auto border border-green-300">
           ☕
         </div>
-        <h2 className="text-patient-hero text-patient-primary">চাহ প্ৰস্তুত হ’ল! (Tea Prepared!)</h2>
-        <p className="text-patient-body text-patient-secondary mt-2">
-          আপুনি চাহ বনোৱাৰ সঠিক ক্ৰমটো সফলভাৱে সজাই উলিয়ালে।
+        <h2 className="text-patient-hero text-patient-primary">
+          {isEn ? 'Sequence Completed!' : 'চাহ প্ৰস্তুত হ’ল! (Well Done!)'}
+        </h2>
+        <p className="text-patient-body text-patient-secondary">
+          {isEn
+            ? 'You arranged all the steps in perfect chronological order.'
+            : 'আপুনি সকলো কামৰ ক্ৰম শুদ্ধকৈ সজালে। আপোনাৰ চিন্তাশক্তি অতি নিখুঁত।'}
         </p>
 
-        <div className="my-6 p-4 bg-patient-canvas border border-patient-border rounded-2xl">
-          <span className="text-xs text-patient-hint uppercase font-bold tracking-wider">প্ৰাপ্ত নম্বৰ</span>
-          <p className="text-4xl font-extrabold text-patient-accent mt-1">১০০ পইণ্ট</p>
+        <div className="p-4 bg-patient-canvas border border-patient-border rounded-2xl">
+          <span className="text-xs text-patient-hint uppercase font-bold tracking-wider">
+            {isEn ? 'Result' : 'ফলাফল'}
+          </span>
+          <p className="text-3xl font-extrabold text-patient-accent mt-1">১০০% শুদ্ধ (100% Correct)</p>
+          <p className="text-xs text-patient-secondary mt-1">Routine: {task.title}</p>
         </div>
 
         {onExit && (
@@ -114,7 +135,7 @@ export default function SequencingGame({
             onClick={onExit}
             className="min-h-touch px-6 py-3 bg-patient-accent text-white font-bold rounded-xl hover:bg-patient-accent-hover transition shadow-sm text-base"
           >
-            মুখ্য পৃষ্ঠালৈ যাওক (Return Home)
+            {isEn ? 'Return Home →' : 'মুখ্য পৃষ্ঠালৈ যাওক (Return Home)'}
           </button>
         )}
       </div>
@@ -126,16 +147,25 @@ export default function SequencingGame({
       {/* Top Bar */}
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <span className="text-xs font-bold px-2.5 py-1 bg-orange-100 text-orange-900 rounded-lg">
-          দৈনন্দিন অভ্যাস ক্ৰম (Daily Routine Sequencing)
+          {isEn ? 'Daily Routine Sequencing' : 'দৈনন্দিন অভ্যাস ক্ৰম (Daily Routine Sequencing)'}
         </span>
-        {onExit && (
+        <div className="flex items-center space-x-2">
           <button
-            onClick={onExit}
-            className="text-xs font-medium text-patient-hint hover:text-patient-primary px-2 py-1"
+            type="button"
+            onClick={() => setShowTutorial(true)}
+            className="text-xs px-2 py-1 bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200 font-bold rounded-lg transition"
           >
-            বন্ধ কৰক (Exit)
+            (?) {isEn ? 'Help' : 'সহায়'}
           </button>
-        )}
+          {onExit && (
+            <button
+              onClick={onExit}
+              className="text-xs font-medium text-patient-hint hover:text-patient-primary px-2 py-1"
+            >
+              {isEn ? 'Exit' : 'বন্ধ কৰক (Exit)'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Task Heading */}
@@ -145,18 +175,18 @@ export default function SequencingGame({
         </span>
         <div className="flex items-center justify-center gap-2">
           <h2 className="text-patient-prompt text-patient-primary font-bold">
-            {task.promptAs}
+            {primaryPrompt}
           </h2>
           <button
             type="button"
             onClick={handleSpeakPrompt}
-            aria-label="Listen in Assamese"
+            aria-label="Listen"
             className="w-10 h-10 rounded-full bg-teal-50 hover:bg-teal-100 text-patient-accent flex items-center justify-center border border-teal-300 text-lg shadow-sm"
           >
             🔊
           </button>
         </div>
-        <p className="text-xs text-patient-hint">{task.promptEn}</p>
+        {secondaryPrompt && <p className="text-xs text-patient-hint">{secondaryPrompt}</p>}
       </div>
 
       {/* Gentle Hint */}
@@ -166,7 +196,7 @@ export default function SequencingGame({
           <div>
             <p className="font-semibold text-patient-primary">{gentleHint}</p>
             <p className="text-xs text-patient-secondary mt-0.5">
-              আহক আমি ক্ৰমটো আকৌ মনত পেলাওঁ।
+              {isEn ? 'Let us recall the next chronological step.' : 'আহক আমি ক্ৰমটো আকৌ মনত পেলাওঁ।'}
             </p>
           </div>
         </div>
@@ -175,11 +205,13 @@ export default function SequencingGame({
       {/* Current Sequence Slot (Ordered items) */}
       <div className="p-4 bg-patient-canvas border-2 border-dashed border-patient-border rounded-2xl space-y-2">
         <span className="text-xs font-bold text-patient-hint uppercase tracking-wider block">
-          আপুনি সজোৱা ক্ৰম (Your Ordered Steps): {selectedSteps.length} / {task.steps.length}
+          {isEn
+            ? `Your Ordered Steps: ${selectedSteps.length} / ${task.steps.length}`
+            : `আপুনি সজোৱা ক্ৰম (Your Ordered Steps): ${selectedSteps.length} / ${task.steps.length}`}
         </span>
         {selectedSteps.length === 0 ? (
           <p className="text-sm text-patient-secondary italic py-3 text-center">
-            তলৰ পৰা প্ৰথমটো কাম স্পৰ্শ কৰক (Tap the first step from below)
+            {isEn ? 'Tap the first step from below' : 'তলৰ পৰা প্ৰথমটো কাম স্পৰ্শ কৰক (Tap the first step from below)'}
           </p>
         ) : (
           <div className="space-y-2">
@@ -192,7 +224,7 @@ export default function SequencingGame({
                   {idx + 1}
                 </span>
                 <span className="text-2xl">{step.icon}</span>
-                <span className="text-base font-semibold">{step.textAs}</span>
+                <span className="text-base font-semibold">{isEn ? step.textEn : step.textAs}</span>
               </div>
             ))}
           </div>
@@ -203,7 +235,7 @@ export default function SequencingGame({
       {availableSteps.length > 0 && (
         <div className="space-y-3">
           <span className="text-xs font-bold text-patient-secondary uppercase tracking-wider block text-center">
-            পৰৱৰ্তী কামটো বাচক (Tap the next step):
+            {isEn ? 'Tap the next step:' : 'পৰৱৰ্তী কামটো বাচক (Tap the next step):'}
           </span>
           <div className="grid grid-cols-1 gap-2.5">
             {availableSteps.map((step) => (
@@ -211,31 +243,34 @@ export default function SequencingGame({
                 key={step.id}
                 type="button"
                 onClick={() => handleSelectStep(step)}
-                className="min-h-touch p-4 bg-white hover:bg-teal-50/60 border-2 border-patient-border hover:border-patient-accent rounded-2xl text-left transition-all shadow-sm flex items-center gap-3 active:scale-98"
+                className="min-h-touch p-3.5 bg-white hover:bg-orange-50/60 border-2 border-patient-border hover:border-orange-300 text-patient-primary rounded-xl font-medium text-base flex items-center gap-3 transition-all active:scale-95 text-left shadow-xs"
               >
-                <span className="text-3xl">{step.icon}</span>
-                <div>
-                  <p className="text-base text-patient-primary font-bold">{step.textAs}</p>
-                  <p className="text-xs text-patient-hint">{step.textEn}</p>
-                </div>
+                <span className="text-2xl">{step.icon}</span>
+                <span>{isEn ? step.textEn : step.textAs}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Reset button */}
-      {selectedSteps.length > 0 && (
-        <div className="text-center pt-2">
-          <button
-            type="button"
-            onClick={handleResetSequence}
-            className="text-xs font-semibold text-patient-hint hover:text-patient-primary py-2 px-4 rounded-lg bg-gray-100 hover:bg-gray-200"
-          >
-            🔄 পুনৰ আৰম্ভ কৰক (Reset Steps)
-          </button>
-        </div>
-      )}
+      {/* Tutorial Overlay Modal */}
+      <GameTutorialOverlay
+        gameType="sequencing"
+        language={patientProfile?.language || 'as'}
+        isOpen={showTutorial}
+        onStart={() => {
+          setShowTutorial(false);
+          try {
+            localStorage.setItem('neurosetu_tutorial_sequencing_seen', 'true');
+          } catch (e) {}
+        }}
+        onSkip={() => {
+          setShowTutorial(false);
+          try {
+            localStorage.setItem('neurosetu_tutorial_sequencing_seen', 'true');
+          } catch (e) {}
+        }}
+      />
     </div>
   );
 }

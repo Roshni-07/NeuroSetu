@@ -165,7 +165,7 @@ export async function authenticatePin(pin, profileName = 'Primary Patient') {
 /**
  * Create and persist an active session
  */
-function createSession(profileName) {
+export function createSession(profileName) {
   const session = {
     profileName,
     authenticatedAt: new Date().toISOString(),

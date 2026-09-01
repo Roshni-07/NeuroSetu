@@ -13,6 +13,7 @@ export function useAppRoute() {
     const hash = window.location.hash.toLowerCase();
     if (hash.includes('dashboard')) return 'dashboard';
     if (hash.includes('marketing') || hash.includes('about')) return 'marketing';
+    if (hash.includes('landing') || hash.includes('welcome')) return 'landing';
     return 'patient';
   };
 
@@ -30,6 +31,7 @@ export function useAppRoute() {
   const navigateTo = (route) => {
     if (route === 'dashboard') window.location.hash = '#/dashboard';
     else if (route === 'marketing') window.location.hash = '#/marketing';
+    else if (route === 'landing') window.location.hash = '#/landing';
     else window.location.hash = '#/patient';
     setCurrentRoute(route);
   };

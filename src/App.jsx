@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PinAuthModal from './components/auth/PinAuthModal.jsx';
 import PatientLayout from './layouts/PatientLayout.jsx';
 import SosEmergencyButton from './components/sos/SosEmergencyButton.jsx';
+import PatientOnboardingModal from './components/onboarding/PatientOnboardingModal.jsx';
 import MemoryRecallGame from './components/games/MemoryRecallGame.jsx';
 import PatternMatchingGame from './components/games/PatternMatchingGame.jsx';
 import SequencingGame from './components/games/SequencingGame.jsx';
@@ -9,13 +10,14 @@ import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from './components/dashboard/
 import CognitiveTrendChart from './components/dashboard/CognitiveTrendChart.jsx';
 import SyncStatusPanel from './components/dashboard/SyncStatusPanel.jsx';
 import MarketingLanding from './pages/MarketingLanding.jsx';
+import WelcomeLanding from './pages/WelcomeLanding.jsx';
 import { useAppRoute } from './router/AppRouter.jsx';
-import { getActiveSession, logout } from './services/authService.js';
+import { getActiveSession, logout, hasConfiguredPin } from './services/authService.js';
 import {
   getRecentBiomarkers,
   getBiomarkerSummary
 } from './services/telemetryService.js';
-import { getPendingSyncEvents } from './db/indexedDb.js';
+import { getPendingSyncEvents, getActiveProfile, DEFAULT_PROFILE } from './db/indexedDb.js';
 import {
   onSyncStatusChange,
   initBackgroundSync
@@ -25,8 +27,11 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { currentRoute, navigateTo } = useAppRoute();
   const [session, setSession] = useState(getActiveSession());
+  const [patientProfile, setPatientProfile] = useState(DEFAULT_PROFILE);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [isSosOpen, setIsSosOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isOnboardingInitialSignup, setIsOnboardingInitialSignup] = useState(false);
 
   // Active Game State
   const [activeGame, setActiveGame] = useState(null); // 'memory' | 'pattern' | 'sequencing' | null
@@ -51,6 +56,14 @@ export default function App() {
       console.error('Error refreshing telemetry:', e);
     }
   };
+
+  useEffect(() => {
+    async function loadProfile() {
+      const prof = await getActiveProfile(session?.profileName || 'default_patient');
+      if (prof) setPatientProfile(prof);
+    }
+    loadProfile();
+  }, [session]);
 
   useEffect(() => {
     initBackgroundSync();
@@ -99,6 +112,8 @@ export default function App() {
 
   const selectedPatient = SAMPLE_ASHA_PATIENTS.find(p => p.id === selectedPatientId) || SAMPLE_ASHA_PATIENTS[0];
 
+  const patientDisplayTitle = `${patientProfile.name} (${patientProfile.villageTown ? `${patientProfile.villageTown}, ` : ''}${patientProfile.homeState || 'Assam'})`;
+
   return (
     <div className="min-h-screen bg-patient-canvas">
       {/* Top Prototype Navigation Bar */}
@@ -106,6 +121,12 @@ export default function App() {
         <div className="flex items-center space-x-2">
           <span className="font-extrabold text-white">NeuroSetu</span>
           <span className="text-gray-500">| Surface:</span>
+          <button
+            onClick={() => { navigateTo('landing'); setActiveGame(null); }}
+            className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'landing' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
+          >
+            Welcome Landing
+          </button>
           <button
             onClick={() => { navigateTo('patient'); setActiveGame(null); }}
             className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'patient' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
@@ -126,7 +147,16 @@ export default function App() {
           </button>
         </div>
 
-        <div>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => {
+              setIsOnboardingInitialSignup(!hasConfiguredPin());
+              setIsOnboardingOpen(true);
+            }}
+            className="text-amber-300 hover:text-amber-200 font-semibold"
+          >
+            👤 Setup / Edit Profile
+          </button>
           {session ? (
             <button
               onClick={handleLogout}
@@ -148,7 +178,7 @@ export default function App() {
       {/* Surface 1: Patient Experience Shell (WCAG 2.1 AA) */}
       {currentRoute === 'patient' && (
         <PatientLayout
-          profileName={session?.profileName || 'Primary Patient'}
+          profileName={patientDisplayTitle}
           activeSection="games"
           isOnline={isOnline}
           onOpenSos={() => setIsSosOpen(true)}
@@ -162,6 +192,7 @@ export default function App() {
           {activeGame === 'memory' && (
             <MemoryRecallGame
               profileId={session?.profileName || 'default_patient'}
+              patientProfile={patientProfile}
               onExit={handleExitGame}
             />
           )}
@@ -169,6 +200,7 @@ export default function App() {
           {activeGame === 'pattern' && (
             <PatternMatchingGame
               profileId={session?.profileName || 'default_patient'}
+              patientProfile={patientProfile}
               onExit={handleExitGame}
             />
           )}
@@ -176,6 +208,7 @@ export default function App() {
           {activeGame === 'sequencing' && (
             <SequencingGame
               profileId={session?.profileName || 'default_patient'}
+              patientProfile={patientProfile}
               onExit={handleExitGame}
             />
           )}
@@ -185,14 +218,24 @@ export default function App() {
             <div className="space-y-6">
               <div className="bg-white rounded-3xl p-6 border-2 border-patient-border shadow-sm text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-patient-hero text-patient-primary">
-                    নমস্কাৰ! (Welcome to NeuroSetu)
-                  </h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-patient-hero text-patient-primary">
+                      নমস্কাৰ! (Welcome to NeuroSetu)
+                    </h1>
+                    <span className="text-xs px-2.5 py-0.5 bg-teal-100 text-patient-accent font-bold rounded-full">
+                      {patientProfile.name} • {patientProfile.homeState} ({patientProfile.villageTown})
+                    </span>
+                  </div>
                   <p className="text-patient-body text-patient-secondary mt-1">
-                    তলৰ সাংস্কৃতিক খেলসমূহৰ পৰা এটা বাচি লওক (Choose a cultural memory game below):
+                    আপোনাৰ অঞ্চলৰ সাংস্কৃতিক খেলসমূহৰ পৰা এটা বাচি লওক (Personalized for {patientProfile.homeState}):
                   </p>
                 </div>
-                <span className="text-4xl" role="img" aria-label="Culture">🪘</span>
+                <button
+                  onClick={() => setIsOnboardingOpen(true)}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-patient-primary rounded-xl text-xs font-bold shrink-0"
+                >
+                  ⚙️ ব্যক্তিগত পৰিচয় (Edit Profile)
+                </button>
               </div>
 
               {/* 3 Large Dementia-Accessible Game Cards */}
@@ -204,10 +247,10 @@ export default function App() {
                       🥁
                     </div>
                     <h3 className="text-patient-prompt text-patient-primary font-bold">
-                      বিহু স্মৃতি খেল
+                      বিহু স্মৃতি খেল (Memory Recall)
                     </h3>
                     <p className="text-xs text-patient-secondary mt-1">
-                      Voice-first recall of Bihu instruments (Dhol, Pepa) with DDA.
+                      {patientProfile.homeState} instruments & personal autobiographical cues with DDA.
                     </p>
                   </div>
                   <button
@@ -228,7 +271,7 @@ export default function App() {
                       বস্ত্ৰ চানেকি
                     </h3>
                     <p className="text-xs text-patient-secondary mt-1">
-                      Pattern recognition with Assamese Muga silk and Mizo weaves.
+                      Traditional handloom patterns ({patientProfile.homeState} & NER weaves).
                     </p>
                   </div>
                   <button
@@ -246,10 +289,10 @@ export default function App() {
                       ☕
                     </div>
                     <h3 className="text-patient-prompt text-patient-primary font-bold">
-                      দৈনন্দিন অভ্যাস
+                      দৈনন্দিন কৰ্ম ক্ৰম
                     </h3>
                     <p className="text-xs text-patient-secondary mt-1">
-                      Sequencing daily Assam tea preparation in chronological steps.
+                      Sequencing mapped to former background: {patientProfile.formerOccupation}.
                     </p>
                   </div>
                   <button
@@ -373,6 +416,18 @@ export default function App() {
         </div>
       )}
 
+      {/* Surface 0: Welcome Landing Surface */}
+      {currentRoute === 'landing' && (
+        <WelcomeLanding
+          onGetStarted={() => {
+            setIsOnboardingInitialSignup(true);
+            setIsOnboardingOpen(true);
+          }}
+          onEnterPin={() => setIsPinModalOpen(true)}
+          onOpenDashboard={() => navigateTo('dashboard')}
+        />
+      )}
+
       {/* Surface 3: Marketing Landing Surface */}
       {currentRoute === 'marketing' && (
         <MarketingLanding
@@ -397,6 +452,22 @@ export default function App() {
           refreshTelemetry();
         }}
         profileId={session?.profileName || 'default_patient'}
+      />
+
+      {/* Personalized Onboarding Intake Modal */}
+      <PatientOnboardingModal
+        isOpen={isOnboardingOpen}
+        isInitialSignup={isOnboardingInitialSignup}
+        initialProfile={patientProfile}
+        onClose={() => setIsOnboardingOpen(false)}
+        onSave={(updatedProfile) => {
+          setPatientProfile(updatedProfile);
+          setIsOnboardingOpen(false);
+          if (isOnboardingInitialSignup) {
+            setSession(getActiveSession());
+            navigateTo('patient');
+          }
+        }}
       />
     </div>
   );

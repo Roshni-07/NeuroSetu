@@ -1,29 +1,63 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CognitiveGameEngine, GAME_STATES } from '../../engine/gameEngine.js';
-import { MEMORY_RECALL_TASKS } from '../../data/reminiscenceContent.js';
+import {
+  MEMORY_RECALL_TASKS,
+  getCulturalContentByState,
+  interpolatePersonalPrompt
+} from '../../data/reminiscenceContent.js';
 import VoiceInputHandler from '../voice/VoiceInputHandler.jsx';
+import GameTutorialOverlay from './GameTutorialOverlay.jsx';
 import { synthesizeSpeech } from '../../services/bhashiniService.js';
 
 export default function MemoryRecallGame({
   profileId = 'default_patient',
+  patientProfile = null,
   initialTier = 2,
   promptDurationMs = 15,
   rewardDurationMs = 50,
   onComplete = null,
   onExit = null
 }) {
+  const isEn = patientProfile?.language === 'en';
   const [engineState, setEngineState] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try {
+      return !localStorage.getItem('neurosetu_tutorial_memory_recall_seen');
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const [tierNotice, setTierNotice] = useState(null);
+  const prevTierRef = useRef(initialTier);
   const engineRef = useRef(null);
 
   useEffect(() => {
+    const tasksToUse = patientProfile?.homeState
+      ? getCulturalContentByState(patientProfile.homeState).memoryTasks
+      : MEMORY_RECALL_TASKS;
+
     const engine = new CognitiveGameEngine({
       profileId,
       gameType: 'memory_recall',
       initialTier,
-      tasks: MEMORY_RECALL_TASKS,
+      tasks: tasksToUse,
       promptDurationMs,
       rewardDurationMs,
-      onStateChange: (state) => setEngineState({ ...state })
+      onStateChange: (state) => {
+        setEngineState({ ...state });
+        if (state.currentTier && state.currentTier !== prevTierRef.current) {
+          const isUp = state.currentTier > prevTierRef.current;
+          setTierNotice({
+            message: isUp
+              ? (isEn ? `🎉 Level Up! Promoted to Tier ${state.currentTier}` : `🎉 পৰ্যায় বৃদ্ধি! পৰ্যায় ${state.currentTier} মুকলি হ’ল`)
+              : (isEn ? `🤝 Gentle Assistance Active (Tier ${state.currentTier})` : `🤝 সহজ সহায় সংক্ৰিয় (পৰ্যায় ${state.currentTier})`),
+            type: isUp ? 'up' : 'down'
+          });
+          prevTierRef.current = state.currentTier;
+          setTimeout(() => setTierNotice(null), 3500);
+        }
+      }
     });
 
     engineRef.current = engine;
@@ -32,7 +66,7 @@ export default function MemoryRecallGame({
     return () => {
       if (engineRef.current) engineRef.current.cleanup();
     };
-  }, [profileId, initialTier]);
+  }, [profileId, initialTier, patientProfile?.homeState]);
 
   if (!engineState) {
     return <div className="p-6 text-center text-patient-hint">খেল আৰম্ভ হৈছে... (Loading Game...)</div>;
@@ -57,16 +91,31 @@ export default function MemoryRecallGame({
 
   const handleVoiceTranscript = (result) => {
     if (engineRef.current && result?.transcript) {
-      // Check detected keyword or raw transcript
       const spoken = result.detectedKeyword || result.transcript;
       engineRef.current.submitAnswer(spoken);
     }
   };
 
+  const hasPersonalInfo = Boolean(
+    patientProfile &&
+    patientProfile.familyMembers?.[0]?.name &&
+    patientProfile.villageTown
+  );
+
+  const renderedPromptAs = (hasPersonalInfo && currentTask?.personalPromptAs)
+    ? interpolatePersonalPrompt(currentTask.personalPromptAs, patientProfile)
+    : (currentTask?.promptAs || '');
+
+  const renderedPromptEn = (hasPersonalInfo && currentTask?.personalPromptEn)
+    ? interpolatePersonalPrompt(currentTask.personalPromptEn, patientProfile)
+    : (currentTask?.promptEn || '');
+
+  // Language authenticity: Primary prompt matches selected language
+  const primaryPrompt = isEn ? renderedPromptEn : renderedPromptAs;
+  const secondaryPrompt = isEn ? renderedPromptAs : renderedPromptEn;
+
   const handleSpeakPrompt = () => {
-    if (currentTask?.promptAs) {
-      synthesizeSpeech(currentTask.promptAs, 'as');
-    }
+    synthesizeSpeech(primaryPrompt, isEn ? 'en' : 'as');
   };
 
   // Completion Screen
@@ -76,15 +125,23 @@ export default function MemoryRecallGame({
         <div className="w-20 h-20 bg-green-100 text-patient-success text-4xl rounded-full flex items-center justify-center mx-auto mb-4 border border-green-300">
           🏆
         </div>
-        <h2 className="text-patient-hero text-patient-primary">বৰ ধুনীয়া! (Well Done!)</h2>
+        <h2 className="text-patient-hero text-patient-primary">
+          {isEn ? 'Well Done!' : 'বৰ ধুনীয়া! (Well Done!)'}
+        </h2>
         <p className="text-patient-body text-patient-secondary mt-2">
-          আপুনি সকলো প্ৰশ্নৰ উত্তৰ সুন্দৰভাৱে দিলে। আপোনাৰ স্মৃতিশক্তি প্ৰশংসনীয়।
+          {isEn
+            ? 'You completed all memory questions beautifully. Your recall is remarkable.'
+            : 'আপুনি সকলো প্ৰশ্নৰ উত্তৰ সুন্দৰভাৱে দিলে। আপোনাৰ স্মৃতিশক্তি প্ৰশংসনীয়।'}
         </p>
 
         <div className="my-6 p-4 bg-patient-canvas border border-patient-border rounded-2xl">
-          <span className="text-xs text-patient-hint uppercase font-bold tracking-wider">অৰ্জিত নম্বৰ (Score)</span>
-          <p className="text-4xl font-extrabold text-patient-accent mt-1">{score} পইণ্ট</p>
-          <p className="text-xs text-patient-secondary mt-1">Difficulty Tier Reached: {currentTier}</p>
+          <span className="text-xs text-patient-hint uppercase font-bold tracking-wider">
+            {isEn ? 'Total Score' : 'অৰ্জিত নম্বৰ (Score)'}
+          </span>
+          <p className="text-4xl font-extrabold text-patient-accent mt-1">{score} {isEn ? 'Points' : 'পইণ্ট'}</p>
+          <p className="text-xs text-patient-secondary mt-1">
+            Difficulty Tier Reached: {currentTier} ({currentTier === 1 ? 'Guided' : currentTier === 2 ? 'Standard' : 'Challenge'})
+          </p>
         </div>
 
         <div className="flex gap-3 justify-center">
@@ -93,7 +150,7 @@ export default function MemoryRecallGame({
               onClick={onExit}
               className="min-h-touch px-6 py-3 bg-patient-accent text-white font-bold rounded-xl hover:bg-patient-accent-hover transition shadow-sm text-base"
             >
-              মুখ্য পৃষ্ঠালৈ যাওক (Return Home)
+              {isEn ? 'Return Home →' : 'মুখ্য পৃষ্ঠালৈ যাওক (Return Home)'}
             </button>
           )}
         </div>
@@ -103,29 +160,59 @@ export default function MemoryRecallGame({
 
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-patient-border shadow-sm max-w-2xl mx-auto space-y-6">
-      {/* Top Header Bar: Progress & Difficulty Tier */}
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+      {/* Top Header Bar: Progress, Visible Tier Indicator, Score, Help & Exit */}
+      <div className="flex flex-wrap items-center justify-between border-b border-gray-100 pb-3 gap-2">
         <div className="flex items-center space-x-2">
           <span className="text-xs font-bold px-2.5 py-1 bg-teal-100 text-patient-accent rounded-lg">
-            প্ৰশ্ন {currentTaskIndex + 1} / {totalTasks}
+            {isEn ? `Question ${currentTaskIndex + 1} / ${totalTasks}` : `প্ৰশ্ন ${currentTaskIndex + 1} / ${totalTasks}`}
           </span>
-          <span className="text-xs font-semibold px-2 py-0.5 bg-gray-100 text-patient-hint rounded">
-            পৰ্যায় (Tier) {currentTier}
-          </span>
+
+          {/* Visible Tier Progression Indicator */}
+          <div className="flex items-center space-x-1 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-lg text-[11px] font-bold text-gray-600">
+            <span className="text-patient-accent">পৰ্যায় {currentTier}:</span>
+            <span className={currentTier === 1 ? 'text-teal-700 font-extrabold' : 'text-gray-400'}>সহজ</span>
+            <span>•</span>
+            <span className={currentTier === 2 ? 'text-teal-700 font-extrabold' : 'text-gray-400'}>মানক</span>
+            <span>•</span>
+            <span className={currentTier === 3 ? 'text-teal-700 font-extrabold' : 'text-gray-400'}>চ্যালেঞ্জ</span>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <span className="text-sm font-bold text-patient-primary">নম্বৰ: {score}</span>
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={() => setShowTutorial(true)}
+            className="text-xs px-2 py-1 bg-teal-50 hover:bg-teal-100 text-patient-accent border border-teal-200 font-bold rounded-lg transition"
+          >
+            (?) {isEn ? 'Help' : 'সহায়'}
+          </button>
+          <span className="text-xs font-bold text-patient-primary">
+            {isEn ? `Score: ${score}` : `নম্বৰ: ${score}`}
+          </span>
           {onExit && (
             <button
               onClick={onExit}
               className="text-xs font-medium text-patient-hint hover:text-patient-primary px-2 py-1"
             >
-              বন্ধ কৰক (Exit)
+              {isEn ? 'Exit' : 'বন্ধ কৰক (Exit)'}
             </button>
           )}
         </div>
       </div>
+
+      {/* DDA Dynamic Tier Level Up / Support Banner */}
+      {tierNotice && (
+        <div
+          role="status"
+          className={`p-3 rounded-2xl border-2 text-sm font-bold flex items-center justify-center gap-2 animate-bounce ${
+            tierNotice.type === 'up'
+              ? 'bg-amber-50 border-amber-300 text-amber-900'
+              : 'bg-blue-50 border-blue-300 text-blue-900'
+          }`}
+        >
+          <span>{tierNotice.message}</span>
+        </div>
+      )}
 
       {/* Cultural Stimulus Card */}
       {currentTask && (
@@ -140,25 +227,27 @@ export default function MemoryRecallGame({
             </span>
             <div className="flex items-center justify-center gap-2 mt-1">
               <h2 className="text-patient-prompt text-patient-primary font-bold">
-                {currentTask.promptAs}
+                {primaryPrompt}
               </h2>
               <button
                 type="button"
                 onClick={handleSpeakPrompt}
-                aria-label="Listen to question in Assamese"
+                aria-label="Listen to question"
                 className="w-10 h-10 rounded-full bg-teal-50 hover:bg-teal-100 text-patient-accent flex items-center justify-center border border-teal-300 text-lg shadow-sm"
               >
                 🔊
               </button>
             </div>
-            <p className="text-xs text-patient-hint mt-0.5">
-              {currentTask.promptEn}
-            </p>
+            {secondaryPrompt && (
+              <p className="text-xs text-patient-hint mt-0.5">
+                {secondaryPrompt}
+              </p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Errorless Feedback Banner (Gentle guidance, never red buzzer) */}
+      {/* Errorless Feedback Banner */}
       {state === GAME_STATES.GENTLE_HINT && gentleHintMessage && (
         <div
           data-testid="gentle-hint-banner"
@@ -168,7 +257,7 @@ export default function MemoryRecallGame({
           <div>
             <p className="font-semibold text-patient-primary">{gentleHintMessage}</p>
             <p className="text-xs text-patient-secondary mt-0.5">
-              একো চিন্তা নকৰিব, সঠিক উত্তৰটো বাচি লওক। (Take your time, choose gently.)
+              {isEn ? 'Take your time, choose gently.' : 'একো চিন্তা নকৰিব, সঠিক উত্তৰটো বাচি লওক।'}
             </p>
           </div>
         </div>
@@ -181,7 +270,7 @@ export default function MemoryRecallGame({
           className="p-4 bg-green-50 border-2 border-green-300 rounded-2xl text-patient-success text-sm font-bold flex items-center justify-center gap-2 animate-scale-up"
         >
           <span className="text-2xl">🌟</span>
-          <span>বৰ ধুনীয়া! আপোনাৰ উত্তৰ সঠিক হৈছে। (+নম্বৰ যোগ হ’ল)</span>
+          <span>{isEn ? 'Splendid! Your answer is correct. (+Points added)' : 'বৰ ধুনীয়া! আপোনাৰ উত্তৰ সঠিক হৈছে। (+নম্বৰ যোগ হ’ল)'}</span>
         </div>
       )}
 
@@ -189,27 +278,27 @@ export default function MemoryRecallGame({
       {currentTask && (
         <div className="space-y-3">
           <span className="text-xs font-bold text-patient-secondary uppercase tracking-wider block text-center">
-            উত্তৰটো স্পৰ্শ কৰক (Touch your answer)
+            {isEn ? 'Touch your answer card:' : 'উত্তৰটো স্পৰ্শ কৰক (Touch your answer):'}
           </span>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {currentTask.options.map((option) => {
               const isEliminated = eliminatedOptions.includes(option.id);
+              const label = isEn ? (option.labelEn || option.labelAs) : option.labelAs;
               return (
                 <button
                   key={option.id}
                   type="button"
-                  disabled={isEliminated || state === GAME_STATES.EVALUATING || state === GAME_STATES.SUCCESS_REWARD}
+                  disabled={isEliminated || state === GAME_STATES.SUCCESS_REWARD}
                   onClick={() => handleOptionClick(option.id)}
-                  className={`min-h-touch p-4 rounded-2xl border-2 font-bold text-lg flex flex-col items-center justify-center gap-1 transition-all shadow-sm ${
+                  className={`min-h-touch p-4 rounded-2xl border-2 font-bold text-base flex flex-col items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${
                     isEliminated
-                      ? 'opacity-30 border-gray-200 bg-gray-100 line-through cursor-not-allowed'
-                      : 'border-patient-border bg-patient-canvas hover:border-patient-accent hover:bg-teal-50/50 active:scale-95 text-patient-primary'
+                      ? 'opacity-30 border-dashed border-gray-300 bg-gray-50 cursor-not-allowed'
+                      : 'border-patient-border hover:border-patient-accent bg-white text-patient-primary'
                   }`}
                 >
-                  <span className="text-2xl">{option.icon}</span>
-                  <span className="text-patient-body">{option.labelAs}</span>
-                  <span className="text-xs text-patient-hint font-normal">{option.labelEn}</span>
+                  <span className="text-3xl" role="img" aria-label={label}>{option.icon || '🎶'}</span>
+                  <span>{label}</span>
                 </button>
               );
             })}
@@ -217,15 +306,35 @@ export default function MemoryRecallGame({
         </div>
       )}
 
-      {/* Integrated Voice Input Handler (Speak to answer in Assamese) */}
-      <div className="pt-2 border-t border-gray-100">
+      {/* Voice Input Section */}
+      <div className="pt-4 border-t border-gray-100 flex flex-col items-center">
+        <span className="text-xs text-patient-hint mb-2">
+          {isEn ? 'Or speak your answer aloud:' : 'নাইবা মাত মাতি কওক:'}
+        </span>
         <VoiceInputHandler
-          language="as"
-          label="নাইবা মুখৰে কওক (Or Speak your answer)"
-          disabled={state === GAME_STATES.EVALUATING || state === GAME_STATES.SUCCESS_REWARD}
-          onTranscriptReceived={handleVoiceTranscript}
+          onTranscript={handleVoiceTranscript}
+          expectedKeywords={currentTask?.acceptedAliases || []}
         />
       </div>
+
+      {/* Tutorial Overlay Modal */}
+      <GameTutorialOverlay
+        gameType="memory_recall"
+        language={patientProfile?.language || 'as'}
+        isOpen={showTutorial}
+        onStart={() => {
+          setShowTutorial(false);
+          try {
+            localStorage.setItem('neurosetu_tutorial_memory_recall_seen', 'true');
+          } catch (e) {}
+        }}
+        onSkip={() => {
+          setShowTutorial(false);
+          try {
+            localStorage.setItem('neurosetu_tutorial_memory_recall_seen', 'true');
+          } catch (e) {}
+        }}
+      />
     </div>
   );
 }

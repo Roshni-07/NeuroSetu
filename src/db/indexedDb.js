@@ -53,6 +53,22 @@ export async function getDB() {
   return dbPromise;
 }
 
+export const DEFAULT_PROFILE = {
+  id: 'default_patient',
+  name: 'Bhaben Kalita',
+  homeState: 'Assam',
+  villageTown: 'Hajo',
+  language: 'as',
+  age: 72,
+  familyMembers: [
+    { name: 'Rumi', relationship: 'daughter' },
+    { name: 'Dipak', relationship: 'son' }
+  ],
+  formerOccupation: 'farmer',
+  favoriteFestival: 'Rongali Bihu',
+  favoriteFood: 'Masor Tenga & Pitha'
+};
+
 /**
  * Save or update a patient profile
  */
@@ -72,6 +88,20 @@ export async function saveProfile(profile) {
 export async function getProfile(id) {
   const db = await getDB();
   return db.get(STORES.PROFILES, id);
+}
+
+/**
+ * Retrieve active profile or fallback to defaults
+ */
+export async function getActiveProfile(id = 'default_patient') {
+  try {
+    const db = await getDB();
+    const found = await db.get(STORES.PROFILES, id);
+    if (found) return found;
+  } catch (e) {
+    console.warn('[IndexedDB] getActiveProfile fallback:', e);
+  }
+  return { ...DEFAULT_PROFILE, id };
 }
 
 /**
