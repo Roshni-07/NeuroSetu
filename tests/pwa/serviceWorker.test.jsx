@@ -86,18 +86,18 @@ describe('Task 3 & 4: PWA, Service Worker & Offline Shell Verification', () => {
     expect(networkBanner).toHaveTextContent(/Online — Cloud Sync Ready/i);
   });
 
-  it('5. App Shell allows switching between WCAG-AA Patient surface and Dark Marketing surface', () => {
+  it('5. App Shell allows navigating from Home to ASHA Dashboard and Patient surface', () => {
     render(<App />);
 
-    // Verify default patient surface
+    // Verify initial Home surface with English default
     expect(screen.getByText(/Patient UI/i)).toBeInTheDocument();
-    expect(screen.getByText(/নমস্কাৰ! \(Welcome to NeuroSetu\)/i)).toBeInTheDocument();
-
-    // Switch to marketing surface
-    const marketingTabBtn = screen.getByRole('button', { name: /Marketing Surface/i });
-    fireEvent.click(marketingTabBtn);
-
     expect(screen.getByText(/Cognitive Games That Speak Your Language/i)).toBeInTheDocument();
     expect(screen.getByText(/Voice-First Bhashini AI/i)).toBeInTheDocument();
+
+    // Switch to ASHA Dashboard
+    const ashaBtn = screen.getByRole('button', { name: /ASHA \/ Caregiver Dashboard/i });
+    fireEvent.click(ashaBtn);
+
+    expect(screen.getByText(/North East Dementia Triage & Telemetry Portal/i)).toBeInTheDocument();
   });
 });

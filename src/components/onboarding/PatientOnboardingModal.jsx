@@ -18,7 +18,7 @@ export default function PatientOnboardingModal({
     name: initialProfile?.name || '',
     homeState: initialProfile?.homeState || NER_STATES.ASSAM,
     villageTown: initialProfile?.villageTown || '',
-    language: initialProfile?.language || 'as',
+    language: initialProfile?.language || 'en',
     age: initialProfile?.age || '',
     familyMemberName: initialProfile?.familyMembers?.[0]?.name || '',
     familyMemberRel: initialProfile?.familyMembers?.[0]?.relationship || 'daughter',
@@ -192,8 +192,8 @@ export default function PatientOnboardingModal({
                 onChange={e => setFormData({ ...formData, language: e.target.value })}
                 className="w-full min-h-touch px-4 py-2 bg-gray-50 border-2 border-gray-200 focus:border-patient-accent focus:bg-white rounded-xl text-base font-semibold"
               >
+                <option value="en">English (Default / NER Regional Standard)</option>
                 <option value="as">Assamese (অসমীয়া)</option>
-                <option value="en">English (NER Regional Standard)</option>
               </select>
               <p className="text-[11px] text-gray-500 mt-1">
                 Note: Prompt text and speech will adapt authentically to the selected language.

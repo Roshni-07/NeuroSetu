@@ -16,6 +16,7 @@ describe('Task 32–34: Full Offline Core Loop & Multi-Surface E2E Suite', () =>
     await clearAllLocalData();
     sessionStorage.clear();
     localStorage.clear();
+    localStorage.setItem('neurosetu_tutorial_memory_recall_seen', 'true');
     window.location.hash = '';
     vi.restoreAllMocks();
   });
@@ -27,23 +28,21 @@ describe('Task 32–34: Full Offline Core Loop & Multi-Surface E2E Suite', () =>
   it('1. Multi-surface navigation: Switches cleanly between Patient, Dashboard, and Marketing surfaces', async () => {
     render(<App />);
 
-    // 1. Initially on Patient surface
-    expect(screen.getByText(/নমস্কাৰ! \(Welcome to NeuroSetu\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/বিহু স্মৃতি খেল/i)).toBeInTheDocument();
+    // 1. Initially on Home surface (unauthenticated first load, English default)
+    expect(screen.getByText(/Cognitive Games That Speak Your Language/i)).toBeInTheDocument();
 
-    // 2. Navigate to Marketing surface
-    const marketingBtn = screen.getByRole('button', { name: /Marketing Surface/i });
-    fireEvent.click(marketingBtn);
-
-    expect(screen.getByText(/Culturally Grounded Cognitive Healthcare for North East India/i)).toBeInTheDocument();
-    expect(screen.getByText(/Launch Patient App →/i)).toBeInTheDocument();
-
-    // 3. Navigate to ASHA Dashboard surface
+    // 2. Navigate to ASHA Dashboard surface
     const dashboardBtn = screen.getByRole('button', { name: /ASHA \/ Caregiver Dashboard/i });
     fireEvent.click(dashboardBtn);
 
     expect(screen.getByText(/North East Dementia Triage & Telemetry Portal/i)).toBeInTheDocument();
     expect(screen.getByText(/ASHA Household Patient Triage/i)).toBeInTheDocument();
+
+    // 3. Navigate back to Home
+    const homeBtn = screen.getByRole('button', { name: 'Home' });
+    fireEvent.click(homeBtn);
+
+    expect(screen.getByText(/Cognitive Games That Speak Your Language/i)).toBeInTheDocument();
   });
 
   it('2. Offline Dementia Care Loop: Authenticates, plays Bihu memory game, and triggers SOS safely', async () => {
@@ -68,18 +67,18 @@ describe('Task 32–34: Full Offline Core Loop & Multi-Surface E2E Suite', () =>
     });
 
     // 2. Launch Memory Recall Game
-    const playMemoryBtn = screen.getAllByRole('button', { name: /খেলক \(Play\) →/i })[0];
+    const playMemoryBtn = screen.getAllByRole('button', { name: /(Play|খেলক) →/i })[0];
     fireEvent.click(playMemoryBtn);
 
     // Wait for question prompt to load
     await waitFor(() => {
-      expect(screen.getByText(/বিহুৰ বাদ্য/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: /(Do you remember|বিহুৰ বাদ্য)/i })).toBeInTheDocument();
     });
 
     await sleep(35);
 
-    // Select Dhol option
-    const dholBtn = screen.getByRole('button', { name: /ঢোল/i });
+    // Select Dhol / Drum option
+    const dholBtn = screen.getByRole('button', { name: /(Bihu Drum|Dhol|ঢোল)/i });
     fireEvent.click(dholBtn);
 
     await waitFor(() => {
@@ -87,7 +86,7 @@ describe('Task 32–34: Full Offline Core Loop & Multi-Surface E2E Suite', () =>
     });
 
     // Exit Game back to Hub
-    const exitBtn = screen.getByRole('button', { name: /বন্ধ কৰক \(Exit\)/i });
+    const exitBtn = screen.getByRole('button', { name: /(Exit|বন্ধ কৰক)/i });
     fireEvent.click(exitBtn);
 
     // 3. Test One-Touch SOS Emergency Button

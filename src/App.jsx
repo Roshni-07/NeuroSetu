@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PinAuthModal from './components/auth/PinAuthModal.jsx';
+import ProfileCheckModal from './components/auth/ProfileCheckModal.jsx';
 import PatientLayout from './layouts/PatientLayout.jsx';
 import SosEmergencyButton from './components/sos/SosEmergencyButton.jsx';
 import PatientOnboardingModal from './components/onboarding/PatientOnboardingModal.jsx';
@@ -9,8 +10,7 @@ import SequencingGame from './components/games/SequencingGame.jsx';
 import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from './components/dashboard/PatientTriageList.jsx';
 import CognitiveTrendChart from './components/dashboard/CognitiveTrendChart.jsx';
 import SyncStatusPanel from './components/dashboard/SyncStatusPanel.jsx';
-import MarketingLanding from './pages/MarketingLanding.jsx';
-import WelcomeLanding from './pages/WelcomeLanding.jsx';
+import HomePage from './pages/HomePage.jsx';
 import { useAppRoute } from './router/AppRouter.jsx';
 import { getActiveSession, logout, hasConfiguredPin } from './services/authService.js';
 import {
@@ -29,6 +29,7 @@ export default function App() {
   const [session, setSession] = useState(getActiveSession());
   const [patientProfile, setPatientProfile] = useState(DEFAULT_PROFILE);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
   const [isSosOpen, setIsSosOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isOnboardingInitialSignup, setIsOnboardingInitialSignup] = useState(false);
@@ -98,11 +99,14 @@ export default function App() {
   const handleAuthSuccess = (newSession) => {
     setSession(newSession);
     setIsPinModalOpen(false);
+    setIsCheckModalOpen(false);
+    navigateTo('patient');
   };
 
   const handleLogout = () => {
     logout();
     setSession(null);
+    navigateTo('home');
   };
 
   const handleExitGame = () => {
@@ -112,205 +116,312 @@ export default function App() {
 
   const selectedPatient = SAMPLE_ASHA_PATIENTS.find(p => p.id === selectedPatientId) || SAMPLE_ASHA_PATIENTS[0];
 
+  const isEn = (patientProfile?.language || 'en') === 'en';
+
   const patientDisplayTitle = `${patientProfile.name} (${patientProfile.villageTown ? `${patientProfile.villageTown}, ` : ''}${patientProfile.homeState || 'Assam'})`;
+
+  // Dev toolbar visibility: enabled in dev / test mode or with ?debug=true
+  const isDevMode = Boolean(
+    (typeof import.meta !== 'undefined' && import.meta.env?.DEV) ||
+    (typeof process !== 'undefined' && (process.env?.NODE_ENV === 'development' || process.env?.NODE_ENV === 'test')) ||
+    (typeof window !== 'undefined' && window.location.search.includes('debug=true'))
+  );
+
+  const handleLaunchPatient = () => {
+    if (session) {
+      navigateTo('patient');
+      setActiveGame(null);
+    } else {
+      setIsCheckModalOpen(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-patient-canvas">
-      {/* Top Prototype Navigation Bar */}
-      <div className="bg-gray-950 text-gray-300 py-1.5 px-4 text-xs flex items-center justify-between border-b border-gray-800">
-        <div className="flex items-center space-x-2">
-          <span className="font-extrabold text-white">NeuroSetu</span>
-          <span className="text-gray-500">| Surface:</span>
-          <button
-            onClick={() => { navigateTo('landing'); setActiveGame(null); }}
-            className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'landing' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
-          >
-            Welcome Landing
-          </button>
-          <button
-            onClick={() => { navigateTo('patient'); setActiveGame(null); }}
-            className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'patient' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
-          >
-            Patient UI (Games)
-          </button>
-          <button
-            onClick={() => navigateTo('dashboard')}
-            className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'dashboard' ? 'bg-blue-800 text-white shadow-xs' : 'hover:bg-gray-800'}`}
-          >
-            ASHA / Caregiver Dashboard ({pendingSyncCount})
-          </button>
-          <button
-            onClick={() => navigateTo('marketing')}
-            className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'marketing' ? 'bg-purple-900 text-white shadow-xs' : 'hover:bg-gray-800'}`}
-          >
-            Marketing Surface
-          </button>
-        </div>
+      {/* Top Prototype / Dev Navigation Bar (Hidden in production for real users) */}
+      {isDevMode && (
+        <div className="bg-gray-950 text-gray-300 py-1.5 px-4 text-xs flex items-center justify-between border-b border-gray-800">
+          <div className="flex items-center space-x-2">
+            <span className="font-extrabold text-white">NeuroSetu [DEV]</span>
+            <span className="text-gray-500">| Surface:</span>
+            <button
+              onClick={() => { navigateTo('home'); setActiveGame(null); }}
+              className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'home' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
+            >
+              Home
+            </button>
+            <button
+              onClick={() => {
+                if (session) {
+                  navigateTo('patient');
+                  setActiveGame(null);
+                } else {
+                  setIsPinModalOpen(true);
+                }
+              }}
+              className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'patient' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
+            >
+              Patient UI (Games)
+            </button>
+            <button
+              onClick={() => navigateTo('dashboard')}
+              className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'dashboard' ? 'bg-blue-800 text-white shadow-xs' : 'hover:bg-gray-800'}`}
+            >
+              ASHA / Caregiver Dashboard ({pendingSyncCount})
+            </button>
+          </div>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => {
-              setIsOnboardingInitialSignup(!hasConfiguredPin());
-              setIsOnboardingOpen(true);
-            }}
-            className="text-amber-300 hover:text-amber-200 font-semibold"
-          >
-            👤 Setup / Edit Profile
-          </button>
-          {session ? (
+          <div className="flex items-center space-x-3">
             <button
-              onClick={handleLogout}
-              className="text-gray-400 hover:text-white underline"
+              onClick={() => {
+                setIsOnboardingInitialSignup(!hasConfiguredPin());
+                setIsOnboardingOpen(true);
+              }}
+              className="text-amber-300 hover:text-amber-200 font-semibold"
             >
-              Lock / Logout ({session.profileName})
+              👤 Setup / Edit Profile
             </button>
-          ) : (
-            <button
-              onClick={() => setIsPinModalOpen(true)}
-              className="text-teal-300 hover:text-teal-200 underline font-semibold"
-            >
-              🔑 Enter Profile PIN
-            </button>
-          )}
+            {session ? (
+              <button
+                onClick={handleLogout}
+                className="text-gray-400 hover:text-white underline"
+              >
+                Lock / Logout ({session.profileName})
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsPinModalOpen(true)}
+                className="text-teal-300 hover:text-teal-200 underline font-semibold"
+              >
+                🔑 Enter Profile PIN
+              </button>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* Offline / Network Status Banner */}
+      <div
+        role="status"
+        aria-live="polite"
+        data-testid="network-status"
+        className={`w-full py-1.5 px-4 text-center font-bold text-xs transition-colors shadow-xs ${
+          isOnline
+            ? 'bg-patient-success text-white'
+            : 'bg-patient-terracotta text-white'
+        }`}
+      >
+        {isOnline
+          ? (isEn ? '● Online — Cloud Sync Ready' : '● অনলাইন — ক্লাউড ছিংক সাজু (Online — Cloud Sync Ready)')
+          : (isEn ? '● Offline Mode Active — Service Worker Serving Shell' : '● অফলাইন ম’ড সক্ৰিয় — (Offline Mode Active — Service Worker Serving Shell)')}
       </div>
+
+      {/* Surface 0: Home Surface (Default Entry View on "/" and refresh) */}
+      {currentRoute === 'home' && (
+        <HomePage
+          onLaunchPatient={handleLaunchPatient}
+          onLaunchDashboard={() => navigateTo('dashboard')}
+          onOpenSetup={() => {
+            setIsOnboardingInitialSignup(!hasConfiguredPin());
+            setIsOnboardingOpen(true);
+          }}
+          initialLanguage={patientProfile?.language || 'en'}
+          onLanguageChange={(lang) => {
+            setPatientProfile(prev => ({ ...prev, language: lang }));
+          }}
+        />
+      )}
 
       {/* Surface 1: Patient Experience Shell (WCAG 2.1 AA) */}
       {currentRoute === 'patient' && (
-        <PatientLayout
-          profileName={patientDisplayTitle}
-          activeSection="games"
-          isOnline={isOnline}
-          onOpenSos={() => setIsSosOpen(true)}
-          onNavigate={(sec) => {
-            if (sec === 'games') setActiveGame(null);
-            if (sec === 'progress') navigateTo('dashboard');
-            if (sec === 'help') setIsSosOpen(true);
-          }}
-        >
-          {/* Active Game View */}
-          {activeGame === 'memory' && (
-            <MemoryRecallGame
-              profileId={session?.profileName || 'default_patient'}
-              patientProfile={patientProfile}
-              onExit={handleExitGame}
-            />
-          )}
+        session ? (
+          <PatientLayout
+            profileName={patientDisplayTitle}
+            language={patientProfile?.language || 'en'}
+            activeSection="games"
+            isOnline={isOnline}
+            onOpenSos={() => setIsSosOpen(true)}
+            onNavigate={(sec) => {
+              if (sec === 'games') setActiveGame(null);
+              if (sec === 'progress') navigateTo('dashboard');
+              if (sec === 'help') setIsSosOpen(true);
+            }}
+          >
+            {/* Active Game View */}
+            {activeGame === 'memory' && (
+              <MemoryRecallGame
+                profileId={session?.profileName || 'default_patient'}
+                patientProfile={patientProfile}
+                onExit={handleExitGame}
+              />
+            )}
 
-          {activeGame === 'pattern' && (
-            <PatternMatchingGame
-              profileId={session?.profileName || 'default_patient'}
-              patientProfile={patientProfile}
-              onExit={handleExitGame}
-            />
-          )}
+            {activeGame === 'pattern' && (
+              <PatternMatchingGame
+                profileId={session?.profileName || 'default_patient'}
+                patientProfile={patientProfile}
+                onExit={handleExitGame}
+              />
+            )}
 
-          {activeGame === 'sequencing' && (
-            <SequencingGame
-              profileId={session?.profileName || 'default_patient'}
-              patientProfile={patientProfile}
-              onExit={handleExitGame}
-            />
-          )}
+            {activeGame === 'sequencing' && (
+              <SequencingGame
+                profileId={session?.profileName || 'default_patient'}
+                patientProfile={patientProfile}
+                onExit={handleExitGame}
+              />
+            )}
 
-          {/* Game Selection Hub */}
-          {!activeGame && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-3xl p-6 border-2 border-patient-border shadow-sm text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-patient-hero text-patient-primary">
-                      নমস্কাৰ! (Welcome to NeuroSetu)
-                    </h1>
-                    <span className="text-xs px-2.5 py-0.5 bg-teal-100 text-patient-accent font-bold rounded-full">
-                      {patientProfile.name} • {patientProfile.homeState} ({patientProfile.villageTown})
-                    </span>
+            {/* Game Selection Hub */}
+            {!activeGame && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-3xl p-6 border-2 border-patient-border shadow-sm text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-patient-hero text-patient-primary">
+                        {isEn ? 'Welcome to NeuroSetu' : 'নমস্কাৰ! (Welcome to NeuroSetu)'}
+                      </h1>
+                      <span className="text-xs px-2.5 py-0.5 bg-teal-100 text-patient-accent font-bold rounded-full">
+                        {patientProfile.name} • {patientProfile.homeState} ({patientProfile.villageTown})
+                      </span>
+                    </div>
+                    <p className="text-patient-body text-patient-secondary mt-1">
+                      {isEn
+                        ? `Select a culturally grounded game personalized for ${patientProfile.homeState}:`
+                        : `আপোনাৰ অঞ্চলৰ সাংস্কৃতিক খেলসমূহৰ পৰা এটা বাচি লওক (Personalized for ${patientProfile.homeState}):`}
+                    </p>
                   </div>
-                  <p className="text-patient-body text-patient-secondary mt-1">
-                    আপোনাৰ অঞ্চলৰ সাংস্কৃতিক খেলসমূহৰ পৰা এটা বাচি লওক (Personalized for {patientProfile.homeState}):
-                  </p>
+                  <button
+                    onClick={() => {
+                      setIsOnboardingInitialSignup(false);
+                      setIsOnboardingOpen(true);
+                    }}
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-patient-primary rounded-xl text-xs font-bold shrink-0"
+                  >
+                    ⚙️ {isEn ? 'Edit Profile' : 'ব্যক্তিগত পৰিচয় (Edit Profile)'}
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsOnboardingOpen(true)}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-patient-primary rounded-xl text-xs font-bold shrink-0"
-                >
-                  ⚙️ ব্যক্তিগত পৰিচয় (Edit Profile)
-                </button>
+
+                {/* 3 Large Dementia-Accessible Game Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Game 1: Memory Recall */}
+                  <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-patient-accent shadow-sm flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="w-14 h-14 rounded-2xl bg-teal-50 text-patient-accent flex items-center justify-center text-3xl mb-3 border border-teal-200">
+                        🥁
+                      </div>
+                      <h3 className="text-patient-prompt text-patient-primary font-bold">
+                        {isEn ? 'Cultural Memory Recall' : 'বিহু স্মৃতি খেল (Memory Recall)'}
+                      </h3>
+                      <p className="text-xs text-patient-secondary mt-1">
+                        {patientProfile.homeState} instruments & personal autobiographical cues with DDA.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveGame('memory')}
+                      className="min-h-touch w-full mt-4 px-4 py-2.5 bg-patient-accent hover:bg-patient-accent-hover text-white font-bold rounded-2xl transition shadow-sm text-sm"
+                    >
+                      {isEn ? 'Play →' : 'খেলক (Play) →'}
+                    </button>
+                  </div>
+
+                  {/* Game 2: Pattern Recognition */}
+                  <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-patient-terracotta shadow-sm flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="w-14 h-14 rounded-2xl bg-amber-50 text-patient-terracotta flex items-center justify-center text-3xl mb-3 border border-amber-200">
+                        🧵
+                      </div>
+                      <h3 className="text-patient-prompt text-patient-primary font-bold">
+                        {isEn ? 'Traditional Patterns' : 'বস্ত্ৰ চানেকি'}
+                      </h3>
+                      <p className="text-xs text-patient-secondary mt-1">
+                        Traditional handloom patterns ({patientProfile.homeState} & NER weaves).
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveGame('pattern')}
+                      className="min-h-touch w-full mt-4 px-4 py-2.5 bg-patient-terracotta hover:bg-patient-terracotta-hover text-white font-bold rounded-2xl transition shadow-sm text-sm"
+                    >
+                      {isEn ? 'Play →' : 'চানেকি (Play) →'}
+                    </button>
+                  </div>
+
+                  {/* Game 3: Daily Routine Sequencing */}
+                  <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-gray-800 shadow-sm flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-800 flex items-center justify-center text-3xl mb-3 border border-orange-200">
+                        ☕
+                      </div>
+                      <h3 className="text-patient-prompt text-patient-primary font-bold">
+                        {isEn ? 'Daily Routine Sequencing' : 'দৈনন্দিন কৰ্ম ক্ৰম'}
+                      </h3>
+                      <p className="text-xs text-patient-secondary mt-1">
+                        Sequencing mapped to former background: {patientProfile.formerOccupation}.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveGame('sequencing')}
+                      className="min-h-touch w-full mt-4 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-2xl transition shadow-sm text-sm"
+                    >
+                      {isEn ? 'Play →' : 'ক্ৰম (Play) →'}
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              {/* 3 Large Dementia-Accessible Game Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Game 1: Memory Recall */}
-                <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-patient-accent shadow-sm flex flex-col justify-between transition-all">
-                  <div>
-                    <div className="w-14 h-14 rounded-2xl bg-teal-50 text-patient-accent flex items-center justify-center text-3xl mb-3 border border-teal-200">
-                      🥁
-                    </div>
-                    <h3 className="text-patient-prompt text-patient-primary font-bold">
-                      বিহু স্মৃতি খেল (Memory Recall)
-                    </h3>
-                    <p className="text-xs text-patient-secondary mt-1">
-                      {patientProfile.homeState} instruments & personal autobiographical cues with DDA.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setActiveGame('memory')}
-                    className="min-h-touch w-full mt-4 px-4 py-2.5 bg-patient-accent hover:bg-patient-accent-hover text-white font-bold rounded-2xl transition shadow-sm text-sm"
-                  >
-                    খেলক (Play) →
-                  </button>
-                </div>
-
-                {/* Game 2: Pattern Recognition */}
-                <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-patient-terracotta shadow-sm flex flex-col justify-between transition-all">
-                  <div>
-                    <div className="w-14 h-14 rounded-2xl bg-amber-50 text-patient-terracotta flex items-center justify-center text-3xl mb-3 border border-amber-200">
-                      🧵
-                    </div>
-                    <h3 className="text-patient-prompt text-patient-primary font-bold">
-                      বস্ত্ৰ চানেকি
-                    </h3>
-                    <p className="text-xs text-patient-secondary mt-1">
-                      Traditional handloom patterns ({patientProfile.homeState} & NER weaves).
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setActiveGame('pattern')}
-                    className="min-h-touch w-full mt-4 px-4 py-2.5 bg-patient-terracotta hover:bg-patient-terracotta-hover text-white font-bold rounded-2xl transition shadow-sm text-sm"
-                  >
-                    চানেকি (Play) →
-                  </button>
-                </div>
-
-                {/* Game 3: Daily Routine Sequencing */}
-                <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-gray-800 shadow-sm flex flex-col justify-between transition-all">
-                  <div>
-                    <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-800 flex items-center justify-center text-3xl mb-3 border border-orange-200">
-                      ☕
-                    </div>
-                    <h3 className="text-patient-prompt text-patient-primary font-bold">
-                      দৈনন্দিন কৰ্ম ক্ৰম
-                    </h3>
-                    <p className="text-xs text-patient-secondary mt-1">
-                      Sequencing mapped to former background: {patientProfile.formerOccupation}.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setActiveGame('sequencing')}
-                    className="min-h-touch w-full mt-4 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-2xl transition shadow-sm text-sm"
-                  >
-                    ক্ৰম (Play) →
-                  </button>
-                </div>
-              </div>
+            )}
+          </PatientLayout>
+        ) : (
+          <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border-2 border-patient-border shadow-xl text-center space-y-5">
+            <span className="text-4xl block">🔒</span>
+            <h2 className="text-xl font-extrabold text-patient-primary">
+              {isEn ? 'Authentication Required' : 'প্ৰৱেশ পিন প্ৰয়োজন'}
+            </h2>
+            <p className="text-sm text-patient-secondary">
+              {isEn
+                ? 'Please enter your 4-digit PIN or register your profile to access cognitive games.'
+                : 'ৰোগীৰ খেলসমূহ উপভোগ কৰিবলৈ অনুগ্ৰহ কৰি আপোনাৰ ৪-সংখ্যাৰ পিন দিয়ক।'}
+            </p>
+            <div className="space-y-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsPinModalOpen(true)}
+                className="w-full min-h-touch py-3.5 bg-patient-accent hover:bg-patient-accent-hover text-white font-bold rounded-2xl text-sm shadow-sm transition"
+              >
+                🔑 {isEn ? 'Enter Profile PIN' : 'পিন প্ৰৱেশ কৰক'}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo('home')}
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs transition"
+              >
+                ← {isEn ? 'Return to Home' : 'মুখ্য পৃষ্ঠালৈ উভতি যাওক'}
+              </button>
             </div>
-          )}
-        </PatientLayout>
+          </div>
+        )
       )}
 
       {/* Surface 2: ASHA Worker & Caregiver Clinical Dashboard */}
       {currentRoute === 'dashboard' && (
         <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+          {/* In-Page Navigation Header */}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => navigateTo('home')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition shadow-xs"
+            >
+              ← Return to Home
+            </button>
+            <button
+              type="button"
+              onClick={handleLaunchPatient}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+            >
+              🎮 Launch Patient App →
+            </button>
+          </div>
+
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
@@ -416,32 +527,27 @@ export default function App() {
         </div>
       )}
 
-      {/* Surface 0: Welcome Landing Surface */}
-      {currentRoute === 'landing' && (
-        <WelcomeLanding
-          onGetStarted={() => {
-            setIsOnboardingInitialSignup(true);
-            setIsOnboardingOpen(true);
-          }}
-          onEnterPin={() => setIsPinModalOpen(true)}
-          onOpenDashboard={() => navigateTo('dashboard')}
-        />
-      )}
-
-      {/* Surface 3: Marketing Landing Surface */}
-      {currentRoute === 'marketing' && (
-        <MarketingLanding
-          onLaunchPatient={() => navigateTo('patient')}
-          onLaunchDashboard={() => navigateTo('dashboard')}
-        />
-      )}
+      {/* Profile Check Modal (Device-based check via IndexedDB) */}
+      <ProfileCheckModal
+        isOpen={isCheckModalOpen}
+        onClose={() => setIsCheckModalOpen(false)}
+        onRouteToPin={() => {
+          setIsCheckModalOpen(false);
+          setIsPinModalOpen(true);
+        }}
+        onRouteToSignup={() => {
+          setIsCheckModalOpen(false);
+          setIsOnboardingInitialSignup(true);
+          setIsOnboardingOpen(true);
+        }}
+      />
 
       {/* Accessible PIN Authentication Modal */}
       <PinAuthModal
         isOpen={isPinModalOpen}
         onClose={() => setIsPinModalOpen(false)}
         onSuccess={handleAuthSuccess}
-        profileName="Elderly Patient"
+        profileName={patientProfile?.name || 'Elderly Patient'}
       />
 
       {/* One-Touch Voice SOS Emergency Assistance Modal */}

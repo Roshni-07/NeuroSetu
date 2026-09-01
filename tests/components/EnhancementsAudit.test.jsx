@@ -28,7 +28,7 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     const options = Array.from(languageSelect.querySelectorAll('option')).map(o => o.value);
 
     // Verify only 'as' and 'en' are offered
-    expect(options).toEqual(['as', 'en']);
+    expect(options.sort()).toEqual(['as', 'en']);
     expect(options).not.toContain('mni');
     expect(options).not.toContain('lus');
   });

@@ -4,34 +4,25 @@ import { synthesizeSpeech } from '../services/bhashiniService.js';
 export default function PatientLayout({
   children,
   profileName = 'Primary Patient',
+  language = 'en',
   activeSection = 'games', // 'games' | 'progress' | 'help'
   onNavigate = null,
   onOpenSos = null,
   isOnline = true
 }) {
+  const isEn = language === 'en';
+
   const handleAudioGuide = () => {
-    synthesizeSpeech('নমস্কাৰ। আপোনাৰ দিনটো শুভ হওক। খেলিবলৈ যিকোনো এটা কাৰ্ড স্পৰ্শ কৰক।', 'as');
+    if (isEn) {
+      synthesizeSpeech('Welcome. Have a wonderful day. Tap any card below to start playing.', 'en');
+    } else {
+      synthesizeSpeech('নমস্কাৰ। আপোনাৰ দিনটো শুভ হওক। খেলিবলৈ যিকোনো এটা কাৰ্ড স্পৰ্শ কৰক।', 'as');
+    }
   };
 
   return (
     <div className="min-h-screen bg-patient-canvas text-patient-primary flex flex-col font-sans selection:bg-teal-200">
-      {/* 1. Offline / Network Status Banner */}
-      <div
-        role="status"
-        aria-live="polite"
-        data-testid="network-status"
-        className={`w-full py-2 px-4 text-center font-bold text-sm transition-colors shadow-xs ${
-          isOnline
-            ? 'bg-patient-success text-white'
-            : 'bg-patient-terracotta text-white'
-        }`}
-      >
-        {isOnline
-          ? '● অনলাইন — ক্লাউড ছিংক সাজু (Online — Cloud Sync Ready)'
-          : '● অফলাইন ম’ড সক্ৰিয় — (Offline Mode Active — Service Worker Serving Shell)'}
-      </div>
-
-      {/* 2. Top Patient Bar (High Contrast, Large Targets, No Hamburger Menu) */}
+      {/* Top Patient Bar (High Contrast, Large Targets, No Hamburger Menu) */}
       <header className="bg-white border-b-2 border-patient-border px-4 py-3 sticky top-0 z-30 shadow-xs">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           {/* Logo & Patient Identity */}
@@ -44,7 +35,7 @@ export default function PatientLayout({
                 NeuroSetu
               </span>
               <span className="text-xs font-semibold text-patient-secondary">
-                👤 {profileName} (অসমীয়া)
+                👤 {profileName} ({isEn ? 'English' : 'অসমীয়া'})
               </span>
             </div>
           </div>
@@ -55,12 +46,12 @@ export default function PatientLayout({
             <button
               type="button"
               onClick={handleAudioGuide}
-              aria-label="Listen to Audio Guide in Assamese"
-              title="শুনক (Listen to Guide)"
+              aria-label={isEn ? "Listen to Audio Guide in English" : "Listen to Audio Guide in Assamese"}
+              title={isEn ? "Audio Guide" : "শুনক (Listen to Guide)"}
               className="min-h-touch min-w-touch px-3 py-2 bg-teal-50 hover:bg-teal-100 text-patient-accent border-2 border-teal-300 rounded-2xl text-sm font-bold flex items-center gap-1.5 active:scale-95 shadow-xs transition"
             >
               <span className="text-xl" role="img" aria-hidden="true">🔊</span>
-              <span className="hidden sm:inline">সহায় শুনক</span>
+              <span className="hidden sm:inline">{isEn ? 'Audio Help' : 'সহায় শুনক'}</span>
             </button>
 
             {/* Emergency SOS Button */}
@@ -72,7 +63,7 @@ export default function PatientLayout({
                 className="min-h-touch min-w-touch px-4 py-2 bg-patient-terracotta hover:bg-patient-terracotta-hover text-white rounded-2xl text-sm font-extrabold flex items-center gap-1.5 active:scale-95 shadow-sm transition animate-pulse"
               >
                 <span className="text-lg" role="img" aria-hidden="true">🆘</span>
-                <span>সহায় (SOS)</span>
+                <span>{isEn ? 'Help (SOS)' : 'সহায় (SOS)'}</span>
               </button>
             )}
           </div>
@@ -102,7 +93,7 @@ export default function PatientLayout({
             }`}
           >
             <span className="text-2xl" role="img" aria-hidden="true">🎮</span>
-            <span className="text-xs mt-0.5">খেল (Games)</span>
+            <span className="text-xs mt-0.5">{isEn ? 'Games' : 'খেল (Games)'}</span>
           </button>
 
           {/* Nav Item 2: Progress */}
@@ -117,7 +108,7 @@ export default function PatientLayout({
             }`}
           >
             <span className="text-2xl" role="img" aria-hidden="true">📊</span>
-            <span className="text-xs mt-0.5">অগ্ৰগতি (Progress)</span>
+            <span className="text-xs mt-0.5">{isEn ? 'Progress' : 'অগ্ৰগতি (Progress)'}</span>
           </button>
 
           {/* Nav Item 3: Caregiver / Helpline Contact */}
@@ -132,7 +123,7 @@ export default function PatientLayout({
             }`}
           >
             <span className="text-2xl" role="img" aria-hidden="true">🤝</span>
-            <span className="text-xs mt-0.5">পৰিয়াল (Family)</span>
+            <span className="text-xs mt-0.5">{isEn ? 'Caregiver' : 'পৰিয়াল (Family)'}</span>
           </button>
         </div>
       </nav>

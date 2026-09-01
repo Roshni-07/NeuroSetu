@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 
 /**
- * AppRouter - Zero-dependency hash-based router for NeuroSetu's dual surfaces
+ * AppRouter - Zero-dependency hash-based router for NeuroSetu's portals
  * 
  * Routes:
- * - '#/' or '#/patient'    => Patient Experience Surface (WCAG 2.1 AA)
- * - '#/dashboard'          => ASHA Worker & Caregiver Clinical Dashboard
- * - '#/about' | '#/marketing' => Dark Mode Public Marketing & Overview
+ * - '#/' or '#/home'      => Home Surface (Default Entry View, formerly Marketing)
+ * - '#/patient'           => Patient Experience Surface (WCAG 2.1 AA)
+ * - '#/dashboard'         => ASHA Worker & Caregiver Clinical Dashboard
  */
 export function useAppRoute() {
   const getRouteFromHash = () => {
     const hash = window.location.hash.toLowerCase();
     if (hash.includes('dashboard')) return 'dashboard';
-    if (hash.includes('marketing') || hash.includes('about')) return 'marketing';
-    if (hash.includes('landing') || hash.includes('welcome')) return 'landing';
-    return 'patient';
+    if (hash.includes('patient') || hash.includes('games')) return 'patient';
+    // Default route on first visit, refresh on '/', or '#/home'
+    return 'home';
   };
 
   const [currentRoute, setCurrentRoute] = useState(getRouteFromHash());
@@ -30,9 +30,8 @@ export function useAppRoute() {
 
   const navigateTo = (route) => {
     if (route === 'dashboard') window.location.hash = '#/dashboard';
-    else if (route === 'marketing') window.location.hash = '#/marketing';
-    else if (route === 'landing') window.location.hash = '#/landing';
-    else window.location.hash = '#/patient';
+    else if (route === 'patient') window.location.hash = '#/patient';
+    else window.location.hash = '#/home';
     setCurrentRoute(route);
   };
 

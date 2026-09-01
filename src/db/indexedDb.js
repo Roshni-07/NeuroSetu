@@ -58,7 +58,7 @@ export const DEFAULT_PROFILE = {
   name: 'Bhaben Kalita',
   homeState: 'Assam',
   villageTown: 'Hajo',
-  language: 'as',
+  language: 'en',
   age: 72,
   familyMembers: [
     { name: 'Rumi', relationship: 'daughter' },
@@ -102,6 +102,32 @@ export async function getActiveProfile(id = 'default_patient') {
     console.warn('[IndexedDB] getActiveProfile fallback:', e);
   }
   return { ...DEFAULT_PROFILE, id };
+}
+
+/**
+ * Check if at least one patient profile exists on this device
+ */
+export async function hasExistingProfile() {
+  try {
+    const db = await getDB();
+    const count = await db.count(STORES.PROFILES);
+    return count > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Retrieve the first or primary stored profile
+ */
+export async function getFirstProfile() {
+  try {
+    const db = await getDB();
+    const all = await db.getAll(STORES.PROFILES);
+    return all.length > 0 ? all[0] : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
