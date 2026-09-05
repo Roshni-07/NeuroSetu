@@ -4,6 +4,8 @@ import {
   blobToBase64,
   transcribeAudio,
   synthesizeSpeech,
+  transliterateIndicToLatin,
+  getActiveTTSProvider,
   isBhashiniConfigured,
   ASSAMESE_OFFLINE_KEYWORDS
 } from '../../src/services/bhashiniService.js';
@@ -95,4 +97,40 @@ describe('Task 15 & 17: Bhashini Speech Service & Assamese Keyword Engine', () =
     expect(result.isOffline).toBe(true);
     expect(result.provider).toBe('browser_web_speech');
   });
+
+  it('6. transliterateIndicToLatin correctly converts Devanagari Hindi text to phonetic Latin for English TTS', () => {
+    const hindiGreeting = 'न्यूरोसेतु में आपका स्वागत है। आपका दिन शुभ हो। अपनी याददाश्त और खेल के लिए नीचे दिए गए कार्ड को छुएं या दवाई की याददाश्त देखें। आप माइक दबाकर बोलकर भी जवाब दे सकते हैं।';
+    const transliterated = transliterateIndicToLatin(hindiGreeting);
+    expect(transliterated).toContain('NeuroSetu mein aapka swaagat hai');
+    expect(/[\u0900-\u097F]/.test(transliterated)).toBe(false); // No remaining Devanagari chars
+  });
+
+  it('7. synthesizeSpeech supports Hindi targetLanguage seamlessly', async () => {
+    const mockSpeak = vi.fn();
+    const mockCancel = vi.fn();
+    window.speechSynthesis = {
+      speak: mockSpeak,
+      cancel: mockCancel,
+      getVoices: () => []
+    };
+    global.SpeechSynthesisUtterance = vi.fn().mockImplementation((text) => ({ text, lang: 'hi-IN' }));
+
+    const result = await synthesizeSpeech('न्यूरोसेतु में आपका स्वागत है।', 'hi');
+    expect(result.success).toBe(true);
+    expect(result.provider).toBe('browser_web_speech');
+  });
+
+  it('8. getActiveTTSProvider correctly detects configured Cloud API keys', () => {
+    expect(getActiveTTSProvider()).toBe('browser_web_speech');
+
+    process.env.VITE_OPENAI_API_KEY = 'mock_openai_key';
+    expect(getActiveTTSProvider()).toBe('openai');
+    delete process.env.VITE_OPENAI_API_KEY;
+
+    process.env.VITE_ELEVENLABS_API_KEY = 'mock_eleven_key';
+    expect(getActiveTTSProvider()).toBe('elevenlabs');
+    delete process.env.VITE_ELEVENLABS_API_KEY;
+  });
 });
+
+

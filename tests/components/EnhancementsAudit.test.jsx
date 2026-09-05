@@ -21,16 +21,22 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     await closeDB();
   });
 
-  it('1. Language Authenticity: Restricted to authentic Assamese and English only (no false fallbacks)', () => {
+  it('1. Language Authenticity: Supports comprehensive NER languages and Hindi with verified phonetic mapping', () => {
     render(<PatientOnboardingModal isOpen={true} isInitialSignup={false} />);
 
     const languageSelect = screen.getByLabelText(/পছন্দৰ ভাষা/i);
     const options = Array.from(languageSelect.querySelectorAll('option')).map(o => o.value);
 
-    // Verify only 'as' and 'en' are offered
-    expect(options.sort()).toEqual(['as', 'en']);
-    expect(options).not.toContain('mni');
-    expect(options).not.toContain('lus');
+    // Verify all supported regional languages are offered
+    expect(options).toContain('as');
+    expect(options).toContain('en');
+    expect(options).toContain('hi');
+    expect(options).toContain('bn');
+    expect(options).toContain('mni');
+    expect(options).toContain('lus');
+    expect(options).toContain('kha');
+    expect(options).toContain('grt');
+    expect(options).toContain('brx');
   });
 
   it('2. Language Authenticity: English profile renders English prompt as primary and invokes English TTS', async () => {

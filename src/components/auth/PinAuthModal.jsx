@@ -118,18 +118,18 @@ export default function PinAuthModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="pin-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in"
     >
-      <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border-2 border-patient-border text-center animate-fade-in">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-6 sm:p-7 shadow-soft-xl border border-slate-200/80 text-center animate-slide-up">
         {/* Header */}
-        <div className="mb-4">
-          <div className="w-14 h-14 bg-teal-50 text-patient-accent rounded-full flex items-center justify-center mx-auto mb-2 text-2xl font-bold border border-teal-200">
+        <div className="mb-5">
+          <div className="w-12 h-12 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl font-bold border border-teal-100/80 shadow-xs">
             🔒
           </div>
-          <h2 id="pin-modal-title" className="text-patient-prompt text-patient-primary">
+          <h2 id="pin-modal-title" className="text-xl font-bold tracking-tight text-slate-900">
             {isSetupMode ? 'Create Profile PIN' : 'Enter 4-Digit PIN'}
           </h2>
-          <p className="text-sm text-patient-secondary mt-1">
+          <p className="text-xs text-slate-500 mt-1 font-normal">
             {isSetupMode
               ? 'Choose a memorable 4-digit code for your daily session.'
               : `Profile: ${profileName}`}
@@ -137,17 +137,17 @@ export default function PinAuthModal({
         </div>
 
         {/* PIN Digit Indicators */}
-        <div className="flex justify-center items-center gap-4 my-5" aria-label="PIN Entry Dots">
+        <div className="flex justify-center items-center gap-3.5 my-6" aria-label="PIN Entry Dots">
           {[0, 1, 2, 3].map((index) => {
             const isFilled = pin.length > index;
             return (
               <div
                 key={index}
                 data-testid={`pin-dot-${index}`}
-                className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                className={`w-5 h-5 rounded-full border transition-all duration-200 ${
                   isFilled
-                    ? 'bg-patient-accent border-patient-accent scale-110'
-                    : 'bg-patient-canvas border-gray-300'
+                    ? 'bg-teal-600 border-teal-600 scale-110 shadow-xs'
+                    : 'bg-slate-100 border-slate-300'
                 }`}
               />
             );
@@ -155,31 +155,31 @@ export default function PinAuthModal({
         </div>
 
         {/* Gentle Feedback Message / Lockout Alert */}
-        <div className="min-h-[28px] mb-3">
+        <div className="min-h-[32px] mb-4 flex items-center justify-center">
           {lockoutRemaining > 0 ? (
-            <p className="text-sm font-semibold text-patient-terracotta bg-orange-50 py-1.5 px-3 rounded-lg border border-orange-200">
+            <p className="text-xs font-semibold text-amber-900 bg-amber-50/80 py-1.5 px-3 rounded-xl border border-amber-200/70">
               ⏳ Locked for {lockoutRemaining}s. Take a breath and wait.
             </p>
           ) : errorMsg ? (
-            <p className="text-sm font-medium text-patient-hint bg-gray-50 py-1 px-3 rounded-lg border border-gray-200">
+            <p className="text-xs font-medium text-slate-700 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-200">
               ℹ {errorMsg}
             </p>
           ) : (
-            <p className="text-xs text-patient-secondary">
+            <p className="text-xs text-slate-400 font-normal">
               Touch the numbers below or speak your PIN.
             </p>
           )}
         </div>
 
         {/* 3x4 Accessible Keypad */}
-        <div className="grid grid-cols-3 gap-3 my-2" role="group" aria-label="Numeric Keypad">
+        <div className="grid grid-cols-3 gap-2.5 my-2" role="group" aria-label="Numeric Keypad">
           {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
             <button
               key={digit}
               type="button"
               disabled={lockoutRemaining > 0 || isSubmitting}
               onClick={() => handleDigitPress(digit)}
-              className="min-h-touch min-w-touch py-3.5 bg-patient-canvas hover:bg-gray-100 active:bg-teal-50 border border-gray-300 rounded-2xl text-2xl font-bold text-patient-primary shadow-sm active:scale-95 transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-[54px] bg-slate-50 hover:bg-slate-100 active:bg-teal-50 border border-slate-200/80 rounded-2xl text-2xl font-semibold text-slate-800 shadow-soft hover:shadow-soft-md active:scale-95 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-none"
             >
               {digit}
             </button>
@@ -190,7 +190,7 @@ export default function PinAuthModal({
             type="button"
             disabled={lockoutRemaining > 0 || isSubmitting || pin.length === 0}
             onClick={handleClear}
-            className="min-h-touch py-3.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-2xl text-sm font-bold text-patient-secondary shadow-sm active:scale-95 transition flex items-center justify-center disabled:opacity-40"
+            className="min-h-[54px] bg-slate-100/70 hover:bg-slate-200/70 active:bg-slate-200 border border-slate-200/80 rounded-2xl text-xs font-bold text-slate-600 shadow-soft active:scale-95 transition-all flex items-center justify-center disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-none"
           >
             Clear
           </button>
@@ -200,7 +200,7 @@ export default function PinAuthModal({
             type="button"
             disabled={lockoutRemaining > 0 || isSubmitting}
             onClick={() => handleDigitPress('0')}
-            className="min-h-touch py-3.5 bg-patient-canvas hover:bg-gray-100 active:bg-teal-50 border border-gray-300 rounded-2xl text-2xl font-bold text-patient-primary shadow-sm active:scale-95 transition flex items-center justify-center disabled:opacity-50"
+            className="min-h-[54px] bg-slate-50 hover:bg-slate-100 active:bg-teal-50 border border-slate-200/80 rounded-2xl text-2xl font-semibold text-slate-800 shadow-soft hover:shadow-soft-md active:scale-95 transition-all flex items-center justify-center disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-none"
           >
             0
           </button>
@@ -211,7 +211,7 @@ export default function PinAuthModal({
             disabled={lockoutRemaining > 0 || isSubmitting || pin.length === 0}
             onClick={handleBackspace}
             aria-label="Delete last digit"
-            className="min-h-touch py-3.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-2xl text-lg font-bold text-patient-secondary shadow-sm active:scale-95 transition flex items-center justify-center disabled:opacity-40"
+            className="min-h-[54px] bg-slate-100/70 hover:bg-slate-200/70 active:bg-slate-200 border border-slate-200/80 rounded-2xl text-base font-bold text-slate-600 shadow-soft active:scale-95 transition-all flex items-center justify-center disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:outline-none"
           >
             ⌫
           </button>
@@ -219,11 +219,11 @@ export default function PinAuthModal({
 
         {/* Optional Cancel/Close Button if provided */}
         {onClose && (
-          <div className="mt-4 pt-2 border-t border-gray-100">
+          <div className="mt-4 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="text-sm font-semibold text-patient-hint hover:text-patient-primary py-2 px-4 rounded-lg"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 py-1.5 px-4 rounded-xl transition"
             >
               Cancel
             </button>

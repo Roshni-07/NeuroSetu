@@ -32,41 +32,51 @@ export const STATE_MEMORY_TASKS = {
       id: 'mem_bihu_dhol',
       state: NER_STATES.ASSAM,
       title: 'বিহুৰ বাদ্য (Bihu Dhol)',
+      titleHi: 'बिहू ढोल (Bihu Dhol)',
       promptAs: 'ছবিখন চাই কওক, এই বাদ্যবিধৰ নাম কি?',
       promptEn: 'Looking at this picture, what is the name of this instrument?',
+      promptHi: 'तस्वीर देखकर बताएं, इस वाद्य का नाम क्या है?',
       personalPromptAs: '{name}ৰ লগত {village}ত বিহুৰ সময়ত বজোৱা এই বাদ্যবিধৰ কথা মনত আছেনে?',
       personalPromptEn: 'Do you remember celebrations in {village} with {name} hearing this instrument?',
+      personalPromptHi: 'क्या आपको {village} में {name} के साथ इस वाद्य की मधुर आवाज़ याद है?',
       correctAnswer: 'dhol',
-      acceptedAliases: ['ঢোল', 'dhol', 'drum', 'বিহু ঢোল'],
+      acceptedAliases: ['ঢোল', 'dhol', 'drum', 'বিহু ঢোল', 'ढोल'],
       icon: '🥁',
       visualDescription: 'কাঠ আৰু চামৰাৰে তৈয়াৰী পৰম্পৰাগত বিহু ঢোল (Traditional wooden Bihu drum)',
       options: [
-        { id: 'dhol', labelAs: 'ঢোল (Dhol)', labelEn: 'Bihu Drum', icon: '🥁' },
-        { id: 'pepa', labelAs: 'পেঁপা (Pepa)', labelEn: 'Buffalo Horn Flute', icon: '📯' },
-        { id: 'gogona', labelAs: 'গগনা (Gogona)', labelEn: 'Bamboo Jaw Harp', icon: '🎋' }
+        { id: 'dhol', labelAs: 'ঢোল (Dhol)', labelEn: 'Bihu Drum', labelHi: 'ढोल (Dhol)', icon: '🥁' },
+        { id: 'pepa', labelAs: 'পেঁপা (Pepa)', labelEn: 'Buffalo Horn Flute', labelHi: 'पेपा (Pepa)', icon: '📯' },
+        { id: 'gogona', labelAs: 'গগনা (Gogona)', labelEn: 'Bamboo Jaw Harp', labelHi: 'गोगना (Gogona)', icon: '🎋' }
       ],
       hint: 'ই কাঠ আৰু চামৰাৰে তৈয়াৰী, বিহু নৃত্যৰ মূল বাদ্য। (Made of wood and leather, the heartbeat of Bihu.)',
-      gentlePrompt: 'মনত পেলাওকচোন, ৰঙালী বিহুত ঢুলীয়াই কি বজায়?'
+      hintHi: 'यह लकड़ी और चमड़े से बना बिहू नृत्य का मुख्य वाद्य है।',
+      gentlePrompt: 'মনত পেলাওকচোন, ৰঙালী বিহুত ঢুলীয়াই কি বজায়?',
+      gentlePromptHi: 'याद कीजिए, बिहू उत्सव में क्या बजाया जाता है?'
     },
     {
       id: 'mem_bihu_pepa',
       state: NER_STATES.ASSAM,
       title: 'ম’হৰ শিংৰ পেঁপা (Buffalo Horn Pepa)',
+      titleHi: 'सींग का पेपा (Buffalo Horn Pepa)',
       promptAs: 'ম’হৰ শিঙেৰে বনোৱা এই সুৰীয়া বাদ্যবিধ কি বাৰু?',
       promptEn: 'Which melodious instrument is crafted from buffalo horn?',
+      promptHi: 'भैंस के सींग से बना यह सुरीला वाद्य कौन सा है?',
       personalPromptAs: '{village}ত থাকোঁতে {name}ৰ লগত পেঁপাৰ সুৰ শুনা মনত পৰে নেকি?',
       personalPromptEn: 'Do you recall the piercing tune of this horn with {name} in {village}?',
+      personalPromptHi: 'क्या {village} में {name} के साथ इस सुरीले वाद्य की धुन याद आती है?',
       correctAnswer: 'pepa',
-      acceptedAliases: ['পেঁপা', 'pepa', 'শিং পেঁপা'],
+      acceptedAliases: ['পেঁপা', 'pepa', 'শিং পেঁপা', 'पेपा'],
       icon: '📯',
       visualDescription: 'ম’হৰ শিং আৰু বাঁহেৰে নিৰ্মিত পেঁপা (Traditional horn pipe)',
       options: [
-        { id: 'pepa', labelAs: 'পেঁপা (Pepa)', labelEn: 'Pepa Horn', icon: '📯' },
-        { id: 'dhol', labelAs: 'ঢোল (Dhol)', labelEn: 'Dhol Drum', icon: '🥁' },
-        { id: 'taal', labelAs: 'তাল (Taal)', labelEn: 'Cymbals', icon: '🔔' }
+        { id: 'pepa', labelAs: 'পেঁপা (Pepa)', labelEn: 'Pepa Horn', labelHi: 'पेपा (Pepa)', icon: '📯' },
+        { id: 'dhol', labelAs: 'ঢোল (Dhol)', labelEn: 'Dhol Drum', labelHi: 'ढोल (Dhol)', icon: '🥁' },
+        { id: 'taal', labelAs: 'তাল (Taal)', labelEn: 'Cymbals', labelHi: 'ताल (Taal)', icon: '🔔' }
       ],
       hint: 'ম’হৰ শিঙৰ চোঙাৰে ফুঁ দি সুৰ ওলোৱা বাদ্য। (Blown horn pipe.)',
-      gentlePrompt: 'আহক আমি আকৌ এবাৰ চেষ্টা কৰোঁ।'
+      hintHi: 'सींग से फूँक मारकर बजाया जाने वाला वाद्य।',
+      gentlePrompt: 'আহক আমি আকৌ এবাৰ চেষ্টা কৰোঁ।',
+      gentlePromptHi: 'आइए एक बार और कोशिश करते हैं।'
     }
   ],
 
@@ -241,19 +251,23 @@ export const STATE_TEXTILE_TASKS = {
       id: 'pat_muga_silk',
       state: NER_STATES.ASSAM,
       title: 'সোণালী মুগা বস্ত্ৰ (Assamese Golden Muga)',
+      titleHi: 'सुनहरा मूगा सिल्क (Golden Muga Silk)',
       promptAs: 'অসমৰ গৌৰৱ এই উজ্জ্বল সোণালী ৰঙৰ ৰেচমী কাপোৰবিধ কি?',
       promptEn: 'Identify Assam’s pride: this naturally golden shimmering silk.',
+      promptHi: 'चित्र में दिखाए गए इस सुनहरे रेशमी वस्त्र को पहचानें:',
       correctAnswer: 'muga',
-      acceptedAliases: ['মুগা', 'muga', 'সোণালী মুগা'],
+      acceptedAliases: ['মুগা', 'muga', 'সোণালী মুগা', 'मूगा'],
       patternColor: '#D4AF37',
       motifName: 'কিংখাপ বুটা (Kingkhap Motif)',
       options: [
-        { id: 'muga', labelAs: 'মুগা পাট (Golden Muga Silk)', region: 'Assam', colorHex: '#D4AF37' },
-        { id: 'eri', labelAs: 'এৰী চাদৰ (Eri Silk)', region: 'Assam', colorHex: '#E5E7EB' },
-        { id: 'gamusa', labelAs: 'ফুলাম গামোচা (Gamusa)', region: 'Assam', colorHex: '#DC2626' }
+        { id: 'muga', labelAs: 'মুগা পাট (Golden Muga Silk)', labelEn: 'Golden Muga Silk', labelHi: 'मूगा सिल्क (Muga)', region: 'Assam', colorHex: '#D4AF37' },
+        { id: 'eri', labelAs: 'এৰী চাদৰ (Eri Silk)', labelEn: 'Eri Silk Wrap', labelHi: 'एरी सिल्क (Eri)', region: 'Assam', colorHex: '#E5E7EB' },
+        { id: 'gamusa', labelAs: 'ফুলাম গামোচা (Gamusa)', labelEn: 'Gamusa Towel', labelHi: 'गामोचा (Gamusa)', region: 'Assam', colorHex: '#DC2626' }
       ],
       hint: 'সোণৰ দৰে উজ্বলি থকা এই কাপোৰ কেৱল অসমতেই পোৱা যায়।',
-      gentlePrompt: 'আমাৰ শালত বোৱা সোণালী সুতাৰ কাপোৰখন চিনাকি পাওঁকচোন।'
+      hintHi: 'सोने जैसी चमक वाला यह पारंपरिक रेशम असम की शान है।',
+      gentlePrompt: 'আমাৰ শালত বোৱা সোণালী সুতাৰ কাপোৰখন চিনাকি পাওঁকচোন।',
+      gentlePromptHi: 'पारंपरिक करघे पर बुने सुनहरे कपड़े को पहचानें।'
     }
   ],
 
@@ -465,16 +479,20 @@ export const OCCUPATION_SEQUENCING_TASKS = {
     id: 'seq_assam_tea',
     occupation: 'homemaker',
     title: 'সোৱাদভৰা অসমীয়া চাহ (Preparing Assam Tea)',
+    titleHi: 'पारंपरिक असमिया चाय बनाना (Assam Tea)',
     promptAs: 'সোৱাদভৰা চাহ তৈয়াৰ কৰাৰ সঠিক ক্ৰমটো সজাওক:',
     promptEn: 'Arrange the correct steps for preparing a warm cup of tea:',
+    promptHi: 'पारंपरिक चाय बनाने के सही चरणों को क्रम में लगाएं:',
     steps: [
-      { id: 'step_tea_h1', order: 1, textAs: '১. চচপেনত পানী লৈ ভালদৰে উতলাওক', textEn: '1. Boil fresh water in the kettle', icon: '🫖' },
-      { id: 'step_tea_h2', order: 2, textAs: '২. সুগন্ধি অসম চাহপাত আৰু আদা দিয়ক', textEn: '2. Add fresh tea leaves and ginger', icon: '🍃' },
-      { id: 'step_tea_h3', order: 3, textAs: '৩. সোৱাদ অনুসৰি গাখীৰ আৰু চেনি দিয়ক', textEn: '3. Add milk and sugar to taste', icon: '🥛' },
-      { id: 'step_tea_h4', order: 4, textAs: '৪. ফিল্টাৰেৰে চালি গৰমে গৰমে কাপত পৰিৱেশন কৰক', textEn: '4. Strain into cup and enjoy warm', icon: '☕' }
+      { id: 'step_tea_h1', order: 1, textAs: '১. চচপেনত পানী লৈ ভালদৰে উতলাওক', textEn: '1. Boil fresh water in the kettle', textHi: '1. बर्तन में पानी लेकर अच्छी तरह उबालें', icon: '🫖' },
+      { id: 'step_tea_h2', order: 2, textAs: '২. সুগন্ধি অসম চাহপাত আৰু আদা দিয়ক', textEn: '2. Add fresh tea leaves and ginger', textHi: '2. ताज़ा चायपत्ती और अदरक डालें', icon: '🍃' },
+      { id: 'step_tea_h3', order: 3, textAs: '৩. সোৱাদ অনুসৰি গাখীৰ আৰু চেনি দিয়ক', textEn: '3. Add milk and sugar to taste', textHi: '3. स्वादानुसार दूध और चीनी मिलाएं', icon: '🥛' },
+      { id: 'step_tea_h4', order: 4, textAs: '৪. ফিল্টাৰেৰে চালি গৰমে গৰমে কাপত পৰিৱেশন কৰক', textEn: '4. Strain into cup and enjoy warm', textHi: '4. छानकर गर्मागर्म प्याले में परोसें', icon: '☕' }
     ],
     hint: 'প্ৰথমে সদায় পানী উতলাব লাগে, তাৰ পিছতহে চাহপাত দিব লাগে।',
-    gentlePrompt: 'ৰাতিপুৱা চাহ বনাওঁতে প্ৰথমে কি কৰোঁ?'
+    hintHi: 'पहले पानी उबालना चाहिए, फिर चायपत्ती डालनी चाहिए।',
+    gentlePrompt: 'ৰাতিপুৱা চাহ বনাওঁতে প্ৰথমে কি কৰোঁ?',
+    gentlePromptHi: 'सुबह चाय बनाते समय पहले क्या करते हैं?'
   }
 };
 
@@ -527,7 +545,45 @@ export function interpolatePersonalPrompt(template, profile = {}) {
     .replace(/\{hometown\}/g, village);
 }
 
+/**
+ * Helper: Get Task Prompt localized to chosen language
+ */
+export function getTaskPrompt(task, lang = 'as', profile = null) {
+  if (!task) return '';
+  const isEn = lang === 'en';
+  const isHi = lang === 'hi';
+  const hasPersonalInfo = Boolean(profile && profile.familyMembers?.[0]?.name && profile.villageTown);
+
+  if (isHi) {
+    if (hasPersonalInfo && task.personalPromptHi) {
+      return interpolatePersonalPrompt(task.personalPromptHi, profile);
+    }
+    return task.promptHi || task.promptEn || task.promptAs || '';
+  }
+  if (isEn) {
+    if (hasPersonalInfo && task.personalPromptEn) {
+      return interpolatePersonalPrompt(task.personalPromptEn, profile);
+    }
+    return task.promptEn || '';
+  }
+  if (hasPersonalInfo && task.personalPromptAs) {
+    return interpolatePersonalPrompt(task.personalPromptAs, profile);
+  }
+  return task.promptAs || task.promptEn || '';
+}
+
+/**
+ * Helper: Get Option Label localized to chosen language
+ */
+export function getOptionLabel(option, lang = 'as') {
+  if (!option) return '';
+  if (lang === 'hi') return option.labelHi || option.labelEn || option.labelAs || '';
+  if (lang === 'en') return option.labelEn || option.labelAs || '';
+  return option.labelAs || option.labelEn || '';
+}
+
 // Backwards-compatible exports for existing game components & tests
 export const MEMORY_RECALL_TASKS = STATE_MEMORY_TASKS[NER_STATES.ASSAM];
 export const TEXTILE_PATTERN_TASKS = STATE_TEXTILE_TASKS[NER_STATES.ASSAM];
 export const CULINARY_SEQUENCING_TASKS = [OCCUPATION_SEQUENCING_TASKS.homemaker];
+

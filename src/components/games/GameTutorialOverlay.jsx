@@ -76,35 +76,35 @@ export default function GameTutorialOverlay({
       role="dialog"
       aria-modal="true"
       aria-labelledby="tutorial-heading"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in"
     >
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border-2 border-patient-border shadow-2xl space-y-6 text-center">
+      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft-xl space-y-6 text-center">
         {/* Visual Icon */}
-        <div className="w-20 h-20 mx-auto bg-teal-50 border-2 border-teal-200 rounded-3xl flex items-center justify-center text-4xl shadow-inner">
+        <div className="w-16 h-16 mx-auto bg-teal-50 border border-teal-200/80 rounded-2xl flex items-center justify-center text-3xl shadow-soft">
           <span role="img" aria-label="Game Tutorial">{content.icon}</span>
         </div>
 
         {/* Heading */}
         <div>
-          <span className="text-xs font-bold text-patient-accent uppercase tracking-wider">
+          <span className="text-[11px] font-semibold text-teal-700 uppercase tracking-wider block">
             {isEn ? 'How to Play' : 'খেলৰ নিয়ম'}
           </span>
-          <h2 id="tutorial-heading" className="text-xl font-extrabold text-patient-primary mt-1">
+          <h2 id="tutorial-heading" className="text-xl font-bold text-slate-900 mt-1">
             {title}
           </h2>
         </div>
 
         {/* Step Guide Cards */}
-        <div className="space-y-3 text-left">
+        <div className="space-y-2.5 text-left">
           {steps.map((stepText, idx) => (
             <div
               key={idx}
-              className="p-3.5 bg-patient-canvas border border-teal-100 rounded-2xl flex items-start gap-3"
+              className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl flex items-start gap-3"
             >
-              <span className="w-7 h-7 rounded-full bg-teal-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-6 h-6 rounded-full bg-teal-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-soft">
                 {idx + 1}
               </span>
-              <p className="text-sm font-semibold text-patient-primary leading-snug">
+              <p className="text-xs sm:text-sm font-medium text-slate-800 leading-snug">
                 {stepText}
               </p>
             </div>
@@ -115,18 +115,18 @@ export default function GameTutorialOverlay({
         <button
           type="button"
           onClick={handleListenGuide}
-          className="w-full min-h-touch py-2.5 px-4 bg-teal-50 hover:bg-teal-100 border border-teal-300 text-patient-accent font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition"
+          className="w-full min-h-touch py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition shadow-soft"
         >
           <span>🔊</span>
           <span>{isEn ? 'Listen to Instructions' : 'নিৰ্দেশনা শুনক'}</span>
         </button>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+        <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
           <button
             type="button"
             onClick={onStart}
-            className="w-full min-h-touch py-3 bg-patient-accent hover:bg-patient-accent-hover text-white font-bold rounded-2xl text-base shadow-sm transition active:scale-95"
+            className="w-full min-h-touch py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-sm shadow-soft transition active:scale-95"
           >
             {isEn ? 'Start Game →' : 'খেল আৰম্ভ কৰক →'}
           </button>
@@ -135,7 +135,7 @@ export default function GameTutorialOverlay({
             <button
               type="button"
               onClick={onSkip}
-              className="text-xs text-patient-hint hover:text-patient-primary py-1 font-semibold"
+              className="text-xs text-slate-400 hover:text-slate-700 py-1 font-medium transition"
             >
               {isEn ? 'Skip and start directly' : 'পোনপটীয়া খেললৈ যাওক (Skip)'}
             </button>

@@ -49,64 +49,73 @@ export default function SyncStatusPanel({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div>
-          <h3 className="font-bold text-gray-900 text-lg">ASHA Household Visit Sync Status</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Data Synchronization
+            </span>
+          </div>
+          <h3 className="font-bold text-slate-900 text-lg mt-1">
+            ASHA Household Visit Sync Status
+          </h3>
+          <p className="text-xs text-slate-500 mt-0.5 max-w-lg leading-relaxed">
             Offline-first background synchronization between rural household devices and PHC Supabase cloud.
           </p>
         </div>
 
         <span
-          className={`px-3 py-1 rounded-full text-xs font-bold ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
             isOnline
-              ? 'bg-green-100 text-green-800 border border-green-300'
-              : 'bg-orange-100 text-orange-800 border border-orange-300'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80'
+              : 'bg-amber-50 text-amber-800 border border-amber-200/80'
           }`}
         >
+          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-600' : 'bg-amber-600'}`}></span>
           {isOnline ? '● Online (Cloud Reachable)' : '● Offline (IndexedDB Active)'}
         </span>
       </div>
 
       {/* Sync Queue Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200">
-          <span className="text-xs text-gray-500 font-medium">Pending Sync Queue</span>
-          <p className="text-2xl font-black text-gray-900 mt-0.5">{pendingCount}</p>
-          <span className="text-[11px] text-gray-500">Unsynced telemetry deltas</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60">
+          <span className="text-xs text-slate-400 font-medium block">Pending Sync Queue</span>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{pendingCount}</p>
+          <span className="text-[11px] text-slate-500">Unsynced telemetry deltas</span>
         </div>
 
-        <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200">
-          <span className="text-xs text-gray-500 font-medium">Storage Engine</span>
-          <p className="text-base font-bold text-teal-800 mt-1">IndexedDB (`idb`)</p>
-          <span className="text-[11px] text-gray-500">Zero network dependency</span>
+        <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60">
+          <span className="text-xs text-slate-400 font-medium block">Storage Engine</span>
+          <p className="text-sm font-bold text-teal-800 mt-1">IndexedDB (`idb`)</p>
+          <span className="text-[11px] text-slate-500">Zero network dependency</span>
         </div>
 
-        <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200">
-          <span className="text-xs text-gray-500 font-medium">Cloud Target</span>
-          <p className="text-base font-bold text-gray-800 mt-1">
+        <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60">
+          <span className="text-xs text-slate-400 font-medium block">Cloud Target</span>
+          <p className="text-sm font-bold text-slate-800 mt-1">
             {isSupabaseConfigured() ? 'Supabase Postgres' : 'Local Offline Mode'}
           </p>
-          <span className="text-[11px] text-gray-500">Free-tier managed backend</span>
+          <span className="text-[11px] text-slate-500">Free-tier managed backend</span>
         </div>
       </div>
 
       {/* ASHA Instructions Callout */}
-      <div className="p-3.5 bg-teal-50/70 border border-teal-200 rounded-xl text-xs text-teal-950 space-y-1">
-        <p className="font-bold">📋 Field Visit Note for ASHA Workers:</p>
-        <p className="text-teal-900">
+      <div className="p-4 bg-teal-50/40 border border-teal-200/60 rounded-xl text-xs text-teal-950 space-y-1">
+        <p className="font-semibold text-teal-900">📋 Field Visit Note for ASHA Workers:</p>
+        <p className="text-teal-800/90 leading-relaxed">
           Patients can complete cognitive sessions with zero internet connectivity. Data is stored safely in local IndexedDB and automatically pushes to the dashboard once your device reconnects to mobile data or PHC Wi-Fi.
         </p>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2.5 pt-1">
+      <div className="flex flex-wrap gap-3 pt-1">
         <button
           type="button"
           onClick={handleTriggerSync}
           disabled={isSyncing}
-          className="min-h-touch px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+          className="min-h-touch px-5 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-semibold rounded-xl shadow-soft transition disabled:opacity-50 flex items-center gap-2"
         >
           {isSyncing ? '⏳ Synchronizing...' : '☁ Push Delta to Supabase'}
         </button>
@@ -114,7 +123,7 @@ export default function SyncStatusPanel({
         <button
           type="button"
           onClick={handleSimulateHouseholdVisit}
-          className="min-h-touch px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold rounded-xl border border-gray-300 transition"
+          className="min-h-touch px-4 py-2.5 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-soft transition"
         >
           + Simulate Household Visit Session
         </button>
@@ -122,7 +131,7 @@ export default function SyncStatusPanel({
 
       {/* Sync Feedback Message */}
       {syncFeedback && (
-        <div className="p-2.5 bg-gray-100 border border-gray-200 rounded-xl text-xs text-gray-800 font-medium">
+        <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-700 font-medium">
           {syncFeedback}
         </div>
       )}

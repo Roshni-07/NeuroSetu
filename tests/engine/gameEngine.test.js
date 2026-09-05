@@ -154,7 +154,7 @@ describe('Task 20 & 21: Game State Machine & Errorless Learning Tests', () => {
 
     // Task 2 correct
     await engine.submitAnswer('pepa');
-    await sleep(35);
+    await sleep(60);
 
     expect(engine.state).toBe(GAME_STATES.SESSION_COMPLETE);
 

@@ -47,47 +47,47 @@ export default function ProfileCheckModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="check-profile-heading"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in"
     >
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border-2 border-patient-border shadow-2xl space-y-6 text-center">
+      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft-xl space-y-6 text-center animate-slide-up">
         {/* Visual Icon */}
-        <div className="w-16 h-16 mx-auto bg-teal-50 border-2 border-teal-200 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+        <div className="w-14 h-14 mx-auto bg-teal-50 border border-teal-100/80 rounded-2xl flex items-center justify-center text-2xl shadow-xs text-teal-700">
           <span role="img" aria-label="Device Profile Check">🔍</span>
         </div>
 
         {/* Heading */}
         <div>
-          <span className="text-xs font-bold text-patient-accent uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider bg-teal-50/70 border border-teal-100/70 px-2.5 py-0.5 rounded-full inline-block">
             ডিভাইচ পৰীক্ষা (Device Profile Check)
           </span>
-          <h2 id="check-profile-heading" className="text-xl font-extrabold text-patient-primary mt-1">
+          <h2 id="check-profile-heading" className="text-xl font-bold text-slate-900 mt-2 tracking-tight">
             ৰোগীৰ পৰিচয় পৰীক্ষা (Patient Status)
           </h2>
         </div>
 
         {/* Dynamic Checking State */}
         {isChecking ? (
-          <div className="p-6 bg-patient-canvas rounded-2xl text-patient-hint text-sm font-semibold animate-pulse">
+          <div className="p-5 bg-slate-50 border border-slate-200/60 rounded-2xl text-slate-500 text-xs font-medium animate-pulse">
             ডিভাইচত পূৰ্বৰ পৰিচয় বিচৰা হৈছে... (Checking local IndexedDB storage...)
           </div>
         ) : existingProfile ? (
           /* Profile Found on Device */
           <div className="space-y-4">
-            <div className="p-4 bg-teal-50 border-2 border-teal-200 rounded-2xl text-left space-y-1">
-              <span className="text-xs font-bold text-teal-800 uppercase block">
+            <div className="p-4 bg-teal-50/60 border border-teal-200/70 rounded-2xl text-left space-y-1">
+              <span className="text-[11px] font-bold text-teal-800 uppercase tracking-wide block">
                 ✓ সংৰক্ষিত পৰিচয় পোৱা গৈছে (Profile Found)
               </span>
-              <p className="text-base font-extrabold text-patient-primary">
+              <p className="text-base font-bold text-slate-900">
                 👤 {existingProfile.name}
               </p>
               {existingProfile.homeState && (
-                <p className="text-xs text-patient-secondary">
+                <p className="text-xs text-slate-600">
                   {existingProfile.villageTown ? `${existingProfile.villageTown}, ` : ''}{existingProfile.homeState}
                 </p>
               )}
             </div>
 
-            <p className="text-xs text-patient-hint">
+            <p className="text-xs text-slate-500 leading-relaxed font-normal">
               এই ডিভাইচত ৰোগীৰ পৰিচয় ইতিমধ্যে আছে। খেল আৰম্ভ কৰিবলৈ পিন দিয়ক।
               (An existing profile is registered on this device. Enter PIN to unlock.)
             </p>
@@ -95,7 +95,7 @@ export default function ProfileCheckModal({
             <button
               type="button"
               onClick={onRouteToPin}
-              className="w-full min-h-touch py-3 bg-patient-accent hover:bg-patient-accent-hover text-white font-extrabold rounded-2xl text-base shadow-sm transition active:scale-95 flex items-center justify-center gap-2"
+              className="w-full min-h-[48px] py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-sm shadow-soft hover:shadow-soft-md transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <span>🔑 পিন প্ৰৱেশ কৰি খুলক (Enter PIN)</span>
               <span>→</span>
@@ -104,7 +104,7 @@ export default function ProfileCheckModal({
             <button
               type="button"
               onClick={onRouteToSignup}
-              className="text-xs font-bold text-patient-secondary hover:text-patient-primary underline py-1"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline py-1 transition"
             >
               নতুন ৰোগীৰ পঞ্জীয়ন কৰক (Register New Patient Instead)
             </button>
@@ -112,14 +112,14 @@ export default function ProfileCheckModal({
         ) : (
           /* No Profile Found on Device */
           <div className="space-y-4">
-            <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl text-left space-y-1">
-              <span className="text-xs font-bold text-patient-hint uppercase block">
+            <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-left space-y-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide block">
                 নতুন ৰোগী (No Profile Found)
               </span>
-              <p className="text-sm font-bold text-patient-primary">
+              <p className="text-sm font-semibold text-slate-800">
                 এই ডিভাইচত এতিয়াও কোনো ৰোগীৰ পৰিচয় সংৰক্ষণ হোৱা নাই।
               </p>
-              <p className="text-xs text-patient-secondary">
+              <p className="text-xs text-slate-500 font-normal">
                 No patient profile is registered on this device yet.
               </p>
             </div>
@@ -127,7 +127,7 @@ export default function ProfileCheckModal({
             <button
               type="button"
               onClick={onRouteToSignup}
-              className="w-full min-h-touch py-3 bg-patient-accent hover:bg-patient-accent-hover text-white font-extrabold rounded-2xl text-base shadow-sm transition active:scale-95 flex items-center justify-center gap-2"
+              className="w-full min-h-[48px] py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-sm shadow-soft hover:shadow-soft-md transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <span>নতুন ৰোগীৰ পঞ্জীয়ন আৰম্ভ কৰক (Start Registration)</span>
               <span>→</span>
@@ -136,7 +136,7 @@ export default function ProfileCheckModal({
             <button
               type="button"
               onClick={onRouteToPin}
-              className="text-xs font-bold text-patient-secondary hover:text-patient-primary underline py-1"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline py-1 transition"
             >
               মোৰ ইতিমধ্যে পিন আছে (I already have a PIN)
             </button>
@@ -145,11 +145,11 @@ export default function ProfileCheckModal({
 
         {/* Dismiss Button */}
         {onClose && (
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-2 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="text-xs text-patient-hint hover:text-patient-primary font-semibold py-1"
+              className="text-xs text-slate-400 hover:text-slate-700 font-semibold py-1 transition"
             >
               বন্ধ কৰক (Close)
             </button>

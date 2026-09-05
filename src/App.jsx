@@ -10,6 +10,7 @@ import SequencingGame from './components/games/SequencingGame.jsx';
 import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from './components/dashboard/PatientTriageList.jsx';
 import CognitiveTrendChart from './components/dashboard/CognitiveTrendChart.jsx';
 import SyncStatusPanel from './components/dashboard/SyncStatusPanel.jsx';
+import RemindersHub from './components/reminders/RemindersHub.jsx';
 import HomePage from './pages/HomePage.jsx';
 import { useAppRoute } from './router/AppRouter.jsx';
 import { getActiveSession, logout, hasConfiguredPin } from './services/authService.js';
@@ -34,8 +35,9 @@ export default function App() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isOnboardingInitialSignup, setIsOnboardingInitialSignup] = useState(false);
 
-  // Active Game State
+  // Active Game & Patient Section State
   const [activeGame, setActiveGame] = useState(null); // 'memory' | 'pattern' | 'sequencing' | null
+  const [patientSection, setPatientSection] = useState('games'); // 'games' | 'reminders'
 
   // Dashboard State
   const [selectedPatientId, setSelectedPatientId] = useState('patient_001');
@@ -137,16 +139,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-patient-canvas">
+    <div className="min-h-screen bg-slate-50/60 font-sans antialiased text-slate-800 selection:bg-teal-600 selection:text-white">
       {/* Top Prototype / Dev Navigation Bar (Hidden in production for real users) */}
       {isDevMode && (
-        <div className="bg-gray-950 text-gray-300 py-1.5 px-4 text-xs flex items-center justify-between border-b border-gray-800">
+        <div className="bg-slate-950 text-slate-300 py-1.5 px-4 text-xs flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center space-x-2">
-            <span className="font-extrabold text-white">NeuroSetu [DEV]</span>
-            <span className="text-gray-500">| Surface:</span>
+            <span className="font-bold text-white tracking-tight">NeuroSetu [DEV]</span>
+            <span className="text-slate-500">| Surface:</span>
             <button
               onClick={() => { navigateTo('home'); setActiveGame(null); }}
-              className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'home' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
+              className={`px-2.5 py-0.5 rounded-lg font-semibold transition ${currentRoute === 'home' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-slate-800 text-slate-300'}`}
             >
               Home
             </button>
@@ -159,13 +161,13 @@ export default function App() {
                   setIsPinModalOpen(true);
                 }
               }}
-              className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'patient' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-gray-800'}`}
+              className={`px-2.5 py-0.5 rounded-lg font-semibold transition ${currentRoute === 'patient' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-slate-800 text-slate-300'}`}
             >
               Patient UI (Games)
             </button>
             <button
               onClick={() => navigateTo('dashboard')}
-              className={`px-2.5 py-0.5 rounded font-semibold transition ${currentRoute === 'dashboard' ? 'bg-blue-800 text-white shadow-xs' : 'hover:bg-gray-800'}`}
+              className={`px-2.5 py-0.5 rounded-lg font-semibold transition ${currentRoute === 'dashboard' ? 'bg-indigo-700 text-white shadow-xs' : 'hover:bg-slate-800 text-slate-300'}`}
             >
               ASHA / Caregiver Dashboard ({pendingSyncCount})
             </button>
@@ -177,21 +179,21 @@ export default function App() {
                 setIsOnboardingInitialSignup(!hasConfiguredPin());
                 setIsOnboardingOpen(true);
               }}
-              className="text-amber-300 hover:text-amber-200 font-semibold"
+              className="text-amber-300 hover:text-amber-200 font-semibold transition"
             >
               👤 Setup / Edit Profile
             </button>
             {session ? (
               <button
                 onClick={handleLogout}
-                className="text-gray-400 hover:text-white underline"
+                className="text-slate-400 hover:text-white underline transition"
               >
                 Lock / Logout ({session.profileName})
               </button>
             ) : (
               <button
                 onClick={() => setIsPinModalOpen(true)}
-                className="text-teal-300 hover:text-teal-200 underline font-semibold"
+                className="text-teal-300 hover:text-teal-200 underline font-semibold transition"
               >
                 🔑 Enter Profile PIN
               </button>
@@ -205,10 +207,10 @@ export default function App() {
         role="status"
         aria-live="polite"
         data-testid="network-status"
-        className={`w-full py-1.5 px-4 text-center font-bold text-xs transition-colors shadow-xs ${
+        className={`w-full py-1.5 px-4 text-center font-semibold text-xs transition-colors shadow-xs ${
           isOnline
-            ? 'bg-patient-success text-white'
-            : 'bg-patient-terracotta text-white'
+            ? 'bg-emerald-700 text-white'
+            : 'bg-amber-700 text-white'
         }`}
       >
         {isOnline
@@ -238,17 +240,35 @@ export default function App() {
           <PatientLayout
             profileName={patientDisplayTitle}
             language={patientProfile?.language || 'en'}
-            activeSection="games"
+            onLanguageChange={(lang) => {
+              setPatientProfile(prev => ({ ...prev, language: lang }));
+            }}
+            activeSection={patientSection}
             isOnline={isOnline}
             onOpenSos={() => setIsSosOpen(true)}
             onNavigate={(sec) => {
-              if (sec === 'games') setActiveGame(null);
+              if (sec === 'games') {
+                setPatientSection('games');
+                setActiveGame(null);
+              }
+              if (sec === 'reminders') {
+                setPatientSection('reminders');
+                setActiveGame(null);
+              }
               if (sec === 'progress') navigateTo('dashboard');
               if (sec === 'help') setIsSosOpen(true);
             }}
           >
+            {/* Reminders & Routine Hub */}
+            {patientSection === 'reminders' && (
+              <RemindersHub
+                patientProfile={patientProfile}
+                onExit={() => setPatientSection('games')}
+              />
+            )}
+
             {/* Active Game View */}
-            {activeGame === 'memory' && (
+            {patientSection === 'games' && activeGame === 'memory' && (
               <MemoryRecallGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={patientProfile}
@@ -256,7 +276,7 @@ export default function App() {
               />
             )}
 
-            {activeGame === 'pattern' && (
+            {patientSection === 'games' && activeGame === 'pattern' && (
               <PatternMatchingGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={patientProfile}
@@ -264,7 +284,7 @@ export default function App() {
               />
             )}
 
-            {activeGame === 'sequencing' && (
+            {patientSection === 'games' && activeGame === 'sequencing' && (
               <SequencingGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={patientProfile}
@@ -273,19 +293,19 @@ export default function App() {
             )}
 
             {/* Game Selection Hub */}
-            {!activeGame && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-3xl p-6 border-2 border-patient-border shadow-sm text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+            {patientSection === 'games' && !activeGame && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-soft text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-patient-hero text-patient-primary">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                         {isEn ? 'Welcome to NeuroSetu' : 'নমস্কাৰ! (Welcome to NeuroSetu)'}
                       </h1>
-                      <span className="text-xs px-2.5 py-0.5 bg-teal-100 text-patient-accent font-bold rounded-full">
+                      <span className="text-xs px-2.5 py-0.5 bg-teal-50 text-teal-700 font-semibold rounded-full border border-teal-100">
                         {patientProfile.name} • {patientProfile.homeState} ({patientProfile.villageTown})
                       </span>
                     </div>
-                    <p className="text-patient-body text-patient-secondary mt-1">
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
                       {isEn
                         ? `Select a culturally grounded game personalized for ${patientProfile.homeState}:`
                         : `আপোনাৰ অঞ্চলৰ সাংস্কৃতিক খেলসমূহৰ পৰা এটা বাচি লওক (Personalized for ${patientProfile.homeState}):`}
@@ -296,7 +316,7 @@ export default function App() {
                       setIsOnboardingInitialSignup(false);
                       setIsOnboardingOpen(true);
                     }}
-                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-patient-primary rounded-xl text-xs font-bold shrink-0"
+                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold shrink-0 transition"
                   >
                     ⚙️ {isEn ? 'Edit Profile' : 'ব্যক্তিগত পৰিচয় (Edit Profile)'}
                   </button>
@@ -305,63 +325,63 @@ export default function App() {
                 {/* 3 Large Dementia-Accessible Game Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Game 1: Memory Recall */}
-                  <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-patient-accent shadow-sm flex flex-col justify-between transition-all">
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-teal-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
                     <div>
-                      <div className="w-14 h-14 rounded-2xl bg-teal-50 text-patient-accent flex items-center justify-center text-3xl mb-3 border border-teal-200">
+                      <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center text-2xl mb-3 border border-teal-100 shadow-xs">
                         🥁
                       </div>
-                      <h3 className="text-patient-prompt text-patient-primary font-bold">
+                      <h3 className="text-base font-bold text-slate-900">
                         {isEn ? 'Cultural Memory Recall' : 'বিহু স্মৃতি খেল (Memory Recall)'}
                       </h3>
-                      <p className="text-xs text-patient-secondary mt-1">
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
                         {patientProfile.homeState} instruments & personal autobiographical cues with DDA.
                       </p>
                     </div>
                     <button
                       onClick={() => setActiveGame('memory')}
-                      className="min-h-touch w-full mt-4 px-4 py-2.5 bg-patient-accent hover:bg-patient-accent-hover text-white font-bold rounded-2xl transition shadow-sm text-sm"
+                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
                     >
                       {isEn ? 'Play →' : 'খেলক (Play) →'}
                     </button>
                   </div>
 
                   {/* Game 2: Pattern Recognition */}
-                  <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-patient-terracotta shadow-sm flex flex-col justify-between transition-all">
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-amber-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
                     <div>
-                      <div className="w-14 h-14 rounded-2xl bg-amber-50 text-patient-terracotta flex items-center justify-center text-3xl mb-3 border border-amber-200">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl mb-3 border border-amber-100 shadow-xs">
                         🧵
                       </div>
-                      <h3 className="text-patient-prompt text-patient-primary font-bold">
+                      <h3 className="text-base font-bold text-slate-900">
                         {isEn ? 'Traditional Patterns' : 'বস্ত্ৰ চানেকি'}
                       </h3>
-                      <p className="text-xs text-patient-secondary mt-1">
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
                         Traditional handloom patterns ({patientProfile.homeState} & NER weaves).
                       </p>
                     </div>
                     <button
                       onClick={() => setActiveGame('pattern')}
-                      className="min-h-touch w-full mt-4 px-4 py-2.5 bg-patient-terracotta hover:bg-patient-terracotta-hover text-white font-bold rounded-2xl transition shadow-sm text-sm"
+                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
                     >
                       {isEn ? 'Play →' : 'চানেকি (Play) →'}
                     </button>
                   </div>
 
                   {/* Game 3: Daily Routine Sequencing */}
-                  <div className="bg-white rounded-3xl p-5 border-2 border-patient-border hover:border-gray-800 shadow-sm flex flex-col justify-between transition-all">
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-400 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
                     <div>
-                      <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-800 flex items-center justify-center text-3xl mb-3 border border-orange-200">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl mb-3 border border-slate-200 shadow-xs">
                         ☕
                       </div>
-                      <h3 className="text-patient-prompt text-patient-primary font-bold">
+                      <h3 className="text-base font-bold text-slate-900">
                         {isEn ? 'Daily Routine Sequencing' : 'দৈনন্দিন কৰ্ম ক্ৰম'}
                       </h3>
-                      <p className="text-xs text-patient-secondary mt-1">
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
                         Sequencing mapped to former background: {patientProfile.formerOccupation}.
                       </p>
                     </div>
                     <button
                       onClick={() => setActiveGame('sequencing')}
-                      className="min-h-touch w-full mt-4 px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-2xl transition shadow-sm text-sm"
+                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
                     >
                       {isEn ? 'Play →' : 'ক্ৰম (Play) →'}
                     </button>
@@ -371,12 +391,12 @@ export default function App() {
             )}
           </PatientLayout>
         ) : (
-          <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border-2 border-patient-border shadow-xl text-center space-y-5">
-            <span className="text-4xl block">🔒</span>
-            <h2 className="text-xl font-extrabold text-patient-primary">
+          <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200/80 shadow-soft-xl text-center space-y-5 animate-slide-up">
+            <span className="text-3xl block">🔒</span>
+            <h2 className="text-lg font-bold text-slate-900">
               {isEn ? 'Authentication Required' : 'প্ৰৱেশ পিন প্ৰয়োজন'}
             </h2>
-            <p className="text-sm text-patient-secondary">
+            <p className="text-xs text-slate-500 leading-relaxed">
               {isEn
                 ? 'Please enter your 4-digit PIN or register your profile to access cognitive games.'
                 : 'ৰোগীৰ খেলসমূহ উপভোগ কৰিবলৈ অনুগ্ৰহ কৰি আপোনাৰ ৪-সংখ্যাৰ পিন দিয়ক।'}
@@ -385,14 +405,14 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsPinModalOpen(true)}
-                className="w-full min-h-touch py-3.5 bg-patient-accent hover:bg-patient-accent-hover text-white font-bold rounded-2xl text-sm shadow-sm transition"
+                className="w-full min-h-[48px] py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-xs shadow-soft transition active:scale-95 flex items-center justify-center gap-1.5"
               >
                 🔑 {isEn ? 'Enter Profile PIN' : 'পিন প্ৰৱেশ কৰক'}
               </button>
               <button
                 type="button"
                 onClick={() => navigateTo('home')}
-                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs transition"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition"
               >
                 ← {isEn ? 'Return to Home' : 'মুখ্য পৃষ্ঠালৈ উভতি যাওক'}
               </button>
@@ -403,40 +423,40 @@ export default function App() {
 
       {/* Surface 2: ASHA Worker & Caregiver Clinical Dashboard */}
       {currentRoute === 'dashboard' && (
-        <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+        <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 animate-fade-in">
           {/* In-Page Navigation Header */}
           <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => navigateTo('home')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-semibold transition shadow-soft"
             >
               ← Return to Home
             </button>
             <button
               type="button"
               onClick={handleLaunchPatient}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-soft transition active:scale-95"
             >
               🎮 Launch Patient App →
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
                 Primary Health Centre (PHC) & ASHA Portal
               </span>
-              <h1 className="text-2xl font-extrabold text-gray-900 mt-0.5">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tracking-tight">
                 North East Dementia Triage & Telemetry Portal
               </h1>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5 font-normal">
                 Silent passive monitoring: response latency spikes, voice prosody flattening, and DDA downward interventions.
               </p>
             </div>
 
             <div className="flex items-center space-x-2">
-              <span className="text-xs px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 font-semibold rounded-lg">
+              <span className="text-xs px-3 py-1 bg-slate-50 text-slate-700 border border-slate-200 font-semibold rounded-xl">
                 Jurisdiction: Kamrup & Bishnupur
               </span>
             </div>
@@ -464,28 +484,28 @@ export default function App() {
               />
 
               {/* Local Physical DB Records Table */}
-              <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-soft">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-gray-900 text-sm">
-                    Local Device Telemetry Buffer (IndexedDB: <code className="text-xs bg-gray-100 px-1 rounded">telemetry_logs</code>)
+                  <h3 className="font-bold text-slate-900 text-xs">
+                    Local Device Telemetry Buffer (IndexedDB: <code className="text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-700">telemetry_logs</code>)
                   </h3>
                   <button
                     onClick={refreshTelemetry}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded font-semibold text-gray-700"
+                    className="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-xl font-semibold text-slate-700 transition"
                   >
                     🔄 Refresh Table
                   </button>
                 </div>
 
                 {telemetryLogs.length === 0 ? (
-                  <p className="text-xs text-gray-500 italic py-2">
+                  <p className="text-xs text-slate-400 italic py-2">
                     No records on this local device yet.
                   </p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-gray-200 text-gray-500 uppercase">
+                        <tr className="border-b border-slate-200/80 text-slate-400 uppercase text-[10px] tracking-wider">
                           <th className="py-2">Task</th>
                           <th className="py-2">Latency</th>
                           <th className="py-2">Errors</th>
@@ -494,25 +514,25 @@ export default function App() {
                           <th className="py-2">Sync Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
                         {telemetryLogs.map((log) => (
-                          <tr key={log.id} className="hover:bg-gray-50">
-                            <td className="py-2 font-medium">{log.taskType}</td>
-                            <td className="py-2">{log.latencyMs} ms</td>
-                            <td className="py-2">{log.errorCount}</td>
-                            <td className="py-2 font-medium text-teal-700">{log.ddaAdjustment}</td>
-                            <td className="py-2">
+                          <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="py-2.5 font-medium text-slate-900">{log.taskType}</td>
+                            <td className="py-2.5 text-slate-600">{log.latencyMs} ms</td>
+                            <td className="py-2.5 text-slate-600">{log.errorCount}</td>
+                            <td className="py-2.5 font-semibold text-teal-700">{log.ddaAdjustment}</td>
+                            <td className="py-2.5">
                               {log.alertFlag ? (
-                                <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded font-bold">ALERT</span>
+                                <span className="bg-amber-50 text-amber-900 border border-amber-200/70 px-2 py-0.5 rounded-full text-[11px] font-semibold">ALERT</span>
                               ) : (
-                                <span className="text-gray-400">Normal</span>
+                                <span className="text-slate-400">Normal</span>
                               )}
                             </td>
-                            <td className="py-2">
+                            <td className="py-2.5">
                               {log.isSynced ? (
-                                <span className="text-green-700 font-semibold">Synced ✓</span>
+                                <span className="text-emerald-700 font-semibold">Synced ✓</span>
                               ) : (
-                                <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-medium">Pending Sync</span>
+                                <span className="text-amber-800 bg-amber-50/70 border border-amber-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">Pending Sync</span>
                               )}
                             </td>
                           </tr>

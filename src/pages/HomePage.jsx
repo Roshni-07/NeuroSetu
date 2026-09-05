@@ -19,43 +19,61 @@ export default function HomePage({
   const isEn = selectedLanguage === 'en';
 
   return (
-    <div className="min-h-screen bg-marketing-canvas text-marketing-primary selection:bg-teal-500 selection:text-white font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-teal-600 selection:text-white font-sans antialiased">
       {/* 1. Home Navigation Bar */}
-      <nav className="border-b border-marketing-card-border bg-marketing-canvas/90 backdrop-blur-md sticky top-0 z-30 px-6 py-4">
+      <nav className="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md sticky top-0 z-30 px-6 py-3.5">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 font-black text-xl shadow-inner">
+            <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold text-lg shadow-inner">
               ন
             </div>
-            <span className="text-xl font-extrabold tracking-tight text-white">
-              NeuroSetu <span className="text-xs font-semibold text-teal-400 px-2 py-0.5 rounded-full bg-teal-950 border border-teal-800">NER Edition</span>
+            <span className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+              NeuroSetu <span className="text-[11px] font-semibold text-teal-400 px-2 py-0.5 rounded-full bg-teal-950/80 border border-teal-800/60">NER Edition</span>
             </span>
           </div>
 
           <div className="flex items-center flex-wrap gap-2.5">
-            {/* Language Switcher */}
-            <div className="flex items-center bg-marketing-card border border-marketing-card-border rounded-xl p-0.5 text-xs">
+            {/* Quick Language Toggle & Multilingual Selector */}
+            <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => handleLanguageToggle('en')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition ${isEn ? 'bg-teal-600 text-white shadow-xs' : 'text-marketing-secondary hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition ${isEn ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
               >
                 English
               </button>
               <button
                 type="button"
                 onClick={() => handleLanguageToggle('as')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition ${!isEn ? 'bg-teal-600 text-white shadow-xs' : 'text-marketing-secondary hover:text-white'}`}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition ${!isEn && selectedLanguage === 'as' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
               >
                 অসমীয়া
               </button>
             </div>
 
+            {/* Extended Multilingual Selector */}
+            <select
+              value={selectedLanguage}
+              onChange={(e) => handleLanguageToggle(e.target.value)}
+              className="bg-slate-900 text-slate-200 border border-slate-800 rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-teal-500 cursor-pointer shadow-xs"
+              aria-label="More Languages"
+            >
+              <option value="en">🇬🇧 English</option>
+              <option value="as">🌿 অসমীয়া (Assamese)</option>
+              <option value="bn">🌸 বাংলা (Bengali)</option>
+              <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+              <option value="mni">🌺 মৈতৈলোন্ (Manipuri)</option>
+              <option value="lus">🌄 Mizo (Mizoram)</option>
+              <option value="kha">🌧️ Khasi (Meghalaya)</option>
+              <option value="grt">🥁 Garo (A·chik)</option>
+              <option value="brx">🌾 बर’ (Bodo)</option>
+            </select>
+
             {onOpenSetup && (
               <button
                 type="button"
                 onClick={onOpenSetup}
-                className="text-xs sm:text-sm font-semibold text-marketing-secondary hover:text-white px-3 py-1.5 transition"
+                className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 transition"
               >
                 {isEn ? 'Profile Setup' : 'প্ৰফাইল ছেটিংছ'}
               </button>
@@ -65,7 +83,7 @@ export default function HomePage({
               <button
                 type="button"
                 onClick={onLaunchDashboard}
-                className="text-xs sm:text-sm font-semibold text-marketing-secondary hover:text-white px-3 py-1.5 transition"
+                className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 transition"
               >
                 {isEn ? 'ASHA Dashboard' : 'আশা ডেচবৰ্ড'}
               </button>
@@ -75,7 +93,7 @@ export default function HomePage({
               <button
                 type="button"
                 onClick={onLaunchPatient}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition active:scale-95"
+                className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-soft transition active:scale-95"
               >
                 {isEn ? 'Launch Patient App →' : 'খেল আৰম্ভ কৰক →'}
               </button>
@@ -85,28 +103,28 @@ export default function HomePage({
       </nav>
 
       {/* 2. Hero Section */}
-      <section className="px-6 pt-16 pb-20 max-w-6xl mx-auto text-center space-y-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-marketing-card border border-marketing-card-border text-xs font-semibold text-teal-400 mb-2">
+      <section className="px-6 pt-16 pb-20 max-w-6xl mx-auto text-center space-y-7">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-teal-400">
           <span>🌿 {isEn ? 'Culturally Grounded Cognitive Healthcare for North East India' : 'উত্তৰ-পূৰ্বাঞ্চলৰ আঞ্চলিক ডিমেনচিয়া স্বাস্থ্য সেৱা'}</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight">
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-tight">
           {isEn ? 'Cognitive Games That Speak Your Language.' : 'ঘৰুৱা চিনাকি পৰিৱেশত স্মৃতিৰ সেঁতু।'}
         </h1>
 
-        <p className="text-lg sm:text-xl text-marketing-secondary max-w-2xl mx-auto font-normal leading-relaxed">
+        <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
           {isEn
             ? 'Voice-first reminiscence therapy powered by Bhashini AI, tailored with authentic Assamese, Mizo, and Manipuri folklore, instruments, and textile motifs — engineered to function 100% offline in rural North East India.'
             : 'ভাৰতৰ উত্তৰ-পূৰ্বাঞ্চলৰ গ্ৰাম্য অঞ্চলৰ বাবে প্ৰস্তুত কৰা ১০০% অফলাইন, মাতৃভাষা-আধাৰিত সাংস্কৃতিক স্মৃতি আৰু জ্ঞানীয় স্বাস্থ্য প্লেটফৰ্ম।'}
         </p>
 
         {/* Primary Call-to-Actions */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+        <div className="flex flex-wrap items-center justify-center gap-3.5 pt-3">
           {onLaunchPatient && (
             <button
               type="button"
               onClick={onLaunchPatient}
-              className="min-h-touch px-8 py-4 bg-teal-600 hover:bg-teal-500 text-white rounded-2xl text-base font-bold shadow-lg shadow-teal-900/40 transition active:scale-95 flex items-center gap-2"
+              className="min-h-[50px] px-7 py-3.5 bg-teal-600 hover:bg-teal-500 text-white rounded-2xl text-sm font-bold shadow-soft hover:shadow-soft-lg transition active:scale-95 flex items-center gap-2"
             >
               <span>🎮 {isEn ? 'Launch Patient Experience' : 'ৰোগীৰ খেল আৰম্ভ কৰক'}</span>
             </button>
@@ -116,7 +134,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={onLaunchDashboard}
-              className="min-h-touch px-7 py-4 bg-marketing-card hover:bg-marketing-card-border border border-marketing-card-border text-white rounded-2xl text-base font-semibold shadow-sm transition active:scale-95 flex items-center gap-2"
+              className="min-h-[50px] px-6 py-3.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 hover:text-white rounded-2xl text-sm font-semibold shadow-soft transition active:scale-95 flex items-center gap-2"
             >
               <span>📊 {isEn ? 'View ASHA Triage Dashboard' : 'আশা ট্ৰায়াজ ডেচবৰ্ড'}</span>
             </button>
@@ -126,7 +144,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={onOpenSetup}
-              className="min-h-touch px-6 py-4 bg-marketing-card/60 hover:bg-marketing-card border border-marketing-card-border text-gray-300 hover:text-white rounded-2xl text-base font-medium transition active:scale-95"
+              className="min-h-[50px] px-5 py-3.5 bg-slate-900/60 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-2xl text-sm font-medium transition active:scale-95"
             >
               ⚙️ {isEn ? 'Setup Profile' : 'ব্যক্তিগত পৰিচয়'}
             </button>
@@ -134,7 +152,7 @@ export default function HomePage({
         </div>
 
         {/* Hero Clinical Badge Strip */}
-        <div className="pt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-marketing-secondary">
+        <div className="pt-6 flex flex-wrap items-center justify-center gap-5 text-xs text-slate-400">
           <span className="flex items-center gap-1.5">✓ WCAG 2.1 AA Gerontology-Tuned</span>
           <span className="flex items-center gap-1.5">✓ Zero-Punitive Errorless Learning</span>
           <span className="flex items-center gap-1.5">✓ Elderline (14567) SOS Routing</span>
@@ -143,58 +161,58 @@ export default function HomePage({
       </section>
 
       {/* 3. 4-Pillar Feature Matrix */}
-      <section className="px-6 py-16 bg-marketing-card/50 border-y border-marketing-card-border">
-        <div className="max-w-6xl mx-auto space-y-12">
-          <div className="text-center space-y-3">
+      <section className="px-6 py-16 bg-slate-900/40 border-y border-slate-850">
+        <div className="max-w-6xl mx-auto space-y-10">
+          <div className="text-center space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
               Core Architecture
             </span>
-            <h2 className="text-3xl font-extrabold text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
               Engineered for the Realities of Rural Dementia Care
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Pillar 1: Voice & Multilingual */}
-            <div className="p-6 bg-marketing-card border border-marketing-card-border rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-teal-950 text-teal-400 border border-teal-800 flex items-center justify-center text-2xl">
+            <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
+              <div className="w-10 h-10 rounded-xl bg-teal-950/80 text-teal-400 border border-teal-850 flex items-center justify-center text-xl">
                 🎙
               </div>
-              <h3 className="font-bold text-white text-base">Voice-First Bhashini AI</h3>
-              <p className="text-xs text-marketing-secondary leading-relaxed">
+              <h3 className="font-bold text-white text-sm">Voice-First Bhashini AI</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
                 ASHA workers and elderly patients navigate games using natural voice input and authentic Indian English and regional TTS.
               </p>
             </div>
 
             {/* Pillar 2: Offline Resilience */}
-            <div className="p-6 bg-marketing-card border border-marketing-card-border rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-purple-950 text-purple-400 border border-purple-800 flex items-center justify-center text-2xl">
+            <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
+              <div className="w-10 h-10 rounded-xl bg-purple-950/80 text-purple-400 border border-purple-850 flex items-center justify-center text-xl">
                 📶
               </div>
-              <h3 className="font-bold text-white text-base">Zero-Connectivity PWA</h3>
-              <p className="text-xs text-marketing-secondary leading-relaxed">
+              <h3 className="font-bold text-white text-sm">Zero-Connectivity PWA</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
                 Runs entirely offline with Service Worker caching and IndexedDB storage. Automatic delta synchronization pushes when online.
               </p>
             </div>
 
             {/* Pillar 3: Cultural Reminiscence */}
-            <div className="p-6 bg-marketing-card border border-marketing-card-border rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-950 text-amber-400 border border-amber-800 flex items-center justify-center text-2xl">
+            <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
+              <div className="w-10 h-10 rounded-xl bg-amber-950/80 text-amber-400 border border-amber-850 flex items-center justify-center text-xl">
                 🌾
               </div>
-              <h3 className="font-bold text-white text-base">8 NER State Traditions</h3>
-              <p className="text-xs text-marketing-secondary leading-relaxed">
+              <h3 className="font-bold text-white text-sm">8 NER State Traditions</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
                 Stimuli tailored with authentic instruments (Dhol, Pepa, Gogona), textiles (Muga, Puanchei), and occupational routines.
               </p>
             </div>
 
             {/* Pillar 4: Biomarker Telemetry */}
-            <div className="p-6 bg-marketing-card border border-marketing-card-border rounded-2xl space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center text-2xl">
+            <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
+              <div className="w-10 h-10 rounded-xl bg-emerald-950/80 text-emerald-400 border border-emerald-850 flex items-center justify-center text-xl">
                 📈
               </div>
-              <h3 className="font-bold text-white text-base">Passive Biomarkers</h3>
-              <p className="text-xs text-marketing-secondary leading-relaxed">
+              <h3 className="font-bold text-white text-sm">Passive Biomarkers</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
                 Dynamic Difficulty Adjustment (DDA) tracks response latency and motor tremor silently to flag longitudinal decline.
               </p>
             </div>
@@ -203,40 +221,40 @@ export default function HomePage({
       </section>
 
       {/* 4. Cultural Memory Heritage Section */}
-      <section className="px-6 py-20 max-w-6xl mx-auto space-y-12">
-        <div className="text-center space-y-3">
+      <section className="px-6 py-16 max-w-6xl mx-auto space-y-10">
+        <div className="text-center space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
             Localized Reminiscence Therapy
           </span>
-          <h2 className="text-3xl font-extrabold text-white">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">
             Stimuli That Resonate with NER Heritage
           </h2>
-          <p className="text-sm text-marketing-secondary max-w-xl mx-auto">
+          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto font-normal">
             Reminiscence therapy triggers deeply consolidated procedural and episodic memories by presenting stimuli from the patient’s formative youth.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 bg-marketing-card border border-marketing-card-border rounded-2xl space-y-3">
-            <span className="text-3xl block">🥁</span>
-            <h4 className="font-bold text-white text-base">Regional Instruments & Festivals</h4>
-            <p className="text-xs text-marketing-secondary">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
+            <span className="text-2xl block">🥁</span>
+            <h4 className="font-bold text-white text-sm">Regional Instruments & Festivals</h4>
+            <p className="text-xs text-slate-400 font-normal leading-relaxed">
               Dhol, Pepa, Gogona, and Kopou Phool orchids evoke joyful Rongali Bihu and regional springtime celebrations.
             </p>
           </div>
 
-          <div className="p-6 bg-marketing-card border border-marketing-card-border rounded-2xl space-y-3">
-            <span className="text-3xl block">🧵</span>
-            <h4 className="font-bold text-white text-base">Traditional Handloom Motifs</h4>
-            <p className="text-xs text-marketing-secondary">
+          <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
+            <span className="text-2xl block">🧵</span>
+            <h4 className="font-bold text-white text-sm">Traditional Handloom Motifs</h4>
+            <p className="text-xs text-slate-400 font-normal leading-relaxed">
               Golden Muga silk Kingkhap motifs, Mizo Puanchei chequered shawls, and Naga warrior textiles.
             </p>
           </div>
 
-          <div className="p-6 bg-marketing-card border border-marketing-card-border rounded-2xl space-y-3">
-            <span className="text-3xl block">☕</span>
-            <h4 className="font-bold text-white text-base">Daily Living & Routine Sequencing</h4>
-            <p className="text-xs text-marketing-secondary">
+          <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
+            <span className="text-2xl block">☕</span>
+            <h4 className="font-bold text-white text-sm">Daily Living & Routine Sequencing</h4>
+            <p className="text-xs text-slate-400 font-normal leading-relaxed">
               Chronological tea preparation and agrarian routines reinforce daily executive functioning and independence.
             </p>
           </div>
@@ -244,26 +262,26 @@ export default function HomePage({
       </section>
 
       {/* 5. Footer & Helpline Notice */}
-      <footer className="border-t border-marketing-card-border bg-black/40 px-6 py-10">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-marketing-secondary">
+      <footer className="border-t border-slate-850 bg-slate-950/90 px-6 py-8">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="space-y-1 text-center sm:text-left">
-            <p className="font-bold text-white">NeuroSetu (নিওৰোসেতু) — North East India Dementia Stimulation Platform</p>
+            <p className="font-semibold text-slate-300">NeuroSetu (নিওৰোসেতু) — North East India Dementia Stimulation Platform</p>
             <p>National Toll-Free Senior Helpline: <span className="text-teal-400 font-bold">Elderline (14567)</span></p>
           </div>
 
           <div className="flex items-center space-x-4">
             {onLaunchPatient && (
-              <button onClick={onLaunchPatient} className="hover:text-white underline">
+              <button onClick={onLaunchPatient} className="hover:text-white underline transition">
                 Patient App
               </button>
             )}
             {onLaunchDashboard && (
-              <button onClick={onLaunchDashboard} className="hover:text-white underline">
+              <button onClick={onLaunchDashboard} className="hover:text-white underline transition">
                 ASHA Dashboard
               </button>
             )}
             {onOpenSetup && (
-              <button onClick={onOpenSetup} className="hover:text-white underline">
+              <button onClick={onOpenSetup} className="hover:text-white underline transition">
                 Profile Setup
               </button>
             )}

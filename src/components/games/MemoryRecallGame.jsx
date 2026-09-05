@@ -3,7 +3,9 @@ import { CognitiveGameEngine, GAME_STATES } from '../../engine/gameEngine.js';
 import {
   MEMORY_RECALL_TASKS,
   getCulturalContentByState,
-  interpolatePersonalPrompt
+  interpolatePersonalPrompt,
+  getTaskPrompt,
+  getOptionLabel
 } from '../../data/reminiscenceContent.js';
 import VoiceInputHandler from '../voice/VoiceInputHandler.jsx';
 import GameTutorialOverlay from './GameTutorialOverlay.jsx';
@@ -18,7 +20,9 @@ export default function MemoryRecallGame({
   onComplete = null,
   onExit = null
 }) {
-  const isEn = patientProfile?.language === 'en';
+  const currentLang = patientProfile?.language || 'as';
+  const isEn = currentLang === 'en';
+  const isHi = currentLang === 'hi';
   const [engineState, setEngineState] = useState(null);
   const [showTutorial, setShowTutorial] = useState(() => {
     try {
@@ -48,10 +52,22 @@ export default function MemoryRecallGame({
         setEngineState({ ...state });
         if (state.currentTier && state.currentTier !== prevTierRef.current) {
           const isUp = state.currentTier > prevTierRef.current;
+          let noticeMsg = '';
+          if (isHi) {
+            noticeMsg = isUp
+              ? `🎉 स्तर वृद्धि! स्तर ${state.currentTier} खुला`
+              : `🤝 सरल सहायता सक्रिय (स्तर ${state.currentTier})`;
+          } else if (isEn) {
+            noticeMsg = isUp
+              ? `🎉 Level Up! Promoted to Tier ${state.currentTier}`
+              : `🤝 Gentle Assistance Active (Tier ${state.currentTier})`;
+          } else {
+            noticeMsg = isUp
+              ? `🎉 পৰ্যায় বৃদ্ধি! পৰ্যায় ${state.currentTier} মুকলি হ’ল`
+              : `🤝 সহজ সহায় সংক্ৰিয় (পৰ্যায় ${state.currentTier})`;
+          }
           setTierNotice({
-            message: isUp
-              ? (isEn ? `🎉 Level Up! Promoted to Tier ${state.currentTier}` : `🎉 পৰ্যায় বৃদ্ধি! পৰ্যায় ${state.currentTier} মুকলি হ’ল`)
-              : (isEn ? `🤝 Gentle Assistance Active (Tier ${state.currentTier})` : `🤝 সহজ সহায় সংক্ৰিয় (পৰ্যায় ${state.currentTier})`),
+            message: noticeMsg,
             type: isUp ? 'up' : 'down'
           });
           prevTierRef.current = state.currentTier;
@@ -66,10 +82,11 @@ export default function MemoryRecallGame({
     return () => {
       if (engineRef.current) engineRef.current.cleanup();
     };
-  }, [profileId, initialTier, patientProfile?.homeState]);
+  }, [profileId, initialTier, patientProfile?.homeState, currentLang]);
 
   if (!engineState) {
-    return <div className="p-6 text-center text-patient-hint">খেল আৰম্ভ হৈছে... (Loading Game...)</div>;
+    const loadingText = isHi ? 'खेल शुरू हो रहा है... (Loading Game...)' : (isEn ? 'Loading Game...' : 'খেল আৰম্ভ হৈছে... (Loading Game...)');
+    return <div className="p-6 text-center text-patient-hint">{loadingText}</div>;
   }
 
   const {
@@ -102,44 +119,42 @@ export default function MemoryRecallGame({
     patientProfile.villageTown
   );
 
-  const renderedPromptAs = (hasPersonalInfo && currentTask?.personalPromptAs)
-    ? interpolatePersonalPrompt(currentTask.personalPromptAs, patientProfile)
-    : (currentTask?.promptAs || '');
-
-  const renderedPromptEn = (hasPersonalInfo && currentTask?.personalPromptEn)
-    ? interpolatePersonalPrompt(currentTask.personalPromptEn, patientProfile)
-    : (currentTask?.promptEn || '');
-
   // Language authenticity: Primary prompt matches selected language
-  const primaryPrompt = isEn ? renderedPromptEn : renderedPromptAs;
-  const secondaryPrompt = isEn ? renderedPromptAs : renderedPromptEn;
+  const primaryPrompt = getTaskPrompt(currentTask, currentLang, patientProfile);
+  const secondaryPrompt = isEn
+    ? (hasPersonalInfo && currentTask?.personalPromptAs ? interpolatePersonalPrompt(currentTask.personalPromptAs, patientProfile) : (currentTask?.promptAs || ''))
+    : (hasPersonalInfo && currentTask?.personalPromptEn ? interpolatePersonalPrompt(currentTask.personalPromptEn, patientProfile) : (currentTask?.promptEn || ''));
 
   const handleSpeakPrompt = () => {
-    synthesizeSpeech(primaryPrompt, isEn ? 'en' : 'as');
+    if (primaryPrompt) {
+      synthesizeSpeech(primaryPrompt, currentLang);
+    }
   };
 
   // Completion Screen
   if (state === GAME_STATES.SESSION_COMPLETE) {
     return (
-      <div className="bg-white rounded-3xl p-8 border-2 border-patient-border shadow-lg text-center max-w-lg mx-auto animate-fade-in">
-        <div className="w-20 h-20 bg-green-100 text-patient-success text-4xl rounded-full flex items-center justify-center mx-auto mb-4 border border-green-300">
+      <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-soft-lg text-center max-w-lg mx-auto animate-fade-in space-y-6">
+        <div className="w-16 h-16 bg-emerald-50 text-emerald-700 text-3xl rounded-2xl flex items-center justify-center mx-auto border border-emerald-200/80 shadow-soft">
           🏆
         </div>
-        <h2 className="text-patient-hero text-patient-primary">
-          {isEn ? 'Well Done!' : 'বৰ ধুনীয়া! (Well Done!)'}
-        </h2>
-        <p className="text-patient-body text-patient-secondary mt-2">
-          {isEn
-            ? 'You completed all memory questions beautifully. Your recall is remarkable.'
-            : 'আপুনি সকলো প্ৰশ্নৰ উত্তৰ সুন্দৰভাৱে দিলে। আপোনাৰ স্মৃতিশক্তি প্ৰশংসনীয়।'}
-        </p>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">
+            {isEn ? 'Well Done!' : 'বৰ ধুনীয়া! (Well Done!)'}
+          </h2>
+          <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+            {isEn
+              ? 'You completed all memory questions beautifully. Your recall is remarkable.'
+              : 'আপুনি সকলো প্ৰশ্নৰ উত্তৰ সুন্দৰভাৱে দিলে। আপোনাৰ স্মৃতিশক্তি প্ৰশংসনীয়।'}
+          </p>
+        </div>
 
-        <div className="my-6 p-4 bg-patient-canvas border border-patient-border rounded-2xl">
-          <span className="text-xs text-patient-hint uppercase font-bold tracking-wider">
+        <div className="p-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold tracking-wider block">
             {isEn ? 'Total Score' : 'অৰ্জিত নম্বৰ (Score)'}
           </span>
-          <p className="text-4xl font-extrabold text-patient-accent mt-1">{score} {isEn ? 'Points' : 'পইণ্ট'}</p>
-          <p className="text-xs text-patient-secondary mt-1">
+          <p className="text-3xl font-extrabold text-teal-800 mt-1">{score} {isEn ? 'Points' : 'পইণ্ট'}</p>
+          <p className="text-xs text-slate-500 mt-1">
             Difficulty Tier Reached: {currentTier} ({currentTier === 1 ? 'Guided' : currentTier === 2 ? 'Standard' : 'Challenge'})
           </p>
         </div>
@@ -148,7 +163,7 @@ export default function MemoryRecallGame({
           {onExit && (
             <button
               onClick={onExit}
-              className="min-h-touch px-6 py-3 bg-patient-accent text-white font-bold rounded-xl hover:bg-patient-accent-hover transition shadow-sm text-base"
+              className="min-h-touch px-6 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 active:bg-teal-800 transition shadow-soft text-sm"
             >
               {isEn ? 'Return Home →' : 'মুখ্য পৃষ্ঠালৈ যাওক (Return Home)'}
             </button>
@@ -159,22 +174,22 @@ export default function MemoryRecallGame({
   }
 
   return (
-    <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-patient-border shadow-sm max-w-2xl mx-auto space-y-6">
+    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft max-w-2xl mx-auto space-y-6">
       {/* Top Header Bar: Progress, Visible Tier Indicator, Score, Help & Exit */}
-      <div className="flex flex-wrap items-center justify-between border-b border-gray-100 pb-3 gap-2">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-bold px-2.5 py-1 bg-teal-100 text-patient-accent rounded-lg">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-4 gap-2">
+        <div className="flex items-center space-x-2.5">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg border border-slate-200/60">
             {isEn ? `Question ${currentTaskIndex + 1} / ${totalTasks}` : `প্ৰশ্ন ${currentTaskIndex + 1} / ${totalTasks}`}
           </span>
 
           {/* Visible Tier Progression Indicator */}
-          <div className="flex items-center space-x-1 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-lg text-[11px] font-bold text-gray-600">
-            <span className="text-patient-accent">পৰ্যায় {currentTier}:</span>
-            <span className={currentTier === 1 ? 'text-teal-700 font-extrabold' : 'text-gray-400'}>সহজ</span>
+          <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600">
+            <span className="text-teal-800 font-semibold">পৰ্যায় {currentTier}:</span>
+            <span className={currentTier === 1 ? 'text-teal-700 font-bold' : 'text-slate-400'}>সহজ</span>
             <span>•</span>
-            <span className={currentTier === 2 ? 'text-teal-700 font-extrabold' : 'text-gray-400'}>মানক</span>
+            <span className={currentTier === 2 ? 'text-teal-700 font-bold' : 'text-slate-400'}>মানক</span>
             <span>•</span>
-            <span className={currentTier === 3 ? 'text-teal-700 font-extrabold' : 'text-gray-400'}>চ্যালেঞ্জ</span>
+            <span className={currentTier === 3 ? 'text-teal-700 font-bold' : 'text-slate-400'}>চ্যালেঞ্জ</span>
           </div>
         </div>
 
@@ -182,17 +197,17 @@ export default function MemoryRecallGame({
           <button
             type="button"
             onClick={() => setShowTutorial(true)}
-            className="text-xs px-2 py-1 bg-teal-50 hover:bg-teal-100 text-patient-accent border border-teal-200 font-bold rounded-lg transition"
+            className="text-xs px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-teal-800 border border-slate-200 font-semibold rounded-lg transition"
           >
             (?) {isEn ? 'Help' : 'সহায়'}
           </button>
-          <span className="text-xs font-bold text-patient-primary">
+          <span className="text-xs font-semibold text-slate-700 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60">
             {isEn ? `Score: ${score}` : `নম্বৰ: ${score}`}
           </span>
           {onExit && (
             <button
               onClick={onExit}
-              className="text-xs font-medium text-patient-hint hover:text-patient-primary px-2 py-1"
+              className="text-xs font-medium text-slate-500 hover:text-slate-800 px-2 py-1 rounded-lg hover:bg-slate-50 transition"
             >
               {isEn ? 'Exit' : 'বন্ধ কৰক (Exit)'}
             </button>
@@ -204,10 +219,10 @@ export default function MemoryRecallGame({
       {tierNotice && (
         <div
           role="status"
-          className={`p-3 rounded-2xl border-2 text-sm font-bold flex items-center justify-center gap-2 animate-bounce ${
+          className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 animate-bounce ${
             tierNotice.type === 'up'
-              ? 'bg-amber-50 border-amber-300 text-amber-900'
-              : 'bg-blue-50 border-blue-300 text-blue-900'
+              ? 'bg-amber-50 border-amber-200 text-amber-900'
+              : 'bg-teal-50 border-teal-200 text-teal-900'
           }`}
         >
           <span>{tierNotice.message}</span>
@@ -217,29 +232,29 @@ export default function MemoryRecallGame({
       {/* Cultural Stimulus Card */}
       {currentTask && (
         <div className="text-center space-y-4">
-          <div className="w-32 h-32 mx-auto bg-patient-canvas border-2 border-teal-200 rounded-3xl flex items-center justify-center text-6xl shadow-inner">
+          <div className="w-28 h-28 mx-auto bg-slate-50 border border-slate-200 rounded-3xl flex items-center justify-center text-5xl shadow-soft">
             <span role="img" aria-label={currentTask.title}>{currentTask.icon}</span>
           </div>
 
           <div>
-            <span className="text-xs font-bold text-patient-accent uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-teal-700 uppercase tracking-wider block">
               {currentTask.title}
             </span>
-            <div className="flex items-center justify-center gap-2 mt-1">
-              <h2 className="text-patient-prompt text-patient-primary font-bold">
+            <div className="flex items-center justify-center gap-2.5 mt-1.5">
+              <h2 className="text-xl sm:text-2xl text-slate-900 font-bold leading-snug max-w-lg">
                 {primaryPrompt}
               </h2>
               <button
                 type="button"
                 onClick={handleSpeakPrompt}
                 aria-label="Listen to question"
-                className="w-10 h-10 rounded-full bg-teal-50 hover:bg-teal-100 text-patient-accent flex items-center justify-center border border-teal-300 text-lg shadow-sm"
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-teal-800 flex items-center justify-center border border-slate-200 text-base shadow-soft shrink-0 transition"
               >
                 🔊
               </button>
             </div>
             {secondaryPrompt && (
-              <p className="text-xs text-patient-hint mt-0.5">
+              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                 {secondaryPrompt}
               </p>
             )}
@@ -251,12 +266,12 @@ export default function MemoryRecallGame({
       {state === GAME_STATES.GENTLE_HINT && gentleHintMessage && (
         <div
           data-testid="gentle-hint-banner"
-          className="p-4 bg-gray-50 border-2 border-gray-300 rounded-2xl text-patient-hint text-sm font-medium flex items-center gap-3 animate-fade-in"
+          className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 text-xs font-medium flex items-center gap-3 animate-fade-in"
         >
-          <span className="text-2xl text-patient-accent">💡</span>
+          <span className="text-2xl text-amber-600">💡</span>
           <div>
-            <p className="font-semibold text-patient-primary">{gentleHintMessage}</p>
-            <p className="text-xs text-patient-secondary mt-0.5">
+            <p className="font-semibold text-slate-900">{gentleHintMessage}</p>
+            <p className="text-slate-500 mt-0.5">
               {isEn ? 'Take your time, choose gently.' : 'একো চিন্তা নকৰিব, সঠিক উত্তৰটো বাচি লওক।'}
             </p>
           </div>
@@ -267,34 +282,38 @@ export default function MemoryRecallGame({
       {state === GAME_STATES.SUCCESS_REWARD && (
         <div
           data-testid="success-banner"
-          className="p-4 bg-green-50 border-2 border-green-300 rounded-2xl text-patient-success text-sm font-bold flex items-center justify-center gap-2 animate-scale-up"
+          className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs font-semibold flex items-center justify-center gap-2 animate-scale-up"
         >
-          <span className="text-2xl">🌟</span>
-          <span>{isEn ? 'Splendid! Your answer is correct. (+Points added)' : 'বৰ ধুনীয়া! আপোনাৰ উত্তৰ সঠিক হৈছে। (+নম্বৰ যোগ হ’ল)'}</span>
+          <span className="text-xl">🌟</span>
+          <span>
+            {isHi
+              ? 'शानदार! आपका उत्तर सही है। (+अंक जुड़े)'
+              : (isEn ? 'Splendid! Your answer is correct. (+Points added)' : 'বৰ ধুনীয়া! আপোনাৰ উত্তৰ সঠিক হৈছে। (+নম্বৰ যোগ হ’ল)')}
+          </span>
         </div>
       )}
 
       {/* Input Section: Touch Cards Options Grid */}
       {currentTask && (
         <div className="space-y-3">
-          <span className="text-xs font-bold text-patient-secondary uppercase tracking-wider block text-center">
-            {isEn ? 'Touch your answer card:' : 'উত্তৰটো স্পৰ্শ কৰক (Touch your answer):'}
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block text-center">
+            {isHi ? 'उत्तर कार्ड को छुएं:' : (isEn ? 'Touch your answer card:' : 'উত্তৰটো স্পৰ্শ কৰক (Touch your answer):')}
           </span>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {currentTask.options.map((option) => {
               const isEliminated = eliminatedOptions.includes(option.id);
-              const label = isEn ? (option.labelEn || option.labelAs) : option.labelAs;
+              const label = getOptionLabel(option, currentLang);
               return (
                 <button
                   key={option.id}
                   type="button"
                   disabled={isEliminated || state === GAME_STATES.SUCCESS_REWARD}
                   onClick={() => handleOptionClick(option.id)}
-                  className={`min-h-touch p-4 rounded-2xl border-2 font-bold text-base flex flex-col items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${
+                  className={`min-h-touch p-4 rounded-2xl border font-semibold text-sm sm:text-base flex flex-col items-center justify-center gap-2 transition-all shadow-soft active:scale-95 ${
                     isEliminated
-                      ? 'opacity-30 border-dashed border-gray-300 bg-gray-50 cursor-not-allowed'
-                      : 'border-patient-border hover:border-patient-accent bg-white text-patient-primary'
+                      ? 'opacity-30 border-dashed border-slate-200 bg-slate-50 cursor-not-allowed'
+                      : 'border-slate-200/80 hover:border-teal-600 hover:bg-teal-50/20 bg-white text-slate-900'
                   }`}
                 >
                   <span className="text-3xl" role="img" aria-label={label}>{option.icon || '🎶'}</span>
@@ -307,9 +326,9 @@ export default function MemoryRecallGame({
       )}
 
       {/* Voice Input Section */}
-      <div className="pt-4 border-t border-gray-100 flex flex-col items-center">
-        <span className="text-xs text-patient-hint mb-2">
-          {isEn ? 'Or speak your answer aloud:' : 'নাইবা মাত মাতি কওক:'}
+      <div className="pt-4 border-t border-slate-100 flex flex-col items-center">
+        <span className="text-xs text-slate-500 mb-2">
+          {isHi ? 'या माइक दबाकर बोलकर उत्तर दें:' : (isEn ? 'Or speak your answer aloud:' : 'নাইবা মাত মাতি কওক:')}
         </span>
         <VoiceInputHandler
           onTranscript={handleVoiceTranscript}

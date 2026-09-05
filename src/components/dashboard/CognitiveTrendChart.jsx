@@ -18,30 +18,36 @@ export default function CognitiveTrendChart({
   const alertThreshold = 15; // 15s red alert line
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-5">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div>
-          <h3 className="font-bold text-gray-900 text-lg">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Biomarker Telemetry
+            </span>
+          </div>
+          <h3 className="font-bold text-slate-900 text-lg mt-1">
             Cognitive Biomarker Trend: {patientName}
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5 max-w-lg leading-relaxed">
             Passive response latency tracking (seconds) & DDA difficulty tier progression across 6 sessions.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs font-semibold">
-          <span className="flex items-center gap-1.5 text-gray-700">
-            <span className="w-3 h-3 bg-teal-600 rounded-sm inline-block" /> Latency (s)
+        <div className="flex items-center space-x-3 text-xs font-medium">
+          <span className="flex items-center gap-1.5 text-slate-700">
+            <span className="w-2.5 h-2.5 bg-teal-600 rounded-sm inline-block" /> Latency (s)
           </span>
-          <span className="flex items-center gap-1.5 text-orange-700">
-            <span className="w-3 h-0.5 bg-red-500 border-b border-dashed inline-block" /> 15s Delay Threshold
+          <span className="flex items-center gap-1.5 text-rose-700">
+            <span className="w-3 h-0.5 bg-rose-500 border-b border-dashed inline-block" /> 15s Delay Threshold
           </span>
         </div>
       </div>
 
       {/* SVG Responsive Latency & DDA Bar Chart */}
-      <div className="relative pt-6 pb-2">
+      <div className="relative pt-4 pb-2">
         <svg
           viewBox="0 0 500 200"
           className="w-full h-52 overflow-visible"
@@ -58,11 +64,11 @@ export default function CognitiveTrendChart({
                   y1={y}
                   x2="480"
                   y2={y}
-                  stroke={val === 15 ? '#EF4444' : '#E5E7EB'}
+                  stroke={val === 15 ? '#FDA4AF' : '#F1F5F9'}
                   strokeWidth={val === 15 ? 1.5 : 1}
                   strokeDasharray={val === 15 ? '4 4' : 'none'}
                 />
-                <text x="32" y={y + 4} textAnchor="end" fontSize="10" fill={val === 15 ? '#DC2626' : '#9CA3AF'}>
+                <text x="32" y={y + 4} textAnchor="end" fontSize="10" fill={val === 15 ? '#E11D48' : '#94A3B8'} fontWeight={val === 15 ? '600' : 'normal'}>
                   {val}s
                 </text>
               </g>
@@ -70,13 +76,13 @@ export default function CognitiveTrendChart({
           })}
 
           {/* Critical Threshold Alert Label */}
-          <text x="475" y="65" textAnchor="end" fontSize="9" fill="#DC2626" fontWeight="bold">
+          <text x="475" y="65" textAnchor="end" fontSize="9" fill="#E11D48" fontWeight="600">
             15s Cognitive Alert
           </text>
 
           {/* Bars and Data Points */}
           {data.map((item, idx) => {
-            const barWidth = 36;
+            const barWidth = 34;
             const x = 70 + idx * 70;
             const height = (item.latencySec / maxLatency) * 160;
             const y = 180 - height;
@@ -91,8 +97,8 @@ export default function CognitiveTrendChart({
                   width={barWidth}
                   height={height}
                   rx="6"
-                  fill={isAlert ? '#F97316' : '#0B6E6E'}
-                  opacity={isAlert ? 0.9 : 0.85}
+                  fill={isAlert ? '#F97316' : '#0D9488'}
+                  opacity={isAlert ? 0.95 : 0.9}
                   className="transition-all hover:opacity-100 cursor-pointer"
                 />
 
@@ -109,7 +115,7 @@ export default function CognitiveTrendChart({
                 </text>
 
                 {/* X-Axis Session Label */}
-                <text x={x} y="196" textAnchor="middle" fontSize="10" fill="#4B5563">
+                <text x={x} y="196" textAnchor="middle" fontSize="10" fill="#64748B" fontWeight="500">
                   {item.session}
                 </text>
 
@@ -124,7 +130,7 @@ export default function CognitiveTrendChart({
                 />
                 <text
                   x={x}
-                  y="214"
+                  y={214}
                   textAnchor="middle"
                   fontSize="8"
                   fontWeight="bold"
@@ -139,17 +145,17 @@ export default function CognitiveTrendChart({
       </div>
 
       {/* Clinical Telemetry Annotation Strip */}
-      <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs space-y-1 mt-4">
-        <span className="font-bold text-gray-800 uppercase tracking-wider block">
+      <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-xl text-xs space-y-1.5 mt-4">
+        <span className="font-semibold text-slate-800 uppercase tracking-wider block text-[11px]">
           Clinical Interpretation:
         </span>
-        <p className="text-gray-600">
-          • <strong>Sessions 1–3:</strong> Normal response range (4.2s–7.8s) with Tier 2 task difficulty maintained.
+        <p className="text-slate-600">
+          • <strong className="text-slate-800">Sessions 1–3:</strong> Normal response range (4.2s–7.8s) with Tier 2 task difficulty maintained.
         </p>
-        <p className="text-orange-800 font-medium">
+        <p className="text-amber-900 font-medium">
           • <strong>Session 4:</strong> Marked delay spike (16.4s) and 2 errors. DDA engine intervened silently to lower difficulty to Tier 1.
         </p>
-        <p className="text-teal-800 font-medium">
+        <p className="text-teal-900 font-medium">
           • <strong>Session 6:</strong> Patient successfully stabilized at Tier 1 with 0 errors and latency reduced back to 9.5s.
         </p>
       </div>
