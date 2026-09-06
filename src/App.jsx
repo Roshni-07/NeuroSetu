@@ -11,6 +11,9 @@ import RemindersHub from './components/reminders/RemindersHub.jsx';
 import HomePage from './pages/HomePage.jsx';
 import Hub from './components2/Hub.jsx';
 import GameWrapper from './components2/GameWrapper.jsx';
+import MemoryRecallGame from './components/games/MemoryRecallGame.jsx';
+import PatternMatchingGame from './components/games/PatternMatchingGame.jsx';
+import SequencingGame from './components/games/SequencingGame.jsx';
 import { GAMES_CONFIG } from './data/gamesConfig.js';
 import { useAppRoute } from './router/AppRouter.jsx';
 import { getActiveSession, logout, hasConfiguredPin } from './services/authService.js';
@@ -323,6 +326,31 @@ export default function App() {
               />
             )}
 
+            {/* Active Cognitive Games */}
+            {patientSection === 'games' && activeGame === 'memory' && (
+              <MemoryRecallGame
+                profileId={session?.profileName || 'default_patient'}
+                patientProfile={patientProfile}
+                onExit={handleExitGame}
+              />
+            )}
+
+            {patientSection === 'games' && activeGame === 'pattern' && (
+              <PatternMatchingGame
+                profileId={session?.profileName || 'default_patient'}
+                patientProfile={patientProfile}
+                onExit={handleExitGame}
+              />
+            )}
+
+            {patientSection === 'games' && activeGame === 'sequencing' && (
+              <SequencingGame
+                profileId={session?.profileName || 'default_patient'}
+                patientProfile={patientProfile}
+                onExit={handleExitGame}
+              />
+            )}
+
             {/* Game Selection Hub */}
             {patientSection === 'games' && !activeGame && (
               <div className="space-y-6 animate-fade-in">
@@ -375,6 +403,71 @@ export default function App() {
                   </button>
                 </div>
 
+                {/* 3 Large Dementia-Accessible Quick Play Game Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Game 1: Memory Recall */}
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-teal-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center text-2xl mb-3 border border-teal-100 shadow-xs">
+                        🥁
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900">
+                        {isEn ? 'Cultural Memory Recall' : 'বিহু স্মৃতি খেল (Memory Recall)'}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
+                        {patientProfile.homeState} instruments & personal autobiographical cues with DDA.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveGame('memory')}
+                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
+                    >
+                      {isEn ? 'Play →' : 'খেলক (Play) →'}
+                    </button>
+                  </div>
+
+                  {/* Game 2: Pattern Recognition */}
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-amber-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl mb-3 border border-amber-100 shadow-xs">
+                        🧵
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900">
+                        {isEn ? 'Traditional Patterns' : 'বস্ত্ৰ চানেকি'}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
+                        Traditional handloom patterns ({patientProfile.homeState} & NER weaves).
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveGame('pattern')}
+                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
+                    >
+                      {isEn ? 'Play →' : 'চানেকি (Play) →'}
+                    </button>
+                  </div>
+
+                  {/* Game 3: Daily Routine Sequencing */}
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-400 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
+                    <div>
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl mb-3 border border-slate-200 shadow-xs">
+                        ☕
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900">
+                        {isEn ? 'Daily Routine Sequencing' : 'দৈনন্দিন কৰ্ম ক্ৰম'}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
+                        Sequencing mapped to former background: {patientProfile.formerOccupation}.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveGame('sequencing')}
+                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
+                    >
+                      {isEn ? 'Play →' : 'ক্ৰম (Play) →'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </PatientLayout>
