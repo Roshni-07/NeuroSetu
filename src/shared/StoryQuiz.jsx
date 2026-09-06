@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { sounds } from '../utils/soundEffects.js';
 import SpeakButton from '../components2/SpeakButton.jsx';
+import { synthesizeSpeech, stopAllSpeech } from '../services/bhashiniService.js';
 
 /**
  * StoryQuiz — Shows a short narrated story, then presents comprehension questions.
@@ -34,12 +35,8 @@ export default function StoryQuiz({
   );
 
   const speakText = (text) => {
-    if (!readAloud || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.rate = 0.85;
-    utt.pitch = 1.0;
-    window.speechSynthesis.speak(utt);
+    if (!readAloud) return;
+    synthesizeSpeech(text, language);
   };
 
   useEffect(() => {
@@ -47,7 +44,7 @@ export default function StoryQuiz({
       speakText(currentParas.join(' '));
     }
     return () => {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      stopAllSpeech();
     };
   }, [readingPage, phase]);
 

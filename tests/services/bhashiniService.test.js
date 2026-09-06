@@ -4,6 +4,7 @@ import {
   blobToBase64,
   transcribeAudio,
   synthesizeSpeech,
+  stopAllSpeech,
   transliterateIndicToLatin,
   getActiveTTSProvider,
   isBhashiniConfigured,
@@ -131,6 +132,50 @@ describe('Task 15 & 17: Bhashini Speech Service & Assamese Keyword Engine', () =
     expect(getActiveTTSProvider()).toBe('elevenlabs');
     delete process.env.VITE_ELEVENLABS_API_KEY;
   });
+
+  it('9. stopAllSpeech cancels SpeechSynthesis and dispatches speech-stopped event', () => {
+    const mockCancel = vi.fn();
+    window.speechSynthesis = {
+      cancel: mockCancel,
+      speak: vi.fn(),
+      getVoices: () => []
+    };
+
+    const stopListener = vi.fn();
+    window.addEventListener('neurosetu:speech-stopped', stopListener);
+
+    stopAllSpeech();
+
+    expect(mockCancel).toHaveBeenCalled();
+    expect(stopListener).toHaveBeenCalled();
+
+    window.removeEventListener('neurosetu:speech-stopped', stopListener);
+  });
+
+  it('10. synthesizeSpeech cancels previous speech before starting new utterance', async () => {
+    const mockCancel = vi.fn();
+    const mockSpeak = vi.fn();
+    window.speechSynthesis = {
+      speak: mockSpeak,
+      cancel: mockCancel,
+      getVoices: () => []
+    };
+    global.SpeechSynthesisUtterance = vi.fn().mockImplementation((text) => ({ text }));
+
+    const startListener = vi.fn();
+    window.addEventListener('neurosetu:speech-started', startListener);
+
+    await synthesizeSpeech('First instruction', 'en');
+    expect(mockCancel).toHaveBeenCalled();
+    expect(startListener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.objectContaining({ text: 'First instruction' })
+      })
+    );
+
+    window.removeEventListener('neurosetu:speech-started', startListener);
+  });
 });
+
 
 

@@ -671,6 +671,108 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 }
 
 /**
+ * Global single-instance audio and speech session tracking
+ */
+let currentSpeechSessionId = 0;
+let currentAudioElement = null;
+let currentSpeechTimeout = null;
+
+/**
+ * Stop any ongoing speech synthesis or audio playback across the app.
+ * Guarantees that only one voice/audio narration plays at a time.
+ */
+export function stopAllSpeech() {
+  if (currentSpeechTimeout) {
+    clearTimeout(currentSpeechTimeout);
+    currentSpeechTimeout = null;
+  }
+
+  // Increment session ID to cancel pending speech resolutions
+  currentSpeechSessionId++;
+
+  // 1. Cancel browser Web Speech synthesis immediately
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      window._neurosetu_active_utterance = null;
+    } catch (e) {}
+  }
+
+  // 2. Stop and clear any active HTML5 Audio element
+  if (currentAudioElement) {
+    try {
+      currentAudioElement.pause();
+      currentAudioElement.currentTime = 0;
+      currentAudioElement.src = '';
+    } catch (e) {}
+    currentAudioElement = null;
+  }
+  if (typeof window !== 'undefined' && window._neurosetu_current_audio) {
+    try {
+      window._neurosetu_current_audio.pause();
+      window._neurosetu_current_audio.currentTime = 0;
+      window._neurosetu_current_audio.src = '';
+    } catch (e) {}
+    window._neurosetu_current_audio = null;
+  }
+
+  // 3. Dispatch speech-stopped event for UI state synchronization
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    try {
+      window.dispatchEvent(new CustomEvent('neurosetu:speech-stopped'));
+    } catch (e) {}
+  }
+}
+
+/**
+ * Helper to play an audio URL and return a Promise that resolves when audio finishes or stops
+ */
+function playAudioPromise(audioUrl, sessionId, providerName) {
+  return new Promise((resolve) => {
+    if (typeof Audio === 'undefined' || !audioUrl) {
+      resolve({ success: true, audioUrl, isOffline: false, provider: providerName });
+      return;
+    }
+
+    try {
+      const audio = new Audio(audioUrl);
+      currentAudioElement = audio;
+      if (typeof window !== 'undefined') {
+        window._neurosetu_current_audio = audio;
+      }
+
+      let settled = false;
+      const cleanup = () => {
+        if (settled) return;
+        settled = true;
+        if (currentSpeechSessionId === sessionId) {
+          currentAudioElement = null;
+          if (typeof window !== 'undefined') window._neurosetu_current_audio = null;
+          if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+            try {
+              window.dispatchEvent(new CustomEvent('neurosetu:speech-stopped'));
+            } catch (e) {}
+          }
+        }
+        resolve({ success: true, audioUrl, isOffline: false, provider: providerName });
+      };
+
+      audio.onended = cleanup;
+      audio.onerror = cleanup;
+
+      // Safety timeout: 30 seconds
+      setTimeout(cleanup, 30000);
+
+      audio.play().catch(() => {
+        cleanup();
+      });
+    } catch (err) {
+      resolve({ success: true, audioUrl, isOffline: false, provider: providerName });
+    }
+  });
+}
+
+/**
  * Check which Cloud TTS provider is active
  */
 export function getActiveTTSProvider() {
@@ -685,7 +787,7 @@ export function getActiveTTSProvider() {
 /**
  * Synthesize Speech via ElevenLabs API (Eleven Multilingual v2)
  */
-async function synthesizeElevenLabs(text, targetLanguage = 'en') {
+async function synthesizeElevenLabs(text, targetLanguage = 'en', sessionId) {
   const apiKey = getEnv('VITE_ELEVENLABS_API_KEY');
   const voiceId = getEnv('VITE_ELEVENLABS_VOICE_ID') || '21m00Tcm4TlvDq8ikWAM'; // Default warm voice
 
@@ -714,25 +816,15 @@ async function synthesizeElevenLabs(text, targetLanguage = 'en') {
 
   const audioBlob = await response.blob();
   const audioUrl = URL.createObjectURL(audioBlob);
-  if (typeof Audio !== 'undefined') {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(() => {});
-  }
-
-  return {
-    success: true,
-    audioUrl,
-    isOffline: false,
-    provider: 'elevenlabs'
-  };
+  return await playAudioPromise(audioUrl, sessionId, 'elevenlabs');
 }
 
 /**
  * Synthesize Speech via OpenAI TTS API (tts-1)
  */
-async function synthesizeOpenAI(text, targetLanguage = 'en') {
+async function synthesizeOpenAI(text, targetLanguage = 'en', sessionId) {
   const apiKey = getEnv('VITE_OPENAI_API_KEY');
-  const voice = getEnv('VITE_OPENAI_VOICE') || 'nova'; // 'nova' | 'shimmer' | 'alloy' | 'echo' | 'fable' | 'onyx'
+  const voice = getEnv('VITE_OPENAI_VOICE') || 'nova';
 
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
@@ -753,23 +845,13 @@ async function synthesizeOpenAI(text, targetLanguage = 'en') {
 
   const audioBlob = await response.blob();
   const audioUrl = URL.createObjectURL(audioBlob);
-  if (typeof Audio !== 'undefined') {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(() => {});
-  }
-
-  return {
-    success: true,
-    audioUrl,
-    isOffline: false,
-    provider: 'openai'
-  };
+  return await playAudioPromise(audioUrl, sessionId, 'openai');
 }
 
 /**
  * Synthesize Speech via Google Cloud Text-to-Speech API
  */
-async function synthesizeGoogleCloud(text, targetLanguage = 'hi') {
+async function synthesizeGoogleCloud(text, targetLanguage = 'hi', sessionId) {
   const apiKey = getEnv('VITE_GOOGLE_TTS_API_KEY');
   const locale = getSpeechLocale(targetLanguage);
 
@@ -804,24 +886,13 @@ async function synthesizeGoogleCloud(text, targetLanguage = 'hi') {
 
   const data = await response.json();
   const audioUrl = data.audioContent ? `data:audio/mp3;base64,${data.audioContent}` : null;
-
-  if (audioUrl && typeof Audio !== 'undefined') {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(() => {});
-  }
-
-  return {
-    success: true,
-    audioUrl,
-    isOffline: false,
-    provider: 'google_cloud'
-  };
+  return await playAudioPromise(audioUrl, sessionId, 'google_cloud');
 }
 
 /**
  * Synthesize Speech via Microsoft Azure Cognitive Speech REST API
  */
-async function synthesizeAzure(text, targetLanguage = 'hi') {
+async function synthesizeAzure(text, targetLanguage = 'hi', sessionId) {
   const apiKey = getEnv('VITE_AZURE_SPEECH_KEY');
   const region = getEnv('VITE_AZURE_SPEECH_REGION') || 'centralindia';
 
@@ -851,43 +922,158 @@ async function synthesizeAzure(text, targetLanguage = 'hi') {
 
   const audioBlob = await response.blob();
   const audioUrl = URL.createObjectURL(audioBlob);
-  if (typeof Audio !== 'undefined') {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(() => {});
-  }
+  return await playAudioPromise(audioUrl, sessionId, 'azure_speech');
+}
 
-  return {
-    success: true,
-    audioUrl,
-    isOffline: false,
-    provider: 'azure_speech'
-  };
+/**
+ * Synthesize Speech via Browser Web Speech API with promise completion
+ */
+function playWebSpeechPromise(text, targetLanguage, sessionId) {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      resolve({
+        success: true,
+        audioUrl: null,
+        isOffline: true,
+        provider: 'browser_web_speech'
+      });
+      return;
+    }
+
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      const bestVoice = getBestVoiceForLanguage(targetLanguage);
+      const locale = getSpeechLocale(targetLanguage);
+
+      const voiceLang = (bestVoice?.lang || '').toLowerCase();
+      const voiceName = (bestVoice?.name || '').toLowerCase();
+      const isNativeHindiVoice = voiceLang.startsWith('hi') || voiceName.includes('hindi') || voiceName.includes('swara') || voiceName.includes('heera') || voiceName.includes('kalpana') || voiceName.includes('madhur');
+      const isNativeBengaliVoice = voiceLang.startsWith('bn') || voiceName.includes('bengali') || voiceName.includes('bangla') || voiceName.includes('tanishaa');
+      const isNativeVoice = targetLanguage === 'hi' ? isNativeHindiVoice : (targetLanguage === 'bn' ? isNativeBengaliVoice : (voiceLang.startsWith(targetLanguage)));
+      const isEnglishVoice = !isNativeVoice;
+
+      let processedText = text;
+      // If the browser only has English voices installed, transliterate Indic script so the English TTS engine can pronounce it
+      if (isEnglishVoice && /[\u0900-\u09FF]/.test(text)) {
+        processedText = transliterateIndicToLatin(text);
+      }
+
+      const utterance = new SpeechSynthesisUtterance(processedText);
+
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+        utterance.lang = isEnglishVoice ? (bestVoice.lang || 'en-IN') : locale;
+      } else {
+        utterance.lang = locale;
+      }
+
+      utterance.rate = 0.90;
+      utterance.pitch = 1.02;
+      utterance.volume = 1.0;
+
+      window._neurosetu_active_utterance = utterance;
+
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (window._neurosetu_active_utterance === utterance) {
+          window._neurosetu_active_utterance = null;
+        }
+        if (currentSpeechSessionId === sessionId) {
+          if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+            try {
+              window.dispatchEvent(new CustomEvent('neurosetu:speech-stopped'));
+            } catch (e) {}
+          }
+        }
+        resolve({
+          success: true,
+          audioUrl: null,
+          isOffline: true,
+          provider: 'browser_web_speech'
+        });
+      };
+
+      utterance.onend = finish;
+      utterance.onerror = finish;
+
+      // Safety timeout: estimated speaking duration based on length
+      const estimatedDurationMs = Math.max(3000, Math.min(30000, processedText.length * 130));
+      setTimeout(finish, estimatedDurationMs);
+
+      // Speak after 20ms to allow cancel cycle to settle cleanly
+      currentSpeechTimeout = setTimeout(() => {
+        currentSpeechTimeout = null;
+        if (currentSpeechSessionId !== sessionId) {
+          finish();
+          return;
+        }
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.warn('[SpeechSynthesis] Speak call failed:', err);
+          finish();
+        }
+      }, 20);
+
+    } catch (e) {
+      console.warn('[SpeechSynthesis] Error speaking text:', e);
+      resolve({
+        success: true,
+        audioUrl: null,
+        isOffline: true,
+        provider: 'browser_web_speech'
+      });
+    }
+  });
 }
 
 /**
  * Synthesize Speech via Browser Web Speech API or Cloud TTS APIs
- * Supports: ElevenLabs, OpenAI, Google Cloud, Azure, Bhashini, with graceful browser fallback
+ * Supports: ElevenLabs, OpenAI, Google Cloud, Azure, Bhashini, with graceful browser fallback.
+ * Strictly guarantees only ONE audio/speech instance plays at any given time.
  */
 export async function synthesizeSpeech(text, targetLanguage = 'as') {
   if (!text) return { success: false };
 
+  // 1. Immediately cancel any currently active speech or audio across the entire application
+  stopAllSpeech();
+
+  const sessionId = ++currentSpeechSessionId;
+
+  // Dispatch speech-started event
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    try {
+      window.dispatchEvent(new CustomEvent('neurosetu:speech-started', {
+        detail: { text, targetLanguage, sessionId }
+      }));
+    } catch (e) {}
+  }
+
   const isOnline = typeof navigator === 'undefined' || navigator.onLine;
   const activeProvider = getActiveTTSProvider();
 
-  // 1. If online and a Cloud API key is configured, execute Cloud TTS
+  // 2. If online and a Cloud API key is configured, execute Cloud TTS
   if (isOnline && activeProvider !== 'browser_web_speech') {
     try {
       if (activeProvider === 'elevenlabs') {
-        return await synthesizeElevenLabs(text, targetLanguage);
+        return await synthesizeElevenLabs(text, targetLanguage, sessionId);
       }
       if (activeProvider === 'openai') {
-        return await synthesizeOpenAI(text, targetLanguage);
+        return await synthesizeOpenAI(text, targetLanguage, sessionId);
       }
       if (activeProvider === 'google') {
-        return await synthesizeGoogleCloud(text, targetLanguage);
+        return await synthesizeGoogleCloud(text, targetLanguage, sessionId);
       }
       if (activeProvider === 'azure') {
-        return await synthesizeAzure(text, targetLanguage);
+        return await synthesizeAzure(text, targetLanguage, sessionId);
       }
       if (activeProvider === 'bhashini') {
         const apiKey = getEnv('VITE_BHASHINI_API_KEY');
@@ -925,91 +1111,13 @@ export async function synthesizeSpeech(text, targetLanguage = 'as') {
         const base64Audio = data.pipelineResponse?.[0]?.audio?.[0]?.audioContent;
         const audioUrl = base64Audio ? `data:audio/wav;base64,${base64Audio}` : null;
 
-        if (audioUrl && typeof Audio !== 'undefined') {
-          const audio = new Audio(audioUrl);
-          audio.play().catch(() => {});
-        }
-
-        return {
-          success: true,
-          audioUrl,
-          isOffline: false,
-          provider: 'bhashini_cloud'
-        };
+        return await playAudioPromise(audioUrl, sessionId, 'bhashini_cloud');
       }
     } catch (cloudError) {
       console.warn(`[TTS] Cloud TTS provider (${activeProvider}) failed, falling back to Browser Web Speech:`, cloudError.message);
     }
   }
 
-  // 2. Browser Web Speech API fallback (zero keys required, natural tuning)
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    try {
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
-      window.speechSynthesis.cancel();
-
-      const bestVoice = getBestVoiceForLanguage(targetLanguage);
-      const locale = getSpeechLocale(targetLanguage);
-
-      const voiceLang = (bestVoice?.lang || '').toLowerCase();
-      const voiceName = (bestVoice?.name || '').toLowerCase();
-      const isNativeHindiVoice = voiceLang.startsWith('hi') || voiceName.includes('hindi') || voiceName.includes('swara') || voiceName.includes('heera') || voiceName.includes('kalpana') || voiceName.includes('madhur');
-      const isNativeBengaliVoice = voiceLang.startsWith('bn') || voiceName.includes('bengali') || voiceName.includes('bangla') || voiceName.includes('tanishaa');
-      const isNativeVoice = targetLanguage === 'hi' ? isNativeHindiVoice : (targetLanguage === 'bn' ? isNativeBengaliVoice : (voiceLang.startsWith(targetLanguage)));
-      const isEnglishVoice = !isNativeVoice;
-
-      let processedText = text;
-      // If the browser only has English voices installed, transliterate Indic script so the English TTS engine can pronounce it
-      if (isEnglishVoice && /[\u0900-\u09FF]/.test(text)) {
-        processedText = transliterateIndicToLatin(text);
-      }
-
-      const utterance = new SpeechSynthesisUtterance(processedText);
-
-      if (bestVoice) {
-        utterance.voice = bestVoice;
-        utterance.lang = isEnglishVoice ? (bestVoice.lang || 'en-IN') : locale;
-      } else {
-        utterance.lang = locale;
-      }
-
-      utterance.rate = 0.90;
-      utterance.pitch = 1.02;
-      utterance.volume = 1.0;
-
-      window._neurosetu_active_utterance = utterance;
-
-      utterance.onend = () => {
-        window._neurosetu_active_utterance = null;
-      };
-
-      utterance.onerror = (e) => {
-        console.warn('[SpeechSynthesis] Utterance error:', e);
-        window._neurosetu_active_utterance = null;
-      };
-
-      // Slight timeout prevents Chrome/Edge bug where cancel() immediately cancels immediate next speak()
-      setTimeout(() => {
-        try {
-          if (window.speechSynthesis.paused) {
-            window.speechSynthesis.resume();
-          }
-          window.speechSynthesis.speak(utterance);
-        } catch (err) {
-          console.warn('[SpeechSynthesis] Speak call failed:', err);
-        }
-      }, 50);
-    } catch (e) {
-      console.warn('[SpeechSynthesis] Error speaking text:', e);
-    }
-  }
-
-  return {
-    success: true,
-    audioUrl: null,
-    isOffline: true,
-    provider: 'browser_web_speech'
-  };
+  // 3. Fallback to Browser Web Speech API
+  return await playWebSpeechPromise(text, targetLanguage, sessionId);
 }
