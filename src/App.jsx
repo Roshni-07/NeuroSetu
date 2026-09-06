@@ -14,7 +14,9 @@ import GameWrapper from './components2/GameWrapper.jsx';
 import MemoryRecallGame from './components/games/MemoryRecallGame.jsx';
 import PatternMatchingGame from './components/games/PatternMatchingGame.jsx';
 import SequencingGame from './components/games/SequencingGame.jsx';
+import SpeakButton from './components2/SpeakButton.jsx';
 import { GAMES_CONFIG } from './data/gamesConfig.js';
+import { getLocalizedGame, getGameVoiceExplanation, getUIString } from './data/gamesLocalization.js';
 import { useAppRoute } from './router/AppRouter.jsx';
 import { getActiveSession, logout, hasConfiguredPin } from './services/authService.js';
 import {
@@ -288,6 +290,10 @@ export default function App() {
             <Hub
               games={GAMES_CONFIG}
               onSelectGame={(game) => setActiveSuiteGame(game)}
+              language={patientProfile?.language || 'en'}
+              onLanguageChange={(lang) => {
+                setPatientProfile(prev => ({ ...prev, language: lang }));
+              }}
             />
           </div>
         )
@@ -406,67 +412,109 @@ export default function App() {
                 {/* 3 Large Dementia-Accessible Quick Play Game Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Game 1: Memory Recall */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-teal-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center text-2xl mb-3 border border-teal-100 shadow-xs">
-                        🥁
+                  {(() => {
+                    const game1Loc = getLocalizedGame({ id: 'memory-recall-game', name: 'Cultural Memory Recall' }, patientProfile?.language || 'en');
+                    const voice1 = getGameVoiceExplanation('memory-recall-game', patientProfile?.language || 'en');
+                    return (
+                      <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-teal-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center text-2xl border border-teal-100 shadow-xs">
+                              🥁
+                            </div>
+                            <SpeakButton
+                              text={voice1}
+                              language={patientProfile?.language || 'en'}
+                              label={`${getUIString('voiceGuide', patientProfile?.language || 'en')}: ${game1Loc.name}`}
+                              className="bg-teal-50 border-teal-200 text-teal-800 text-xs px-2 py-1 h-8 rounded-xl shadow-xs"
+                            />
+                          </div>
+                          <h3 className="text-base font-bold text-slate-900">
+                            {game1Loc.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
+                            {game1Loc.subtitle}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveGame('memory')}
+                          className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
+                        >
+                          {isEn ? 'Play →' : `${game1Loc.name.split(' ')[0]} (Play) →`}
+                        </button>
                       </div>
-                      <h3 className="text-base font-bold text-slate-900">
-                        {isEn ? 'Cultural Memory Recall' : 'বিহু স্মৃতি খেল (Memory Recall)'}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
-                        {patientProfile.homeState} instruments & personal autobiographical cues with DDA.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveGame('memory')}
-                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
-                    >
-                      {isEn ? 'Play →' : 'খেলক (Play) →'}
-                    </button>
-                  </div>
+                    );
+                  })()}
 
                   {/* Game 2: Pattern Recognition */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-amber-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl mb-3 border border-amber-100 shadow-xs">
-                        🧵
+                  {(() => {
+                    const game2Loc = getLocalizedGame({ id: 'pattern-matching-game', name: 'Traditional Patterns' }, patientProfile?.language || 'en');
+                    const voice2 = getGameVoiceExplanation('pattern-matching-game', patientProfile?.language || 'en');
+                    return (
+                      <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-amber-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl border border-amber-100 shadow-xs">
+                              🧵
+                            </div>
+                            <SpeakButton
+                              text={voice2}
+                              language={patientProfile?.language || 'en'}
+                              label={`${getUIString('voiceGuide', patientProfile?.language || 'en')}: ${game2Loc.name}`}
+                              className="bg-amber-50 border-amber-200 text-amber-800 text-xs px-2 py-1 h-8 rounded-xl shadow-xs"
+                            />
+                          </div>
+                          <h3 className="text-base font-bold text-slate-900">
+                            {game2Loc.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
+                            {game2Loc.subtitle}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveGame('pattern')}
+                          className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
+                        >
+                          {isEn ? 'Play →' : `${game2Loc.name.split(' ')[0]} (Play) →`}
+                        </button>
                       </div>
-                      <h3 className="text-base font-bold text-slate-900">
-                        {isEn ? 'Traditional Patterns' : 'বস্ত্ৰ চানেকি'}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
-                        Traditional handloom patterns ({patientProfile.homeState} & NER weaves).
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveGame('pattern')}
-                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
-                    >
-                      {isEn ? 'Play →' : 'চানেকি (Play) →'}
-                    </button>
-                  </div>
+                    );
+                  })()}
 
                   {/* Game 3: Daily Routine Sequencing */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-400 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl mb-3 border border-slate-200 shadow-xs">
-                        ☕
+                  {(() => {
+                    const game3Loc = getLocalizedGame({ id: 'sequencing-game', name: 'Daily Routine Sequencing' }, patientProfile?.language || 'en');
+                    const voice3 = getGameVoiceExplanation('sequencing-game', patientProfile?.language || 'en');
+                    return (
+                      <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-400 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl border border-slate-200 shadow-xs">
+                              ☕
+                            </div>
+                            <SpeakButton
+                              text={voice3}
+                              language={patientProfile?.language || 'en'}
+                              label={`${getUIString('voiceGuide', patientProfile?.language || 'en')}: ${game3Loc.name}`}
+                              className="bg-slate-100 border-slate-300 text-slate-800 text-xs px-2 py-1 h-8 rounded-xl shadow-xs"
+                            />
+                          </div>
+                          <h3 className="text-base font-bold text-slate-900">
+                            {game3Loc.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
+                            {game3Loc.subtitle}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setActiveGame('sequencing')}
+                          className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
+                        >
+                          {isEn ? 'Play →' : `${game3Loc.name.split(' ')[0]} (Play) →`}
+                        </button>
                       </div>
-                      <h3 className="text-base font-bold text-slate-900">
-                        {isEn ? 'Daily Routine Sequencing' : 'দৈনন্দিন কৰ্ম ক্ৰম'}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
-                        Sequencing mapped to former background: {patientProfile.formerOccupation}.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveGame('sequencing')}
-                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
-                    >
-                      {isEn ? 'Play →' : 'ক্ৰম (Play) →'}
-                    </button>
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}

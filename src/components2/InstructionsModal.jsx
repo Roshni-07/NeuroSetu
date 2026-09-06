@@ -1,6 +1,7 @@
 import React from 'react';
 import { sounds } from '../utils/soundEffects.js';
 import SpeakButton from './SpeakButton.jsx';
+import { getUIString } from '../data/gamesLocalization.js';
 
 /**
  * InstructionsModal - Displayed before gameplay to orient elderly players
@@ -10,16 +11,18 @@ import SpeakButton from './SpeakButton.jsx';
  * - High contrast (dark slate text on soft warm background)
  * - Large 56px+ tap targets
  * - Clear, numbered steps with icons
+ * - One-touch Audio Explanation in user's active language
  */
 export default function InstructionsModal({
   isOpen = true,
   onClose,
-  title = 'How to Play',
+  title = '',
   gameName = '',
   culturalTag = '',
   steps = [],
-  tip = 'Take your time — there is no rush!',
-  language = 'en'
+  tip = '',
+  language = 'en',
+  voiceText = ''
 }) {
   if (!isOpen) return null;
 
@@ -27,6 +30,10 @@ export default function InstructionsModal({
     sounds.playGentleTap();
     onClose();
   };
+
+  const modalHeading = gameName || title || getUIString('howToPlay', language);
+  const modalTip = tip || getUIString('tipRelax', language);
+  const speechText = voiceText || `${modalHeading}. ${steps.join('. ')}. ${modalTip}`;
 
   return (
     <div
@@ -46,16 +53,17 @@ export default function InstructionsModal({
 
         {/* Game Title & Prompt */}
         <h2 id="modal-title" className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight">
-          {gameName || title}
+          {modalHeading}
         </h2>
-        <div className="flex items-center gap-2 mt-1">
-          <p className="text-base text-slate-600 font-medium">
-            Simple steps to guide your exercise:
+        <div className="flex items-center justify-between gap-2 mt-1">
+          <p className="text-sm sm:text-base text-slate-600 font-medium">
+            {getUIString('howToPlay', language)}:
           </p>
           <SpeakButton
-            text={`${gameName || title}. ${steps.join('. ')}. ${tip}`}
+            text={speechText}
             language={language}
-            label={language === 'en' ? 'Read instructions aloud' : 'নিৰ্দেশনা শুনক'}
+            label={getUIString('voiceGuide', language)}
+            className="bg-teal-50 border-teal-200 text-teal-800 hover:bg-teal-100 font-bold text-xs"
           />
         </div>
 
@@ -79,7 +87,7 @@ export default function InstructionsModal({
         {/* Reassuring Tip */}
         <div className="flex items-center space-x-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-medium text-sm mb-4">
           <span className="text-xl">🌸</span>
-          <span>{tip}</span>
+          <span>{modalTip}</span>
         </div>
 
         {/* Big Start Button */}
@@ -89,7 +97,7 @@ export default function InstructionsModal({
             onClick={handleStart}
             className="flex-1 min-h-[52px] px-5 py-3 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-3 cursor-pointer"
           >
-            <span>Start Playing</span>
+            <span>{getUIString('startPlaying', language)}</span>
             <span className="text-2xl">➔</span>
           </button>
         </div>
