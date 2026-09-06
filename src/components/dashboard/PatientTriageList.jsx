@@ -104,7 +104,7 @@ export default function PatientTriageList({
             onClick={() => setFilter('critical')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               filter === 'critical'
-                ? 'bg-white text-amber-800 shadow-soft font-semibold'
+                ? 'bg-white text-teal-800 shadow-soft font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -174,8 +174,8 @@ export default function PatientTriageList({
                       Urgent Home Visit
                     </span>
                   ) : patient.status === 'attention' ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
                       Needs Follow-up
                     </span>
                   ) : (
@@ -198,7 +198,7 @@ export default function PatientTriageList({
 
                 <div>
                   <span className="text-slate-400 text-[11px] block font-medium">Active Alerts</span>
-                  <span className={`font-semibold text-xs ${patient.activeAlerts > 0 ? 'text-amber-700 font-bold' : 'text-slate-800'}`}>
+                  <span className={`font-semibold text-xs ${patient.activeAlerts > 0 ? 'text-teal-700 font-bold' : 'text-slate-800'}`}>
                     {patient.activeAlerts} flag{patient.activeAlerts !== 1 ? 's' : ''}
                   </span>
                 </div>

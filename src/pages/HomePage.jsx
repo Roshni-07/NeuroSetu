@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export default function HomePage({
   onLaunchPatient = null,
   onLaunchDashboard = null,
+  onLaunchHub = null,
   onOpenSetup = null,
   initialLanguage = 'en',
   onLanguageChange = null
@@ -69,6 +70,16 @@ export default function HomePage({
               <option value="brx">🌾 बर’ (Bodo)</option>
             </select>
 
+            {onLaunchHub && (
+              <button
+                type="button"
+                onClick={onLaunchHub}
+                className="text-xs font-bold text-teal-300 bg-teal-950/60 border border-teal-600/50 hover:bg-teal-900/60 px-3 py-1.5 rounded-xl transition cursor-pointer"
+              >
+                🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
+              </button>
+            )}
+
             {onOpenSetup && (
               <button
                 type="button"
@@ -120,11 +131,21 @@ export default function HomePage({
 
         {/* Primary Call-to-Actions */}
         <div className="flex flex-wrap items-center justify-center gap-3.5 pt-3">
+          {onLaunchHub && (
+            <button
+              type="button"
+              onClick={onLaunchHub}
+              className="min-h-[50px] px-7 py-3.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white rounded-2xl text-sm font-bold shadow-lg hover:shadow-xl transition active:scale-95 flex items-center gap-2 cursor-pointer border border-teal-400/40"
+            >
+              <span>🌾 {isEn ? 'Play Cognitive Game Suite (15 Games)' : 'জ্ঞানীয় খেল শৃংখলা (১৫ খেল)'}</span>
+            </button>
+          )}
+
           {onLaunchPatient && (
             <button
               type="button"
               onClick={onLaunchPatient}
-              className="min-h-[50px] px-7 py-3.5 bg-teal-600 hover:bg-teal-500 text-white rounded-2xl text-sm font-bold shadow-soft hover:shadow-soft-lg transition active:scale-95 flex items-center gap-2"
+              className="min-h-[50px] px-7 py-3.5 bg-teal-600 hover:bg-teal-500 text-white rounded-2xl text-sm font-bold shadow-soft hover:shadow-soft-lg transition active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               <span>🎮 {isEn ? 'Launch Patient Experience' : 'ৰোগীৰ খেল আৰম্ভ কৰক'}</span>
             </button>
@@ -197,7 +218,7 @@ export default function HomePage({
 
             {/* Pillar 3: Cultural Reminiscence */}
             <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl space-y-2.5 shadow-soft">
-              <div className="w-10 h-10 rounded-xl bg-amber-950/80 text-amber-400 border border-amber-850 flex items-center justify-center text-xl">
+              <div className="w-10 h-10 rounded-xl bg-teal-950/80 text-teal-400 border border-teal-850 flex items-center justify-center text-xl">
                 🌾
               </div>
               <h3 className="font-bold text-white text-sm">8 NER State Traditions</h3>

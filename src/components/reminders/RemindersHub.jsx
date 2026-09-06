@@ -272,13 +272,13 @@ export default function RemindersHub({
           onClick={() => setActiveTab('activities')}
           className={`min-h-touch p-3 rounded-2xl border font-semibold text-xs flex flex-col items-center justify-center gap-1 transition-all ${
             activeTab === 'activities'
-              ? 'bg-amber-50/60 border-amber-600 text-amber-900 shadow-soft ring-1 ring-amber-600/30'
+              ? 'bg-teal-50/60 border-teal-600 text-teal-900 shadow-soft ring-1 ring-teal-600/30'
               : 'border-slate-200/80 hover:border-slate-300 bg-white text-slate-700'
           }`}
         >
           <span className="text-xl">🌿</span>
           <span>{isHi ? 'दिनचर्या' : (isEn ? 'Daily Routine' : 'দৈনন্দিন কাম')}</span>
-          <span className="text-[10px] text-amber-800 font-bold">
+          <span className="text-[10px] text-teal-800 font-bold">
             {reminders.activities.filter(a => a.completed).length}/{reminders.activities.length} {isHi ? 'पूर्ण' : (isEn ? 'Done' : 'সম্পূৰ্ণ')}
           </span>
         </button>
@@ -442,13 +442,13 @@ export default function RemindersHub({
                   onClick={() => handleToggleActivity(act.id)}
                   className={`w-full p-4 rounded-2xl border text-left flex items-center justify-between transition active:scale-[0.99] ${
                     act.completed
-                      ? 'bg-amber-50/60 border-amber-300 text-amber-950'
+                      ? 'bg-teal-50/60 border-teal-300 text-teal-950'
                       : 'bg-white border-slate-200 hover:border-slate-300 text-slate-800 shadow-soft'
                   }`}
                 >
                   <div className="flex items-center space-x-3.5">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-xs ${
-                      act.completed ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                      act.completed ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600'
                     }`}>
                       {act.completed ? '✓' : act.icon}
                     </div>
@@ -464,7 +464,7 @@ export default function RemindersHub({
 
                   <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${
                     act.completed
-                      ? 'bg-amber-700 text-white border-amber-800'
+                      ? 'bg-teal-700 text-white border-teal-800'
                       : 'bg-slate-100 text-slate-700 border-slate-200'
                   }`}>
                     {act.completed

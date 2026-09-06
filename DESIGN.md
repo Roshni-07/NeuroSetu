@@ -62,7 +62,7 @@ This doc covers both, explicitly separated.
 |---|---|---|
 | `--bg-canvas` | `#110F14` (confirmed from Senthora) | Page background |
 | `--surface-card` | `#1B1820` **[inferred]** | Cards, feature tiles |
-| `--accent-primary` | Warm gradient, amber→teal **[inferred — to be finalized]** | CTA buttons, highlights (tie to NER cultural motif: sunrise/textile colors rather than generic purple/blue SaaS gradient) |
+| `--accent-primary` | Warm gradient, teal→teal **[inferred — to be finalized]** | CTA buttons, highlights (tie to NER cultural motif: sunrise/textile colors rather than generic purple/blue SaaS gradient) |
 | `--text-primary` | `#F5F3F0` | Headlines |
 | `--text-secondary` | `#A8A2AE` | Subcopy |
 

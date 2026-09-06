@@ -35,8 +35,61 @@ button, a, input, select {
   touch-action: manipulation;
 }
 
+/* Keep game surfaces compact while preserving their explicit touch targets. */
+.game-surface .text-3xl {
+  font-size: 1.5rem;
+}
+
+.game-surface .text-2xl {
+  font-size: 1.25rem;
+}
+
+.game-surface .text-xl {
+  font-size: 1.05rem;
+}
+
+.game-surface .text-lg {
+  font-size: 0.95rem;
+}
+
+.game-surface .p-8 {
+  padding: 1.5rem;
+}
+
+.game-surface .p-6 {
+  padding: 1.25rem;
+}
+
+.game-surface .p-5 {
+  padding: 1.1rem;
+}
+
+.game-surface .gap-6 {
+  gap: 1.25rem;
+}
+
+.game-surface .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1.25rem;
+}
+
 /* Accessible focus ring style */
 :focus-visible {
   outline: 2px solid #0D9488;
   outline-offset: 2px;
 }
+
+/* 3D Card Flip Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+

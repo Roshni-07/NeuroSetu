@@ -4,14 +4,14 @@ import ProfileCheckModal from './components/auth/ProfileCheckModal.jsx';
 import PatientLayout from './layouts/PatientLayout.jsx';
 import SosEmergencyButton from './components/sos/SosEmergencyButton.jsx';
 import PatientOnboardingModal from './components/onboarding/PatientOnboardingModal.jsx';
-import MemoryRecallGame from './components/games/MemoryRecallGame.jsx';
-import PatternMatchingGame from './components/games/PatternMatchingGame.jsx';
-import SequencingGame from './components/games/SequencingGame.jsx';
 import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from './components/dashboard/PatientTriageList.jsx';
 import CognitiveTrendChart from './components/dashboard/CognitiveTrendChart.jsx';
 import SyncStatusPanel from './components/dashboard/SyncStatusPanel.jsx';
 import RemindersHub from './components/reminders/RemindersHub.jsx';
 import HomePage from './pages/HomePage.jsx';
+import Hub from './components2/Hub.jsx';
+import GameWrapper from './components2/GameWrapper.jsx';
+import { GAMES_CONFIG } from './data/gamesConfig.js';
 import { useAppRoute } from './router/AppRouter.jsx';
 import { getActiveSession, logout, hasConfiguredPin } from './services/authService.js';
 import {
@@ -37,6 +37,7 @@ export default function App() {
 
   // Active Game & Patient Section State
   const [activeGame, setActiveGame] = useState(null); // 'memory' | 'pattern' | 'sequencing' | null
+  const [activeSuiteGame, setActiveSuiteGame] = useState(null); // Game config object for 15-game suite
   const [patientSection, setPatientSection] = useState('games'); // 'games' | 'reminders'
 
   // Dashboard State
@@ -179,7 +180,7 @@ export default function App() {
                 setIsOnboardingInitialSignup(!hasConfiguredPin());
                 setIsOnboardingOpen(true);
               }}
-              className="text-amber-300 hover:text-amber-200 font-semibold transition"
+              className="text-teal-300 hover:text-teal-200 font-semibold transition"
             >
               👤 Setup / Edit Profile
             </button>
@@ -207,11 +208,10 @@ export default function App() {
         role="status"
         aria-live="polite"
         data-testid="network-status"
-        className={`w-full py-1.5 px-4 text-center font-semibold text-xs transition-colors shadow-xs ${
-          isOnline
-            ? 'bg-emerald-700 text-white'
-            : 'bg-amber-700 text-white'
-        }`}
+        className={`w-full py-1.5 px-4 text-center font-semibold text-xs transition-colors shadow-xs ${isOnline
+          ? 'bg-emerald-700 text-white'
+          : 'bg-teal-700 text-white'
+          }`}
       >
         {isOnline
           ? (isEn ? '● Online — Cloud Sync Ready' : '● অনলাইন — ক্লাউড ছিংক সাজু (Online — Cloud Sync Ready)')
@@ -223,6 +223,7 @@ export default function App() {
         <HomePage
           onLaunchPatient={handleLaunchPatient}
           onLaunchDashboard={() => navigateTo('dashboard')}
+          onLaunchHub={() => navigateTo('hub')}
           onOpenSetup={() => {
             setIsOnboardingInitialSignup(!hasConfiguredPin());
             setIsOnboardingOpen(true);
@@ -232,6 +233,61 @@ export default function App() {
             setPatientProfile(prev => ({ ...prev, language: lang }));
           }}
         />
+      )}
+
+      {/* Surface: Cognitive Training Game Suite Hub */}
+      {currentRoute === 'hub' && (
+        activeSuiteGame ? (
+          <GameWrapper
+            gameConfig={activeSuiteGame}
+            onBack={() => setActiveSuiteGame(null)}
+            language={patientProfile?.language || 'en'}
+          >
+            {activeSuiteGame.component ? (
+              React.createElement(activeSuiteGame.component, {
+                language: patientProfile?.language || 'en',
+                patientProfile
+              })
+            ) : (
+              <div className="p-8 text-center text-xl text-slate-700 bg-teal-50 rounded-2xl border-2 border-teal-200">
+                This game is planned for Phase 2!
+              </div>
+            )}
+          </GameWrapper>
+        ) : (
+          <div>
+            <div className="bg-stone-900 text-slate-200 px-4 py-2.5 text-xs flex flex-wrap justify-between items-center border-b border-stone-800">
+              <button
+                type="button"
+                onClick={() => navigateTo('home')}
+                className="text-teal-300 hover:text-white font-bold flex items-center gap-1.5 cursor-pointer text-sm"
+              >
+                <span>←</span>
+                <span>Return to NeuroSetu Portal</span>
+              </button>
+              <div className="flex gap-4 font-semibold">
+                <button
+                  type="button"
+                  onClick={() => navigateTo('patient')}
+                  className="hover:text-teal-300 cursor-pointer"
+                >
+                  Patient Care Hub
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('dashboard')}
+                  className="hover:text-teal-300 cursor-pointer"
+                >
+                  ASHA Telemetry Dashboard
+                </button>
+              </div>
+            </div>
+            <Hub
+              games={GAMES_CONFIG}
+              onSelectGame={(game) => setActiveSuiteGame(game)}
+            />
+          </div>
+        )
       )}
 
       {/* Surface 1: Patient Experience Shell (WCAG 2.1 AA) */}
@@ -267,31 +323,6 @@ export default function App() {
               />
             )}
 
-            {/* Active Game View */}
-            {patientSection === 'games' && activeGame === 'memory' && (
-              <MemoryRecallGame
-                profileId={session?.profileName || 'default_patient'}
-                patientProfile={patientProfile}
-                onExit={handleExitGame}
-              />
-            )}
-
-            {patientSection === 'games' && activeGame === 'pattern' && (
-              <PatternMatchingGame
-                profileId={session?.profileName || 'default_patient'}
-                patientProfile={patientProfile}
-                onExit={handleExitGame}
-              />
-            )}
-
-            {patientSection === 'games' && activeGame === 'sequencing' && (
-              <SequencingGame
-                profileId={session?.profileName || 'default_patient'}
-                patientProfile={patientProfile}
-                onExit={handleExitGame}
-              />
-            )}
-
             {/* Game Selection Hub */}
             {patientSection === 'games' && !activeGame && (
               <div className="space-y-6 animate-fade-in">
@@ -322,71 +353,28 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* 3 Large Dementia-Accessible Game Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Game 1: Memory Recall */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-teal-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center text-2xl mb-3 border border-teal-100 shadow-xs">
-                        🥁
-                      </div>
-                      <h3 className="text-base font-bold text-slate-900">
-                        {isEn ? 'Cultural Memory Recall' : 'বিহু স্মৃতি খেল (Memory Recall)'}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
-                        {patientProfile.homeState} instruments & personal autobiographical cues with DDA.
-                      </p>
+                {/* 15-Game Suite Banner */}
+                <div className="bg-gradient-to-r from-white via-teal-50 to-slate-100 rounded-3xl p-6 text-slate-900 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 border-2 border-teal-200">
+                  <div>
+                    <div className="text-xs uppercase tracking-widest font-bold text-teal-700">
+                      🌾 North-East India Cultural Suite
                     </div>
-                    <button
-                      onClick={() => setActiveGame('memory')}
-                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
-                    >
-                      {isEn ? 'Play →' : 'খেলক (Play) →'}
-                    </button>
+                    <h2 className="text-xl sm:text-2xl font-extrabold mt-1">
+                      15 Cognitive Training Games
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                      Explore Memory, Attention, Reasoning, Visual & Emotional Cognition exercises.
+                    </p>
                   </div>
-
-                  {/* Game 2: Pattern Recognition */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-amber-300 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl mb-3 border border-amber-100 shadow-xs">
-                        🧵
-                      </div>
-                      <h3 className="text-base font-bold text-slate-900">
-                        {isEn ? 'Traditional Patterns' : 'বস্ত্ৰ চানেকি'}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
-                        Traditional handloom patterns ({patientProfile.homeState} & NER weaves).
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveGame('pattern')}
-                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
-                    >
-                      {isEn ? 'Play →' : 'চানেকি (Play) →'}
-                    </button>
-                  </div>
-
-                  {/* Game 3: Daily Routine Sequencing */}
-                  <div className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-400 shadow-soft hover:shadow-soft-md flex flex-col justify-between transition-all">
-                    <div>
-                      <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl mb-3 border border-slate-200 shadow-xs">
-                        ☕
-                      </div>
-                      <h3 className="text-base font-bold text-slate-900">
-                        {isEn ? 'Daily Routine Sequencing' : 'দৈনন্দিন কৰ্ম ক্ৰম'}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed font-normal">
-                        Sequencing mapped to former background: {patientProfile.formerOccupation}.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveGame('sequencing')}
-                      className="min-h-[48px] w-full mt-4 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl transition-all shadow-soft active:scale-95 text-xs flex items-center justify-center gap-1"
-                    >
-                      {isEn ? 'Play →' : 'ক্ৰম (Play) →'}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('hub')}
+                    className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-sm shadow-md transition cursor-pointer shrink-0"
+                  >
+                    Open 15-Game Hub ➔
+                  </button>
                 </div>
+
               </div>
             )}
           </PatientLayout>
@@ -523,7 +511,7 @@ export default function App() {
                             <td className="py-2.5 font-semibold text-teal-700">{log.ddaAdjustment}</td>
                             <td className="py-2.5">
                               {log.alertFlag ? (
-                                <span className="bg-amber-50 text-amber-900 border border-amber-200/70 px-2 py-0.5 rounded-full text-[11px] font-semibold">ALERT</span>
+                                <span className="bg-teal-50 text-teal-900 border border-teal-200/70 px-2 py-0.5 rounded-full text-[11px] font-semibold">ALERT</span>
                               ) : (
                                 <span className="text-slate-400">Normal</span>
                               )}
@@ -532,7 +520,7 @@ export default function App() {
                               {log.isSynced ? (
                                 <span className="text-emerald-700 font-semibold">Synced ✓</span>
                               ) : (
-                                <span className="text-amber-800 bg-amber-50/70 border border-amber-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">Pending Sync</span>
+                                <span className="text-teal-800 bg-teal-50/70 border border-teal-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">Pending Sync</span>
                               )}
                             </td>
                           </tr>

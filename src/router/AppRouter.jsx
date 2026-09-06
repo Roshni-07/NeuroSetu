@@ -11,8 +11,9 @@ import React, { useState, useEffect } from 'react';
 export function useAppRoute() {
   const getRouteFromHash = () => {
     const hash = window.location.hash.toLowerCase();
+    if (hash.includes('hub') || hash.includes('suite') || hash.includes('games')) return 'hub';
     if (hash.includes('dashboard')) return 'dashboard';
-    if (hash.includes('patient') || hash.includes('games')) return 'patient';
+    if (hash.includes('patient')) return 'patient';
     // Default route on first visit, refresh on '/', or '#/home'
     return 'home';
   };
@@ -29,7 +30,8 @@ export function useAppRoute() {
   }, []);
 
   const navigateTo = (route) => {
-    if (route === 'dashboard') window.location.hash = '#/dashboard';
+    if (route === 'hub' || route === 'games') window.location.hash = '#/hub';
+    else if (route === 'dashboard') window.location.hash = '#/dashboard';
     else if (route === 'patient') window.location.hash = '#/patient';
     else window.location.hash = '#/home';
     setCurrentRoute(route);

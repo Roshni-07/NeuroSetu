@@ -70,10 +70,10 @@ export default function SyncStatusPanel({
           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
             isOnline
               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80'
-              : 'bg-amber-50 text-amber-800 border border-amber-200/80'
+              : 'bg-teal-50 text-teal-800 border border-teal-200/80'
           }`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-600' : 'bg-amber-600'}`}></span>
+          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-600' : 'bg-teal-600'}`}></span>
           {isOnline ? '● Online (Cloud Reachable)' : '● Offline (IndexedDB Active)'}
         </span>
       </div>

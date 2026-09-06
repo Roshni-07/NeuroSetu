@@ -157,7 +157,7 @@ export default function PinAuthModal({
         {/* Gentle Feedback Message / Lockout Alert */}
         <div className="min-h-[32px] mb-4 flex items-center justify-center">
           {lockoutRemaining > 0 ? (
-            <p className="text-xs font-semibold text-amber-900 bg-amber-50/80 py-1.5 px-3 rounded-xl border border-amber-200/70">
+            <p className="text-xs font-semibold text-teal-900 bg-teal-50/80 py-1.5 px-3 rounded-xl border border-teal-200/70">
               ⏳ Locked for {lockoutRemaining}s. Take a breath and wait.
             </p>
           ) : errorMsg ? (

@@ -152,7 +152,7 @@ export default function CognitiveTrendChart({
         <p className="text-slate-600">
           • <strong className="text-slate-800">Sessions 1–3:</strong> Normal response range (4.2s–7.8s) with Tier 2 task difficulty maintained.
         </p>
-        <p className="text-amber-900 font-medium">
+        <p className="text-teal-900 font-medium">
           • <strong>Session 4:</strong> Marked delay spike (16.4s) and 2 errors. DDA engine intervened silently to lower difficulty to Tier 1.
         </p>
         <p className="text-teal-900 font-medium">

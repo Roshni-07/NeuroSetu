@@ -25,8 +25,8 @@ export default {
           'terracotta-light': '#FFF7ED',
           success: '#059669', // Muted sage/emerald
           'success-light': '#ECFDF5',
-          amber: '#D97706',
-          'amber-light': '#FFFBEB',
+          teal: '#D97706',
+          'teal-light': '#FFFBEB',
           rose: '#E11D48',
           'rose-light': '#FFF1F2',
           hint: '#475569',
