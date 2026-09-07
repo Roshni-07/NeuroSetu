@@ -10,12 +10,17 @@ import React, { useState, useEffect } from 'react';
  */
 export function useAppRoute() {
   const getRouteFromHash = () => {
-    const hash = window.location.hash.toLowerCase();
-    if (hash.includes('hub') || hash.includes('suite') || hash.includes('games')) return 'hub';
-    if (hash.includes('dashboard')) return 'dashboard';
-    if (hash.includes('patient')) return 'patient';
-    // Default route on first visit, refresh on '/', or '#/home'
-    return 'home';
+    const rawHash = window.location.hash || '';
+    const hash = rawHash.toLowerCase().replace(/^#\/?/, '').trim();
+
+    // Default route on first visit, root '/', or '#/home'
+    if (!hash || hash === 'home') return 'home';
+    if (hash === 'hub' || hash === 'suite' || hash === 'games') return 'hub';
+    if (hash === 'dashboard') return 'dashboard';
+    if (hash === 'patient') return 'patient';
+
+    // Unrecognized route
+    return 'not-found';
   };
 
   const [currentRoute, setCurrentRoute] = useState(getRouteFromHash());
@@ -33,6 +38,7 @@ export function useAppRoute() {
     if (route === 'hub' || route === 'games') window.location.hash = '#/hub';
     else if (route === 'dashboard') window.location.hash = '#/dashboard';
     else if (route === 'patient') window.location.hash = '#/patient';
+    else if (route === 'not-found') window.location.hash = '#/404';
     else window.location.hash = '#/home';
     setCurrentRoute(route);
   };
