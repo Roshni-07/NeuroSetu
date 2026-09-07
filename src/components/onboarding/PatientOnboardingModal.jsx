@@ -12,7 +12,7 @@ export default function PatientOnboardingModal({
   initialProfile = null
 }) {
   const [step, setStep] = useState(1);
-  const maxSteps = isInitialSignup ? 5 : 4;
+  const maxSteps = isInitialSignup ? 6 : 5;
 
   const [formData, setFormData] = useState({
     id: initialProfile?.id || `patient_${Date.now()}`,
@@ -26,52 +26,88 @@ export default function PatientOnboardingModal({
     formerOccupation: initialProfile?.formerOccupation || 'farmer',
     favoriteFestival: initialProfile?.favoriteFestival || '',
     favoriteFood: initialProfile?.favoriteFood || '',
+    dailyRoutine: initialProfile?.dailyRoutine && initialProfile.dailyRoutine.length >= 4
+      ? initialProfile.dailyRoutine
+      : [
+          { id: 'act_1', label: 'পুৱাৰ চাহ (Morning Chai)', time: 'Dawn (6:00 AM)', icon: '☕' },
+          { id: 'act_2', label: 'বাৰীত ফুৰা (Garden Walk & Flowers)', time: 'Early Morning (7:30 AM)', icon: '🌿' },
+          { id: 'act_3', label: 'দৰব গ্ৰহণ (Morning Medicine)', time: 'Forenoon (9:00 AM)', icon: '💊' },
+          { id: 'act_4', label: 'দুপৰীয়াৰ আহাৰ (Midday Lunch)', time: 'Afternoon (1:00 PM)', icon: '🍲' },
+          { id: 'act_5', label: 'ৰাতিৰ বিশ্ৰাম (Night Rest & Sleep)', time: 'Night (9:00 PM)', icon: '🌙' }
+        ],
+    starting_difficulty_tier: initialProfile?.starting_difficulty_tier || 1,
     pin: '',
     confirmPin: ''
   });
 
   const [validationError, setValidationError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   if (!isOpen) return null;
 
   const handleNext = () => {
     setValidationError('');
+    setFieldErrors({});
+    const errors = {};
+
     if (step === 1) {
       if (!formData.name.trim()) {
-        setValidationError('অনুগ্ৰহ কৰি ৰোগীৰ নামটো দিয়ক (Please enter patient name)');
-        return;
+        errors.name = 'অনুগ্ৰহ কৰি ৰোগীৰ নামটো দিয়ক (Please enter patient name)';
       }
       if (!formData.villageTown.trim()) {
-        setValidationError('অনুগ্ৰহ কৰি গৃহগাঁও বা চহৰৰ নাম দিয়ক (Please enter village/town)');
-        return;
+        errors.villageTown = 'অনুগ্ৰহ কৰি গৃহগাঁও বা চহৰৰ নাম দিয়ক (Please enter village/town)';
       }
     } else if (step === 2) {
       if (!formData.familyMemberName.trim()) {
-        setValidationError('অনুগ্ৰহ কৰি এজন পৰিয়ালৰ সদস্যৰ নাম দিয়ক (Please enter family member name)');
-        return;
+        errors.familyMemberName = 'অনুগ্ৰহ কৰি এজন পৰিয়ালৰ সদস্যৰ নাম দিয়ক (Please enter family member name)';
+      }
+    } else if (step === 5) {
+      if (!formData.dailyRoutine || formData.dailyRoutine.length < 4 || formData.dailyRoutine.length > 6) {
+        errors.dailyRoutine = 'অনুগ্ৰহ কৰি ৪ৰ পৰা ৬টা দৈনন্দিন কাৰ্যসূচী ৰাখক (Please maintain 4 to 6 daily routine activities)';
+      } else if (formData.dailyRoutine.some(act => !act.label.trim())) {
+        errors.dailyRoutine = 'অনুগ্ৰহ কৰি সকলো কাৰ্যৰ বিৱৰণ দিয়ক (Please provide description for each routine activity)';
       }
     }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setValidationError(Object.values(errors)[0]);
+      return;
+    }
+
     setStep(prev => Math.min(maxSteps, prev + 1));
   };
 
   const handleBack = () => {
     setValidationError('');
+    setFieldErrors({});
     setStep(prev => Math.max(1, prev - 1));
   };
 
   const handleSaveProfile = async () => {
     setValidationError('');
+    setFieldErrors({});
+    const errors = {};
 
-    // If initial signup, validate PIN setup in Step 5
+    // Validate daily routine
+    if (!formData.dailyRoutine || formData.dailyRoutine.length < 4 || formData.dailyRoutine.length > 6) {
+      errors.dailyRoutine = 'অনুগ্ৰহ কৰি ৪ৰ পৰা ৬টা দৈনন্দিন কাৰ্যসূচী ৰাখক (Please maintain 4 to 6 daily routine activities)';
+    }
+
+    // If initial signup, validate PIN setup in Step 6
     if (isInitialSignup) {
       if (!validatePinFormat(formData.pin)) {
-        setValidationError('পিনটো ঠিক ৪টা সংখ্যা হ’ব লাগিব (PIN must be exactly 4 numeric digits)');
-        return;
+        errors.pin = 'পিনটো ঠিক ৪টা সংখ্যা হ’ব লাগিব (PIN must be exactly 4 numeric digits)';
       }
       if (formData.pin !== formData.confirmPin) {
-        setValidationError('দুয়োটা পিন মিল খোৱা নাই (PINs do not match)');
-        return;
+        errors.confirmPin = 'দুয়োটা পিন মিল খোৱা নাই (PINs do not match)';
       }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setValidationError(Object.values(errors)[0]);
+      return;
     }
 
     const profileToSave = {
@@ -89,7 +125,15 @@ export default function PatientOnboardingModal({
       ],
       formerOccupation: formData.formerOccupation,
       favoriteFestival: formData.favoriteFestival.trim() || 'Traditional Festival',
-      favoriteFood: formData.favoriteFood.trim() || 'Regional Food'
+      favoriteFood: formData.favoriteFood.trim() || 'Regional Food',
+      starting_difficulty_tier: Number(formData.starting_difficulty_tier) || 1,
+      dailyRoutine: (formData.dailyRoutine || []).map((item, idx) => ({
+        id: item.id || `routine_${idx + 1}`,
+        label: item.label.trim(),
+        time: item.time ? item.time.trim() : `Step ${idx + 1}`,
+        icon: item.icon || '🗓️',
+        correctSlot: `slot_${idx + 1}`
+      }))
     };
 
     await saveProfile(profileToSave);
@@ -110,7 +154,7 @@ export default function PatientOnboardingModal({
       aria-labelledby="onboarding-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in"
     >
-      <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft-xl space-y-6 animate-slide-up">
+      <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-soft-xl space-y-6 animate-slide-up">
         {/* Header & Step Indicator */}
         <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
           <div>
@@ -122,7 +166,8 @@ export default function PatientOnboardingModal({
               {step === 2 && '২. পৰিয়ালৰ সদস্য (Family Ties)'}
               {step === 3 && '৩. পূৰ্বৰ জীৱিকা (Life Background)'}
               {step === 4 && '৪. প্ৰিয় উৎসৱ আৰু খাদ্য (Cultural Anchors)'}
-              {step === 5 && '৫. ৪-সংখ্যাৰ পিন নিৰ্ধাৰণ (Set 4-Digit Security PIN)'}
+              {step === 5 && '৫. দৈনন্দিন কাৰ্যসূচী (Elder\'s Daily Routine)'}
+              {step === 6 && '৬. ৪-সংখ্যাৰ পিন নিৰ্ধাৰণ (Set 4-Digit Security PIN)'}
             </h2>
           </div>
           <span className="text-xs font-bold px-3 py-1 bg-teal-50 text-teal-700 rounded-xl border border-teal-200/70 shrink-0">
@@ -148,10 +193,23 @@ export default function PatientOnboardingModal({
                 id="patient-name"
                 type="text"
                 value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                onChange={e => {
+                  setFormData({ ...formData, name: e.target.value });
+                  if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: '' }));
+                }}
                 placeholder="e.g. Bhaben Kalita"
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition"
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition ${
+                  fieldErrors.name
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               />
+              {fieldErrors.name && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.name}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -178,10 +236,23 @@ export default function PatientOnboardingModal({
                 id="patient-village"
                 type="text"
                 value={formData.villageTown}
-                onChange={e => setFormData({ ...formData, villageTown: e.target.value })}
+                onChange={e => {
+                  setFormData({ ...formData, villageTown: e.target.value });
+                  if (fieldErrors.villageTown) setFieldErrors(prev => ({ ...prev, villageTown: '' }));
+                }}
                 placeholder="e.g. Sualkuchi / Hajo / Reiek"
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition"
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition ${
+                  fieldErrors.villageTown
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               />
+              {fieldErrors.villageTown && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.villageTown}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -222,10 +293,23 @@ export default function PatientOnboardingModal({
                 id="family-name"
                 type="text"
                 value={formData.familyMemberName}
-                onChange={e => setFormData({ ...formData, familyMemberName: e.target.value })}
+                onChange={e => {
+                  setFormData({ ...formData, familyMemberName: e.target.value });
+                  if (fieldErrors.familyMemberName) setFieldErrors(prev => ({ ...prev, familyMemberName: '' }));
+                }}
                 placeholder="e.g. Rumi / Dipak"
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition"
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition ${
+                  fieldErrors.familyMemberName
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               />
+              {fieldErrors.familyMemberName && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.familyMemberName}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -317,8 +401,125 @@ export default function PatientOnboardingModal({
           </div>
         )}
 
-        {/* Step 5 (Only during initial signup): Set 4-Digit Security PIN */}
-        {step === 5 && isInitialSignup && (
+        {/* Step 5: Elder's Daily Routine (4-6 Ordered Activities) */}
+        {step === 5 && (
+          <div className="space-y-4 text-left">
+            <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-2xl text-xs text-teal-900 leading-relaxed">
+              🗓️ <strong>দৈনন্দিন ক্ৰম নিৰ্ধাৰণ (Daily Rhythm Setup):</strong> বৃদ্ধ সদস্যজনৰ প্ৰকৃত দিনটোৰ ৪-৬টা নিয়মীয়া কাম নিৰ্বাচন বা সম্পাদনা কৰক। এই ক্ৰমটো তেওঁৰ ব্যক্তিগত স্মৃতি-ক্ৰম খেলত ব্যৱহাৰ হ’ব। (Capture the elder's actual 4–6 daily activities to personalize their Daily Routine Recall game.)
+            </div>
+
+            <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+              {formData.dailyRoutine.map((item, idx) => (
+                <div
+                  key={item.id || idx}
+                  className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl"
+                >
+                  <span className="w-6 h-6 rounded-full bg-teal-700 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                    {idx + 1}
+                  </span>
+                  <span className="text-xl shrink-0">{item.icon || '⏰'}</span>
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="text"
+                      value={item.label}
+                      onChange={(e) => {
+                        const updated = [...formData.dailyRoutine];
+                        updated[idx] = { ...updated[idx], label: e.target.value };
+                        setFormData({ ...formData, dailyRoutine: updated });
+                      }}
+                      placeholder="Activity (e.g. Morning Tea)"
+                      aria-label={`Routine activity ${idx + 1}`}
+                      className="w-full min-h-[36px] px-3 py-1 bg-white border border-slate-200 focus:border-teal-600 rounded-xl text-xs font-bold text-slate-900 focus-visible:outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={item.time || ''}
+                      onChange={(e) => {
+                        const updated = [...formData.dailyRoutine];
+                        updated[idx] = { ...updated[idx], time: e.target.value };
+                        setFormData({ ...formData, dailyRoutine: updated });
+                      }}
+                      placeholder="Approximate Time (e.g. 7:00 AM)"
+                      aria-label={`Routine time ${idx + 1}`}
+                      className="w-full min-h-[30px] px-3 py-0.5 bg-white border border-slate-200 focus:border-teal-600 rounded-xl text-[11px] text-slate-600 focus-visible:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => {
+                        const updated = [...formData.dailyRoutine];
+                        const temp = updated[idx - 1];
+                        updated[idx - 1] = updated[idx];
+                        updated[idx] = temp;
+                        setFormData({ ...formData, dailyRoutine: updated });
+                      }}
+                      aria-label={`Move activity ${idx + 1} up`}
+                      className="w-7 h-7 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === formData.dailyRoutine.length - 1}
+                      onClick={() => {
+                        const updated = [...formData.dailyRoutine];
+                        const temp = updated[idx + 1];
+                        updated[idx + 1] = updated[idx];
+                        updated[idx] = temp;
+                        setFormData({ ...formData, dailyRoutine: updated });
+                      }}
+                      aria-label={`Move activity ${idx + 1} down`}
+                      className="w-7 h-7 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={formData.dailyRoutine.length <= 4}
+                    onClick={() => {
+                      if (formData.dailyRoutine.length <= 4) return;
+                      const updated = formData.dailyRoutine.filter((_, i) => i !== idx);
+                      setFormData({ ...formData, dailyRoutine: updated });
+                    }}
+                    aria-label={`Remove activity ${idx + 1}`}
+                    className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center shrink-0 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {formData.dailyRoutine.length < 6 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (formData.dailyRoutine.length >= 6) return;
+                  const newActivity = {
+                    id: `act_${Date.now()}`,
+                    label: '',
+                    time: '',
+                    icon: '⏰'
+                  };
+                  setFormData({
+                    ...formData,
+                    dailyRoutine: [...formData.dailyRoutine, newActivity]
+                  });
+                }}
+                className="w-full min-h-[44px] py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>＋</span>
+                <span>নতুন কাৰ্য যোগ কৰক (Add Routine Activity — {formData.dailyRoutine.length}/6)</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Step 6 (Only during initial signup): Set 4-Digit Security PIN */}
+        {step === 6 && isInitialSignup && (
           <div className="space-y-4 text-left">
             <div className="p-3.5 bg-teal-50/60 border border-teal-200/70 rounded-2xl text-xs text-teal-900">
               🔑 <strong>সুৰক্ষা পিন নিৰ্ধাৰণ (Create Security PIN):</strong> ৰোগীৰ পৰিচয় আৰু তথ্যৰ সুৰক্ষাৰ বাবে এটা সহজ ৪-সংখ্যাৰ পিন নিৰ্বাচন কৰক। (Set a simple 4-digit PIN to lock and protect this profile.)
@@ -333,10 +534,23 @@ export default function PatientOnboardingModal({
                 type="password"
                 maxLength={4}
                 value={formData.pin}
-                onChange={e => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '') })}
+                onChange={e => {
+                  setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '') });
+                  if (fieldErrors.pin) setFieldErrors(prev => ({ ...prev, pin: '' }));
+                }}
                 placeholder="••••"
-                className="w-full min-h-[48px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-center text-2xl tracking-widest font-mono font-bold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition"
+                className={`w-full min-h-[48px] px-4 py-2 rounded-xl text-center text-2xl tracking-widest font-mono font-bold text-slate-900 focus-visible:outline-none transition ${
+                  fieldErrors.pin
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               />
+              {fieldErrors.pin && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center justify-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.pin}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -348,10 +562,23 @@ export default function PatientOnboardingModal({
                 type="password"
                 maxLength={4}
                 value={formData.confirmPin}
-                onChange={e => setFormData({ ...formData, confirmPin: e.target.value.replace(/\D/g, '') })}
+                onChange={e => {
+                  setFormData({ ...formData, confirmPin: e.target.value.replace(/\D/g, '') });
+                  if (fieldErrors.confirmPin) setFieldErrors(prev => ({ ...prev, confirmPin: '' }));
+                }}
                 placeholder="••••"
-                className="w-full min-h-[48px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-center text-2xl tracking-widest font-mono font-bold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition"
+                className={`w-full min-h-[48px] px-4 py-2 rounded-xl text-center text-2xl tracking-widest font-mono font-bold text-slate-900 focus-visible:outline-none transition ${
+                  fieldErrors.confirmPin
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               />
+              {fieldErrors.confirmPin && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center justify-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.confirmPin}</span>
+                </p>
+              )}
             </div>
           </div>
         )}

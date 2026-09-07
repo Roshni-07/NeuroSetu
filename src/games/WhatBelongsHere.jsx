@@ -19,7 +19,7 @@ const HOMESTEAD_OBJECTS = [
   { id: 'japi', label: 'Farmer Japi Hat', icon: '👒', correctZone: 'courtyard' }
 ];
 
-export default function WhatBelongsHere({ onComplete, language = 'en' }) {
+export default function WhatBelongsHere({ onComplete, onExit, language = 'en' }) {
   const [assignments, setAssignments] = useState({});
 
   const handleAssign = (itemId, zoneId) => {
@@ -65,6 +65,19 @@ export default function WhatBelongsHere({ onComplete, language = 'en' }) {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
+      {onExit && (
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       <div className="p-4 rounded-2xl bg-teal-50 border-2 border-teal-300 flex items-center justify-between">
         <div>
           <h3 className="text-xl sm:text-2xl font-bold text-slate-900">

@@ -57,10 +57,10 @@ describe('App Entry Flow: Home First, Device Check & Gated Routing', () => {
     const registerBtn = screen.getByRole('button', { name: /নতুন ৰোগীৰ পঞ্জীয়ন আৰম্ভ কৰক/i });
     fireEvent.click(registerBtn);
 
-    // Routes into 5-step PatientOnboardingModal
+    // Routes into 6-step PatientOnboardingModal (including daily routine step)
     await waitFor(() => {
       expect(screen.getByText(/১\. আঞ্চলিক পৰিচয়/i)).toBeInTheDocument();
-      expect(screen.getByText(/1 \/ 5/i)).toBeInTheDocument();
+      expect(screen.getByText(/1 \/ 6/i)).toBeInTheDocument();
     });
   });
 

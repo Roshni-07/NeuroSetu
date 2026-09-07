@@ -99,3 +99,10 @@ export function evaluateDifficulty(currentTier = 1, {
     alertTriggered: false
   };
 }
+
+export {
+  assignDailyGames,
+  COGNITIVE_DOMAINS,
+  resolvePatientStartingTier
+} from './dailyAssignmentEngine.js';
+

@@ -38,7 +38,7 @@ const BASKET_MISSIONS = [
   }
 ];
 
-export default function PackVillageBasket({ onComplete, language = 'en' }) {
+export default function PackVillageBasket({ onComplete, onExit, language = 'en' }) {
   const [missionIndex, setMissionIndex] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -85,6 +85,19 @@ export default function PackVillageBasket({ onComplete, language = 'en' }) {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+      {onExit && (
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       {/* Task Prompt Card */}
       <div className="p-5 sm:p-6 rounded-3xl bg-teal-50 border-3 border-teal-300 shadow-sm space-y-2">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-teal-200 text-teal-950 text-sm font-bold uppercase tracking-wider">

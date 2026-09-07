@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import MapRoute from '../shared/MapRoute.jsx';
 import { sounds } from '../utils/soundEffects.js';
+import { evaluateDifficulty } from '../engine/ddaEngine.js';
 
 /**
  * Game 10 — Memory Map of Home (Memory)
  * Uses MapRoute. Shows a path through a village/home map; player then taps nodes in order.
+ * Difficulty is dynamically seeded by starting_difficulty_tier / clinical status,
+ * and adjusted in real time via ddaEngine without manual selector exposure.
  */
 
 const MAP_NODES = [
@@ -27,20 +30,72 @@ const MAP_CONNECTIONS = [
 
 // Three difficulty sequences (subsets of nodes, different lengths)
 const SEQUENCES = [
-  ['well', 'garden', 'kitchen'],       // Easy: 3 nodes
-  ['well', 'garden', 'bedroom', 'porch'],   // Medium: 4
-  ['well', 'garden', 'kitchen', 'bedroom', 'porch'], // Hard: 5
+  ['well', 'garden', 'kitchen'],       // Tier 1: 3 nodes
+  ['well', 'garden', 'bedroom', 'porch'],   // Tier 2: 4 nodes
+  ['well', 'garden', 'kitchen', 'bedroom', 'porch'], // Tier 3: 5 nodes
 ];
 
-export default function MemoryMapHome({ onComplete, language = 'en' }) {
-  const [levelIndex, setLevelIndex] = useState(0);
+export default function MemoryMapHome({
+  onComplete,
+  onExit,
+  language = 'en',
+  patientProfile = null,
+  startingTier = null
+}) {
+  const initialTier = useMemo(() => {
+    if (startingTier && [1, 2, 3].includes(Number(startingTier))) {
+      return Number(startingTier);
+    }
+    if (patientProfile?.starting_difficulty_tier && [1, 2, 3].includes(Number(patientProfile.starting_difficulty_tier))) {
+      return Number(patientProfile.starting_difficulty_tier);
+    }
+    if (patientProfile?.startingTier && [1, 2, 3].includes(Number(patientProfile.startingTier))) {
+      return Number(patientProfile.startingTier);
+    }
+    if (patientProfile?.status === 'critical') return 1;
+    if (patientProfile?.status === 'attention') return 2;
+    if (patientProfile?.status === 'stable') return 3;
+    return 1;
+  }, [startingTier, patientProfile]);
+
+  const [currentTier, setCurrentTier] = useState(initialTier);
   const [phase, setPhase] = useState('idle'); // 'idle' | 'show' | 'select' | 'done'
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
   const [attempts, setAttempts] = useState(0);
-  const [success, setSuccess] = useState(false);
+  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  const [consecutiveSuccesses, setConsecutiveSuccesses] = useState(0);
+  const [turnStartTime, setTurnStartTime] = useState(null);
+  const [ddaNotice, setDdaNotice] = useState(null);
 
+  useEffect(() => {
+    setCurrentTier(initialTier);
+  }, [initialTier]);
+
+  const levelIndex = Math.min(Math.max(currentTier - 1, 0), 2);
   const sequence = SEQUENCES[levelIndex];
+
+  // Monitor latency in select phase; gently reduce if > 15s
+  useEffect(() => {
+    if (phase !== 'select') return;
+    const timer = setTimeout(() => {
+      if (currentTier > 1) {
+        const decision = evaluateDifficulty(currentTier, {
+          consecutiveErrors: 0,
+          latencyMs: 16000,
+          consecutiveSuccesses: 0
+        });
+        if (decision.action === 'decreased') {
+          setCurrentTier(decision.newTier);
+          setConsecutiveErrors(0);
+          setDdaNotice(`Adjusted path to ${SEQUENCES[decision.newTier - 1].length} locations for comfort.`);
+          setPhase('show');
+          setGameKey(k => k + 1);
+        }
+      }
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [phase, currentTier, gameKey]);
 
   const instructions = `A character walks through your village home. Watch the path carefully!
 
@@ -51,14 +106,60 @@ Start from the first place and follow the journey step by step.`;
   const handleStart = () => {
     setPhase('show');
     setAttempts(a => a + 1);
+    setDdaNotice(null);
   };
 
   const handleShowDone = () => {
     sounds.playEncouragingSoft();
+    setTurnStartTime(Date.now());
     setPhase('select');
   };
 
+  const handleError = () => {
+    const nextErrors = consecutiveErrors + 1;
+    setConsecutiveErrors(nextErrors);
+    setConsecutiveSuccesses(0);
+    const latency = turnStartTime ? Date.now() - turnStartTime : 0;
+
+    const decision = evaluateDifficulty(currentTier, {
+      consecutiveErrors: nextErrors,
+      latencyMs: latency,
+      consecutiveSuccesses: 0
+    });
+
+    if (decision.action === 'decreased') {
+      setCurrentTier(decision.newTier);
+      setConsecutiveErrors(0);
+      setDdaNotice(`Adjusted path to ${SEQUENCES[decision.newTier - 1].length} locations for comfort.`);
+      setTimeout(() => {
+        setPhase('show');
+        setGameKey(k => k + 1);
+      }, 700);
+    }
+  };
+
+  const handleStep = () => {
+    setConsecutiveErrors(0);
+  };
+
   const handleSequenceComplete = ({ correct, total }) => {
+    const latency = turnStartTime ? Date.now() - turnStartTime : 0;
+    const isPerfect = correct === total && consecutiveErrors === 0;
+    const nextSuccesses = isPerfect ? consecutiveSuccesses + 1 : 0;
+    setConsecutiveSuccesses(nextSuccesses);
+    setConsecutiveErrors(0);
+
+    const decision = evaluateDifficulty(currentTier, {
+      consecutiveErrors: 0,
+      latencyMs: latency,
+      consecutiveSuccesses: nextSuccesses
+    });
+
+    if (decision.action === 'increased') {
+      setCurrentTier(decision.newTier);
+      setDdaNotice(`Wonderful mastery! Next journey will explore ${SEQUENCES[decision.newTier - 1].length} locations.`);
+    }
+
     const accuracy = Math.round((correct / total) * 100);
     const score = Math.max(30, accuracy - (attempts - 1) * 15);
     const message = accuracy === 100
@@ -67,8 +168,11 @@ Start from the first place and follow the journey step by step.`;
     const res = {
       score: Math.min(100, score),
       maxScore: 100,
+      accuracy,
       message,
-      subtext: `Completed path with ${correct}/${total} steps correct.`
+      subtext: `Completed Tier ${currentTier} path with ${correct}/${total} steps correct.`,
+      tier: currentTier,
+      ddaDecision: decision
     };
     setResult(res);
     setPhase('done');
@@ -80,6 +184,9 @@ Start from the first place and follow the journey step by step.`;
     setPhase('idle');
     setGameKey(k => k + 1);
     setAttempts(0);
+    setConsecutiveErrors(0);
+    setTurnStartTime(null);
+    setDdaNotice(null);
   };
 
   return (
@@ -91,24 +198,27 @@ Start from the first place and follow the journey step by step.`;
       result={result}
       onRetry={handleRetry}
       onComplete={onComplete}
+      onBack={onExit}
     >
-      {/* Level selector */}
-      <div className="flex justify-center gap-2 mb-4">
-        {['Easy (3)', 'Medium (4)', 'Full Path (5)'].map((l, i) => (
+      {onExit && (
+        <div className="flex items-center justify-between mb-4">
           <button
-            key={i}
             type="button"
-            onClick={() => { setLevelIndex(i); handleRetry(); }}
-            className={`min-h-[44px] px-3 rounded-xl text-sm font-bold border-2 transition-colors ${
-              i === levelIndex
-                ? 'bg-teal-600 text-white border-teal-500'
-                : 'bg-white text-teal-700 border-teal-300 hover:bg-teal-50'
-            }`}
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
           >
-            {l}
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
           </button>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {ddaNotice && (
+        <div className="p-3 bg-teal-50 border-2 border-teal-300 text-teal-900 text-sm sm:text-base font-semibold rounded-xl text-center mb-4 animate-fade-in">
+          {ddaNotice}
+        </div>
+      )}
 
       {phase === 'idle' && (
         <div className="flex flex-col items-center space-y-6 py-4">
@@ -118,11 +228,14 @@ Start from the first place and follow the journey step by step.`;
             <p className="text-base text-teal-700 mt-1">
               Watch the character walk through {sequence.length} locations, then recreate the journey.
             </p>
+            <div className="mt-3 inline-block px-3 py-1 bg-teal-200 text-teal-900 rounded-full text-xs font-bold uppercase tracking-wider">
+              Tier {currentTier} • {sequence.length} Locations
+            </div>
           </div>
           <button
             type="button"
             onClick={handleStart}
-            className="min-h-[60px] px-10 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xl font-bold shadow-lg active:scale-95 transition-transform"
+            className="min-h-[60px] px-10 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xl font-bold shadow-lg active:scale-95 transition-transform cursor-pointer"
           >
             Start Journey 🚶
           </button>
@@ -150,6 +263,8 @@ Start from the first place and follow the journey step by step.`;
             onShowDone={handleShowDone}
             language={language}
             onSequenceComplete={handleSequenceComplete}
+            onError={handleError}
+            onStep={handleStep}
             showDuration={1000}
             mapTitle="Your Village Home"
           />
@@ -158,7 +273,7 @@ Start from the first place and follow the journey step by step.`;
             <button
               type="button"
               onClick={handleStart}
-              className="w-full min-h-[48px] rounded-xl bg-teal-100 hover:bg-teal-200 border-2 border-teal-300 text-teal-900 text-base font-semibold transition-colors"
+              className="w-full min-h-[48px] rounded-xl bg-teal-100 hover:bg-teal-200 border-2 border-teal-300 text-teal-900 text-base font-semibold transition-colors cursor-pointer"
             >
               👁️ Watch Path Again
             </button>

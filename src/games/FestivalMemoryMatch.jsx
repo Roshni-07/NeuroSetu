@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FlipCard from '../shared/FlipCard.jsx';
 import { sounds } from '../utils/soundEffects.js';
+import { resolvePatientStartingTier } from '../engine/dailyAssignmentEngine.js';
 
 const FESTIVAL_PAIRS = [
   { id: 'dhol', label: 'Bihu Dhol', icon: '🥁' },
@@ -11,16 +12,33 @@ const FESTIVAL_PAIRS = [
   { id: 'gogona', label: 'Gogona Harp', icon: '🎋' }
 ];
 
-export default function FestivalMemoryMatch({ onComplete }) {
+export default function FestivalMemoryMatch({
+  onComplete,
+  onExit,
+  language = 'en',
+  tier = null,
+  startingTier = null,
+  initialTier = null,
+  patientProfile = null
+}) {
+  const effectiveTier = (tier || startingTier || initialTier)
+    ? Number(tier || startingTier || initialTier)
+    : patientProfile
+    ? resolvePatientStartingTier(patientProfile)
+    : 2;
+
+  const targetPairsCount = effectiveTier === 1 ? 2 : effectiveTier === 3 ? 6 : 4;
+  const resetDelayMs = effectiveTier === 1 ? 1500 : effectiveTier === 3 ? 800 : 1100;
+
   const [cards, setCards] = useState([]);
   const [flippedIndices, setFlippedIndices] = useState([]);
   const [matchedIds, setMatchedIds] = useState([]);
   const [turns, setTurns] = useState(0);
   const [isBusy, setIsBusy] = useState(false);
 
-  // Initialize 4 pairs (8 cards)
+  // Initialize pairs based on tier (Tier 1: 2 pairs / 4 cards, Tier 2: 4 pairs / 8 cards, Tier 3: 6 pairs / 12 cards)
   useEffect(() => {
-    const selectedPairs = FESTIVAL_PAIRS.slice(0, 4);
+    const selectedPairs = FESTIVAL_PAIRS.slice(0, targetPairsCount);
     const deck = [];
     selectedPairs.forEach((item) => {
       deck.push({ uniqueKey: `${item.id}_a`, pairId: item.id, label: item.label, icon: item.icon });
@@ -32,7 +50,7 @@ export default function FestivalMemoryMatch({ onComplete }) {
     setFlippedIndices([]);
     setMatchedIds([]);
     setTurns(0);
-  }, []);
+  }, [targetPairsCount]);
 
   const handleCardClick = (index) => {
     if (isBusy || flippedIndices.includes(index)) return;
@@ -56,11 +74,11 @@ export default function FestivalMemoryMatch({ onComplete }) {
         setFlippedIndices([]);
         setIsBusy(false);
 
-        // Check if all pairs matched (4 pairs)
-        if (nextMatched.length === 4) {
+        // Check if all pairs matched
+        if (nextMatched.length === targetPairsCount) {
           setTimeout(() => {
-            const accuracy = Math.min(100, Math.round((4 / Math.max(4, turns + 1)) * 100));
-            const score = Math.max(50, 100 - (turns - 4) * 10);
+            const accuracy = Math.min(100, Math.round((targetPairsCount / Math.max(targetPairsCount, turns + 1)) * 100));
+            const score = Math.max(50, 100 - (turns - targetPairsCount) * 10);
             onComplete({
               score,
               maxScore: 100,
@@ -76,13 +94,26 @@ export default function FestivalMemoryMatch({ onComplete }) {
           sounds.playEncouragingSoft();
           setFlippedIndices([]);
           setIsBusy(false);
-        }, 1100);
+        }, resetDelayMs);
       }
     }
   };
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+      {onExit && (
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       {/* Game Header Bar */}
       <div className="p-4 rounded-2xl bg-teal-50 border-2 border-teal-300 flex items-center justify-between">
         <div>
@@ -90,14 +121,20 @@ export default function FestivalMemoryMatch({ onComplete }) {
             Find the Matching Festival Pairs:
           </h3>
           <p className="text-base text-slate-600 font-medium">
-            Pairs matched: {matchedIds.length} of 4 • Turns taken: {turns}
+            Pairs matched: {matchedIds.length} of {targetPairsCount} • Turns taken: {turns}
           </p>
         </div>
         <span className="text-3xl">🪘</span>
       </div>
 
-      {/* 4x2 Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-items-center">
+      {/* Cards Grid */}
+      <div className={`grid gap-4 justify-items-center ${
+        targetPairsCount === 2
+          ? 'grid-cols-2 max-w-sm mx-auto'
+          : targetPairsCount === 6
+          ? 'grid-cols-3 sm:grid-cols-4'
+          : 'grid-cols-2 sm:grid-cols-4'
+      }`}>
         {cards.map((card, idx) => {
           const isFlipped = flippedIndices.includes(idx);
           const isMatched = matchedIds.includes(card.pairId);

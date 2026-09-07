@@ -117,7 +117,64 @@ const COMPANIONS = [
   }
 ];
 
-export default function CareForYourCompanion({ onComplete }) {
+export function getCompanionStatus(companionId, health) {
+  if (companionId === 'tea_plant') {
+    if (health >= 75) {
+      return {
+        icon: '🌿',
+        status: 'Thriving & Lush',
+        tier: 'thriving',
+        badgeCls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        barColor: 'bg-emerald-500'
+      };
+    }
+    if (health >= 45) {
+      return {
+        icon: '🌱',
+        status: 'Doing Okay',
+        tier: 'okay',
+        badgeCls: 'bg-teal-100 text-teal-900 border-teal-300',
+        barColor: 'bg-teal-500'
+      };
+    }
+    return {
+      icon: '🥀',
+      status: 'Needs Gentle Care',
+      tier: 'struggling',
+      badgeCls: 'bg-amber-100 text-amber-900 border-amber-300',
+      barColor: 'bg-amber-500'
+    };
+  } else {
+    // 'chicken'
+    if (health >= 75) {
+      return {
+        icon: '🐔',
+        status: 'Thriving & Content',
+        tier: 'thriving',
+        badgeCls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        barColor: 'bg-emerald-500'
+      };
+    }
+    if (health >= 45) {
+      return {
+        icon: '🐥',
+        status: 'Doing Okay',
+        tier: 'okay',
+        badgeCls: 'bg-teal-100 text-teal-900 border-teal-300',
+        barColor: 'bg-teal-500'
+      };
+    }
+    return {
+      icon: '🤒',
+      status: 'Needs Gentle Care',
+      tier: 'struggling',
+      badgeCls: 'bg-amber-100 text-amber-900 border-amber-300',
+      barColor: 'bg-amber-500'
+    };
+  }
+}
+
+export default function CareForYourCompanion({ onComplete, onExit, language = 'en' }) {
   const [companionIndex, setCompanionIndex] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -125,11 +182,13 @@ export default function CareForYourCompanion({ onComplete }) {
   const [answers, setAnswers] = useState([]);
   const [result, setResult] = useState(null);
   const [gameKey, setGameKey] = useState(0);
-  const [happiness, setHappiness] = useState(50);
+  const [companionHealth, setCompanionHealth] = useState(70);
 
   const companion = COMPANIONS[companionIndex];
   const step = companion.steps[stepIndex];
   const totalSteps = companion.steps.length;
+  const currentStatus = getCompanionStatus(companion.id, companionHealth);
+
   const needs = companion.id === 'tea_plant'
     ? ['thirsty', 'needs shade', 'needs medicine', 'needs warmth']
     : ['hungry', 'needs a dry nest', 'needs cool water', 'needs a secure home'];
@@ -145,7 +204,7 @@ There is no rush — take your time before choosing.`;
     const opt = step.options[optIdx];
     setSelected(optIdx);
     setShowFeedback(true);
-    setHappiness(value => Math.max(0, Math.min(100, value + (opt.correct ? 15 : -10))));
+    setCompanionHealth(value => Math.max(0, Math.min(100, value + (opt.correct ? 15 : -25))));
     if (opt.correct) {
       sounds.playMatchChime();
     } else {
@@ -157,20 +216,30 @@ There is no rush — take your time before choosing.`;
   const handleNext = () => {
     const nextStep = stepIndex + 1;
     if (nextStep >= totalSteps) {
-      const correct = answers.filter(a => a.correct).length + (step.options[selected]?.correct ? 0 : 0);
-      const allAnswers = [...answers, { stepIndex, selected, correct: step.options[selected]?.correct }];
-      const correctCount = allAnswers.filter(a => a.correct).length;
+      const correctCount = answers.filter(a => a.correct).length;
       const score = Math.round((correctCount / totalSteps) * 100);
+
+      let healthSummary = '';
+      if (companionHealth >= 75) {
+        healthSummary = `${companion.name} is glowing with health (${companionHealth}% vitality) thanks to your mindful care!`;
+      } else if (companionHealth >= 45) {
+        healthSummary = `${companion.name} made it through the day in stable care (${companionHealth}% vitality).`;
+      } else {
+        healthSummary = `${companion.name} had a tough day (${companionHealth}% vitality), but with more practice tomorrow it will thrive.`;
+      }
+
       const message = score >= 80
-        ? `You are a wonderful caretaker! ${companion.name} is thriving under your care.`
+        ? `Wonderful caretaker! ${healthSummary}`
         : score >= 50
-          ? `Good caring instincts! You kept ${companion.name} safe and comfortable.`
-          : `Kind effort! Caring for living things takes practice — you showed real heart.`;
+          ? `Good caring instincts! ${healthSummary}`
+          : `Kind effort! ${healthSummary}`;
+
       const res = {
         score: Math.max(30, score),
         maxScore: 100,
+        companionHealth,
         message,
-        subtext: `Made ${correctCount} of ${totalSteps} best decisions through the day.`
+        subtext: `Made ${correctCount} of ${totalSteps} best decisions through the day • Final health: ${companionHealth}%.`
       };
       setResult(res);
       if (onComplete) onComplete(res);
@@ -187,7 +256,7 @@ There is no rush — take your time before choosing.`;
     setSelected(null);
     setShowFeedback(false);
     setAnswers([]);
-    setHappiness(50);
+    setCompanionHealth(70);
     setGameKey(k => k + 1);
   };
 
@@ -196,13 +265,27 @@ There is no rush — take your time before choosing.`;
   return (
     <GameWrapper
       title="Care for Your Companion"
-      emoji={companion.icon}
+      emoji={currentStatus.icon}
       category="Reasoning"
       instructions={instructions}
       result={result}
       onRetry={handleRetry}
       onComplete={onComplete}
+      onBack={onExit}
     >
+      {onExit && (
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       {/* Companion selector */}
       <div className="flex justify-center gap-2 mb-4">
         {COMPANIONS.map((c, i) => (
@@ -215,7 +298,7 @@ There is no rush — take your time before choosing.`;
                 : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'
               }`}
           >
-            {c.icon} {c.name}
+            {i === companionIndex ? currentStatus.icon : c.icon} {c.name}
           </button>
         ))}
       </div>
@@ -228,15 +311,29 @@ There is no rush — take your time before choosing.`;
         />
       </div>
 
-      <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl px-4 py-3 mb-4">
-        <div className="flex items-center justify-between text-sm font-bold text-emerald-900">
-          <span>{companion.icon} Happiness</span>
-          <span>{happiness}%</span>
+      {/* Cumulative Companion Health Status Banner */}
+      <div className={`border-2 rounded-2xl px-4 py-3 mb-4 transition-all duration-300 ${currentStatus.badgeCls}`}>
+        <div className="flex items-center justify-between text-sm font-bold">
+          <span className="flex items-center gap-2">
+            <span className="text-2xl" role="img" aria-label="Companion condition">{currentStatus.icon}</span>
+            <span>{companion.name} Health</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border border-current">
+              {currentStatus.status}
+            </span>
+            <span className="text-base font-extrabold">{companionHealth}%</span>
+          </div>
         </div>
-        <div className="mt-2 h-3 rounded-full bg-emerald-100 overflow-hidden">
-          <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${happiness}%` }} />
+        <div className="mt-2 h-3 rounded-full bg-black/10 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${currentStatus.barColor}`}
+            style={{ width: `${companionHealth}%` }}
+          />
         </div>
-        <p className="mt-2 text-sm font-semibold text-emerald-800">Current need: {needs[stepIndex]}</p>
+        <p className="mt-2 text-sm font-semibold opacity-90">
+          Current need: <span className="underline decoration-current font-bold">{needs[stepIndex]}</span>
+        </p>
       </div>
 
       {/* Time of day banner */}
@@ -246,7 +343,9 @@ There is no rush — take your time before choosing.`;
           <p className="text-sm font-bold uppercase text-teal-600">{step.time}</p>
           <p className="text-base font-bold text-teal-900">Step {stepIndex + 1} of {totalSteps}</p>
         </div>
-        <div className="ml-auto text-4xl">{companion.icon}</div>
+        <div className="ml-auto text-4xl" title={`${companion.name} (${currentStatus.status})`}>
+          {currentStatus.icon}
+        </div>
       </div>
 
       {/* Situation */}
@@ -282,11 +381,19 @@ There is no rush — take your time before choosing.`;
       {showFeedback && (
         <div className={`mt-4 rounded-2xl px-4 py-3 border-2 ${step.options[selected]?.correct
             ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-            : 'bg-teal-50 border-teal-300 text-teal-800'
+            : 'bg-amber-50 border-amber-300 text-amber-900'
           }`}>
           <p className="text-base font-bold">
             {step.options[selected]?.correct ? '🌟 ' : '💛 '}
             {step.options[selected]?.feedback}
+          </p>
+          <p className="text-sm mt-1 font-semibold flex items-center gap-2">
+            <span>{currentStatus.icon}</span>
+            <span>
+              {step.options[selected]?.correct
+                ? `${companion.name} gained health (+15%) and is ${currentStatus.status.toLowerCase()}!`
+                : `${companion.name} lost health (-25%). It needs gentle care in the next step.`}
+            </span>
           </p>
         </div>
       )}

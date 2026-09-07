@@ -58,4 +58,27 @@ describe('Task 27 & 28: SOS Emergency Assistance Button Tests', () => {
     expect(unsynced[0].taskType).toBe('sos_emergency');
     expect(unsynced[0].alertFlag).toBe(true);
   });
+
+  it('4. Renders active tel: anchor links for Elderline and Caregiver phone numbers', async () => {
+    render(
+      <SosEmergencyButton
+        isOpen={true}
+        countdownSeconds={0}
+        caregiverPhone="+91 98640 54321"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Elderline/i)).toBeInTheDocument();
+    });
+
+    const elderlineLinks = screen.getAllByRole('link', { name: /14567|কল কৰক/i });
+    expect(elderlineLinks.length).toBeGreaterThanOrEqual(2);
+    expect(elderlineLinks[0]).toHaveAttribute('href', 'tel:14567');
+
+    const caregiverLinks = screen.getAllByRole('link', { name: /\+91 98640 54321|ফোন কৰক/i });
+    expect(caregiverLinks.length).toBeGreaterThanOrEqual(2);
+    expect(caregiverLinks[0]).toHaveAttribute('href', 'tel:+919864054321');
+  });
 });
+

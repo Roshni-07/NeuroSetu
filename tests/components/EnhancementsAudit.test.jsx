@@ -111,7 +111,7 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
       />
     );
 
-    expect(screen.getByText(/1 \/ 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 \/ 6/i)).toBeInTheDocument();
 
     // Step 1
     fireEvent.change(screen.getByLabelText(/ৰোগীৰ সম্পূৰ্ণ নাম/i), { target: { value: 'Dhiren Das' } });
@@ -128,9 +128,14 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     // Step 4
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
-    // Step 5: PIN Setup
-    expect(screen.getByText(/৫\. ৪-সংখ্যাৰ পিন নিৰ্ধাৰণ/i)).toBeInTheDocument();
-    expect(screen.getByText(/5 \/ 5/i)).toBeInTheDocument();
+    // Step 5: Daily Routine (4-6 items already populated by default)
+    expect(screen.getByText(/৫\. দৈনন্দিন কাৰ্যসূচী/i)).toBeInTheDocument();
+    expect(screen.getByText(/5 \/ 6/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
+
+    // Step 6: PIN Setup
+    expect(screen.getByText(/৬\. ৪-সংখ্যাৰ পিন নিৰ্ধাৰণ/i)).toBeInTheDocument();
+    expect(screen.getByText(/6 \/ 6/i)).toBeInTheDocument();
 
     const pinInput = screen.getByLabelText(/৪-সংখ্যাৰ নতুন পিন/i);
     const confirmInput = screen.getByLabelText(/পিন পুনৰ দিয়ক/i);

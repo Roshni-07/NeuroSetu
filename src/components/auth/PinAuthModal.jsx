@@ -9,18 +9,29 @@ export default function PinAuthModal({
   isOpen,
   onSuccess,
   onClose,
-  profileName = 'Primary Patient'
+  profileName = 'Primary Patient',
+  role = 'patient',
+  onChangeRole = null
 }) {
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [lockoutRemaining, setLockoutRemaining] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSetupMode, setIsSetupMode] = useState(!hasConfiguredPin());
+  const [isSetupMode, setIsSetupMode] = useState(!hasConfiguredPin(role));
+
+  // Update setup mode and reset PIN when open or role changes
+  useEffect(() => {
+    if (isOpen) {
+      setIsSetupMode(!hasConfiguredPin(role));
+      setPin('');
+      setErrorMsg('');
+    }
+  }, [isOpen, role]);
 
   // Check lockout status on mount & interval
   useEffect(() => {
     const checkLockout = () => {
-      const status = getLockoutStatus();
+      const status = getLockoutStatus(role);
       if (status.isLocked) {
         setLockoutRemaining(status.remainingSeconds);
       } else {
@@ -31,7 +42,7 @@ export default function PinAuthModal({
     checkLockout();
     const interval = setInterval(checkLockout, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [role]);
 
   const handleDigitPress = useCallback((digit) => {
     if (lockoutRemaining > 0 || isSubmitting) return;
@@ -65,7 +76,7 @@ export default function PinAuthModal({
     setErrorMsg('');
 
     try {
-      const result = await authenticatePin(pinToTest, profileName);
+      const result = await authenticatePin(pinToTest, profileName, role);
       if (result.success) {
         setPin('');
         setIsSubmitting(false);
@@ -74,7 +85,7 @@ export default function PinAuthModal({
         setErrorMsg(result.error || "Let's try that again together.");
         setPin('');
         if (result.isLocked) {
-          const status = getLockoutStatus();
+          const status = getLockoutStatus(role);
           setLockoutRemaining(status.remainingSeconds);
         }
         setIsSubmitting(false);
@@ -84,7 +95,7 @@ export default function PinAuthModal({
       setPin('');
       setIsSubmitting(false);
     }
-  }, [pin, profileName, onSuccess]);
+  }, [pin, profileName, role, onSuccess]);
 
   // Auto submit when 4 digits are entered
   useEffect(() => {
@@ -113,6 +124,8 @@ export default function PinAuthModal({
 
   if (!isOpen) return null;
 
+  const roleLabel = role === 'caregiver' ? 'Caregiver' : role === 'asha_worker' ? 'ASHA Worker' : 'Patient';
+
   return (
     <div
       role="dialog"
@@ -127,17 +140,32 @@ export default function PinAuthModal({
             🔒
           </div>
           <h2 id="pin-modal-title" className="text-xl font-bold tracking-tight text-slate-900">
-            {isSetupMode ? 'Create Profile PIN' : 'Enter 4-Digit PIN'}
+            {isSetupMode ? (role === 'patient' ? 'Create Profile PIN' : `Create ${roleLabel} PIN`) : 'Enter 4-Digit PIN'}
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-normal">
             {isSetupMode
-              ? 'Choose a memorable 4-digit code for your daily session.'
-              : `Profile: ${profileName}`}
+              ? `Choose a memorable 4-digit code for your ${role === 'patient' ? 'daily' : roleLabel.toLowerCase()} session.`
+              : (role === 'patient' ? `Profile: ${profileName}` : `Profile: ${profileName} (${roleLabel})`)}
           </p>
+          {onChangeRole && (
+            <button
+              type="button"
+              onClick={onChangeRole}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-600 hover:text-teal-700 underline mt-1.5 cursor-pointer"
+            >
+              <span>⇄</span>
+              <span>Switch Role</span>
+            </button>
+          )}
         </div>
 
         {/* PIN Digit Indicators */}
-        <div className="flex justify-center items-center gap-3.5 my-6" aria-label="PIN Entry Dots">
+        <div
+          className={`flex justify-center items-center gap-3.5 my-6 p-2 rounded-2xl transition-all duration-200 ${
+            errorMsg ? 'border border-rose-300 bg-rose-50/40' : ''
+          }`}
+          aria-label="PIN Entry Dots"
+        >
           {[0, 1, 2, 3].map((index) => {
             const isFilled = pin.length > index;
             return (
@@ -145,7 +173,9 @@ export default function PinAuthModal({
                 key={index}
                 data-testid={`pin-dot-${index}`}
                 className={`w-5 h-5 rounded-full border transition-all duration-200 ${
-                  isFilled
+                  errorMsg
+                    ? 'border-rose-400 bg-rose-100'
+                    : isFilled
                     ? 'bg-teal-600 border-teal-600 scale-110 shadow-xs'
                     : 'bg-slate-100 border-slate-300'
                 }`}
@@ -157,12 +187,13 @@ export default function PinAuthModal({
         {/* Gentle Feedback Message / Lockout Alert */}
         <div className="min-h-[32px] mb-4 flex items-center justify-center">
           {lockoutRemaining > 0 ? (
-            <p className="text-xs font-semibold text-teal-900 bg-teal-50/80 py-1.5 px-3 rounded-xl border border-teal-200/70">
+            <p role="alert" className="text-xs font-semibold text-amber-900 bg-amber-50/90 py-1.5 px-3 rounded-xl border border-amber-300">
               ⏳ Locked for {lockoutRemaining}s. Take a breath and wait.
             </p>
           ) : errorMsg ? (
-            <p className="text-xs font-medium text-slate-700 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-200">
-              ℹ {errorMsg}
+            <p role="alert" className="text-xs font-semibold text-rose-700 bg-rose-50 py-1.5 px-3 rounded-xl border border-rose-200 flex items-center gap-1.5">
+              <span>⚠️</span>
+              <span>{errorMsg}</span>
             </p>
           ) : (
             <p className="text-xs text-slate-400 font-normal">

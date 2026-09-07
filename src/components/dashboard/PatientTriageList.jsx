@@ -14,6 +14,7 @@ export const SAMPLE_ASHA_PATIENTS = [
     sessionsCompleted: 14,
     lastActive: 'Today, 10:15 AM',
     status: 'critical', // 'critical' | 'attention' | 'stable'
+    starting_difficulty_tier: 1,
     alertReason: '3 response latency alerts (>15s) and 2 consecutive errors in Bihu recall'
   },
   {
@@ -28,6 +29,7 @@ export const SAMPLE_ASHA_PATIENTS = [
     sessionsCompleted: 19,
     lastActive: 'Yesterday',
     status: 'attention',
+    starting_difficulty_tier: 2,
     alertReason: 'DDA tier reduced from Tier 2 to Tier 1 during textile pattern matching'
   },
   {
@@ -42,6 +44,7 @@ export const SAMPLE_ASHA_PATIENTS = [
     sessionsCompleted: 26,
     lastActive: 'Today, 8:45 AM',
     status: 'stable',
+    starting_difficulty_tier: 3,
     alertReason: 'Stable task performance; response times consistent under 5s'
   }
 ];
@@ -49,7 +52,8 @@ export const SAMPLE_ASHA_PATIENTS = [
 export default function PatientTriageList({
   patients = SAMPLE_ASHA_PATIENTS,
   selectedPatientId = 'patient_001',
-  onSelectPatient = null
+  onSelectPatient = null,
+  isLoading = false
 }) {
   const [filter, setFilter] = useState('all'); // 'all' | 'critical' | 'stable'
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,7 +91,7 @@ export default function PatientTriageList({
         </div>
 
         {/* Filter Pills */}
-        <div className="flex bg-slate-100/80 p-1 rounded-xl text-xs font-medium border border-slate-200/60">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl text-xs font-medium border border-slate-200/60">
           <button
             type="button"
             onClick={() => setFilter('all')}
@@ -126,7 +130,7 @@ export default function PatientTriageList({
 
       {/* Search Input */}
       <div className="relative">
-        <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -140,84 +144,101 @@ export default function PatientTriageList({
 
       {/* Patients Card List */}
       <div className="space-y-3">
-        {filteredPatients.map((patient) => {
-          const isSelected = selectedPatientId === patient.id;
-          return (
-            <div
-              key={patient.id}
-              onClick={() => onSelectPatient && onSelectPatient(patient.id)}
-              className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                isSelected
-                  ? 'border-teal-600 bg-teal-50/30 shadow-soft ring-1 ring-teal-600/30'
-                  : 'border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50 bg-white'
-              }`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-900 text-sm">{patient.name}</h3>
-                    <span className="text-xs text-slate-400">({patient.age} yrs)</span>
-                    <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-200/60">
-                      {patient.language}
+        {isLoading ? (
+          <div data-testid="triage-loading" className="space-y-3 animate-pulse">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-4 rounded-xl border border-slate-200 bg-slate-50 h-24" />
+            ))}
+          </div>
+        ) : filteredPatients.length === 0 ? (
+          <div data-testid="triage-empty" className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 text-slate-500 space-y-1.5">
+            <span className="text-2xl block">👥</span>
+            <p className="text-xs font-semibold text-slate-700">No patients found</p>
+            <p className="text-[11px] text-slate-400">Try adjusting your search query or triage filter.</p>
+          </div>
+        ) : (
+          filteredPatients.map((patient) => {
+            const isSelected = selectedPatientId === patient.id;
+            return (
+              <div
+                key={patient.id}
+                onClick={() => onSelectPatient && onSelectPatient(patient.id)}
+                className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'border-teal-600 bg-teal-50/30 shadow-soft ring-1 ring-teal-600/30'
+                    : 'border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50 bg-white'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 text-sm">{patient.name}</h3>
+                      <span className="text-xs text-slate-400">({patient.age} yrs)</span>
+                      <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-200/60">
+                        {patient.language}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                      <span>📍</span> {patient.village} • <span className="font-medium text-slate-700">{patient.condition}</span>
+                    </p>
+                  </div>
+
+                  {/* Soft Status Triage Badge & Assigned Tier */}
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-900 border border-teal-200">
+                      Tier {patient.starting_difficulty_tier || (patient.status === 'critical' ? 1 : patient.status === 'attention' ? 2 : 3)}
+                    </span>
+                    {patient.status === 'critical' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200/80">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                        Urgent Home Visit
+                      </span>
+                    ) : patient.status === 'attention' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80">
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                        Needs Follow-up
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                        Stable
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Triage Biomarker Metrics Bar */}
+                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 text-xs">
+                  <div>
+                    <span className="text-slate-400 text-[11px] block font-medium">Avg Response</span>
+                    <span className={`font-semibold text-xs ${patient.avgLatencyMs > 15000 ? 'text-rose-700 font-bold' : 'text-slate-800'}`}>
+                      {(patient.avgLatencyMs / 1000).toFixed(1)}s
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                    <span>📍</span> {patient.village} • <span className="font-medium text-slate-700">{patient.condition}</span>
-                  </p>
+
+                  <div>
+                    <span className="text-slate-400 text-[11px] block font-medium">Active Alerts</span>
+                    <span className={`font-semibold text-xs ${patient.activeAlerts > 0 ? 'text-teal-700 font-bold' : 'text-slate-800'}`}>
+                      {patient.activeAlerts} flag{patient.activeAlerts !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 text-[11px] block font-medium">Sessions</span>
+                    <span className="font-semibold text-xs text-slate-800">{patient.sessionsCompleted}</span>
+                  </div>
                 </div>
 
-                {/* Soft Status Triage Badge */}
-                <div>
-                  {patient.status === 'critical' ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                      Urgent Home Visit
-                    </span>
-                  ) : patient.status === 'attention' ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
-                      Needs Follow-up
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                      Stable
-                    </span>
-                  )}
-                </div>
+                {/* Clinical Alert Reason Callout */}
+                {patient.alertReason && patient.status !== 'stable' && (
+                  <div className="mt-3 p-2.5 bg-slate-50 border border-slate-200/60 rounded-lg text-xs text-slate-700 font-normal leading-relaxed">
+                    <span className="font-semibold text-slate-900">Clinical Note:</span> {patient.alertReason}
+                  </div>
+                )}
               </div>
-
-              {/* Triage Biomarker Metrics Bar */}
-              <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 text-xs">
-                <div>
-                  <span className="text-slate-400 text-[11px] block font-medium">Avg Response</span>
-                  <span className={`font-semibold text-xs ${patient.avgLatencyMs > 15000 ? 'text-rose-700 font-bold' : 'text-slate-800'}`}>
-                    {(patient.avgLatencyMs / 1000).toFixed(1)}s
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-slate-400 text-[11px] block font-medium">Active Alerts</span>
-                  <span className={`font-semibold text-xs ${patient.activeAlerts > 0 ? 'text-teal-700 font-bold' : 'text-slate-800'}`}>
-                    {patient.activeAlerts} flag{patient.activeAlerts !== 1 ? 's' : ''}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-slate-400 text-[11px] block font-medium">Sessions</span>
-                  <span className="font-semibold text-xs text-slate-800">{patient.sessionsCompleted}</span>
-                </div>
-              </div>
-
-              {/* Clinical Alert Reason Callout */}
-              {patient.alertReason && patient.status !== 'stable' && (
-                <div className="mt-3 p-2.5 bg-slate-50 border border-slate-200/60 rounded-lg text-xs text-slate-700 font-normal leading-relaxed">
-                  <span className="font-semibold text-slate-900">Clinical Note:</span> {patient.alertReason}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

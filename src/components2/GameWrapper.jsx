@@ -23,6 +23,8 @@ const GameWrapperContext = createContext(false);
 export default function GameWrapper({
   gameConfig,
   onBack,
+  onExit,
+  onComplete,
   children,
   language = 'en',
   title = '',
@@ -74,16 +76,17 @@ export default function GameWrapper({
     message = 'Well done! Exercising your mind helps keep it vibrant.',
     subtext = ''
   }) => {
-    if (gameConfig?.id) {
-      saveGameScore(gameConfig.id, score, { accuracy });
-    }
-    setResultData({
+    const payload = {
       score,
       maxScore,
       accuracy,
       message,
       subtext
-    });
+    };
+    if (gameConfig?.id) {
+      saveGameScore(gameConfig.id, score, { accuracy });
+    }
+    setResultData(payload);
   };
 
   const handlePlayAgain = () => {
@@ -103,7 +106,8 @@ export default function GameWrapper({
               type="button"
               onClick={() => {
                 sounds.playGentleTap();
-                onBack();
+                if (onExit) onExit();
+                else if (onBack) onBack();
               }}
               className="flex items-center space-x-2 px-3 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-xl font-bold text-base border border-slate-300 shadow-sm cursor-pointer transition-colors"
               aria-label={getUIString('gamesHub', language)}
@@ -173,15 +177,24 @@ export default function GameWrapper({
             subtext={displayedResult.subtext}
             language={language}
             onPlayAgain={handlePlayAgain}
-            onBackToHub={onBack}
+            onBackToHub={onExit || onBack}
           />
         ) : (
           <div key={gameKey} className="w-full">
             {typeof children === 'function'
-              ? children({ onComplete: handleGameComplete, language })
+              ? children({ onComplete: handleGameComplete, language, onExit: onExit || onBack })
               : React.Children.map(children, (child) =>
                   React.isValidElement(child) && typeof child.type !== 'string'
-                    ? React.cloneElement(child, { onComplete: handleGameComplete, language })
+                    ? React.cloneElement(child, {
+                        onComplete: (data) => {
+                          if (child.props.onComplete) {
+                            child.props.onComplete(data);
+                          }
+                          handleGameComplete(data || {});
+                        },
+                        language,
+                        onExit: child.props.onExit || onExit || onBack
+                      })
                     : child
                 )}
           </div>

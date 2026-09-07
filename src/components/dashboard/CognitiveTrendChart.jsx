@@ -12,10 +12,35 @@ export const SAMPLE_TREND_HISTORY = [
 
 export default function CognitiveTrendChart({
   patientName = 'Bhaben Kalita',
-  data = SAMPLE_TREND_HISTORY
+  data = SAMPLE_TREND_HISTORY,
+  isLoading = false
 }) {
   const maxLatency = 20; // 20s y-axis ceiling
   const alertThreshold = 15; // 15s red alert line
+
+  if (isLoading) {
+    return (
+      <div data-testid="chart-loading" className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-5 animate-pulse">
+        <div className="h-6 bg-slate-200 rounded-lg w-1/3" />
+        <div className="h-4 bg-slate-100 rounded-lg w-1/2" />
+        <div className="h-52 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
+          <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div data-testid="chart-empty" className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-8 text-center space-y-3">
+        <span className="text-3xl block">📊</span>
+        <h4 className="text-base font-bold text-slate-800">No sessions recorded yet</h4>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+          As {patientName} completes cognitive games on their device, response latency trends and DDA adjustments will appear here.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-5">
@@ -36,7 +61,7 @@ export default function CognitiveTrendChart({
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs font-medium">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-medium">
           <span className="flex items-center gap-1.5 text-slate-700">
             <span className="w-2.5 h-2.5 bg-teal-600 rounded-sm inline-block" /> Latency (s)
           </span>
@@ -47,7 +72,7 @@ export default function CognitiveTrendChart({
       </div>
 
       {/* SVG Responsive Latency & DDA Bar Chart */}
-      <div className="relative pt-4 pb-2">
+      <div className="relative pt-4 pb-2 overflow-x-auto max-w-full">
         <svg
           viewBox="0 0 500 200"
           className="w-full h-52 overflow-visible"

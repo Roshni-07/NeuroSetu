@@ -27,7 +27,9 @@ export default function MapRoute({
   showDuration = 900,
   mapTitle = 'Village Path',
   language = 'en',
-  className = ''
+  className = '',
+  onError,
+  onStep
 }) {
   const [activeNode, setActiveNode] = useState(null); // for 'show' animation driven externally
   const [playerSequence, setPlayerSequence] = useState([]);
@@ -67,6 +69,9 @@ export default function MapRoute({
       sounds.playMatchChime();
       const newSeq = [...playerSequence, nodeId];
       setPlayerSequence(newSeq);
+      if (onStep) {
+        onStep({ nodeId, stepIndex: newSeq.length, total: correctSequence.length });
+      }
       setTimeout(() => setLastCorrect(null), 600);
 
       if (newSeq.length === correctSequence.length) {
@@ -77,9 +82,12 @@ export default function MapRoute({
     } else {
       setLastWrong(nodeId);
       sounds.playEncouragingSoft();
+      if (onError) {
+        onError({ nodeId, expected: expectedNext, currentStep: playerSequence.length });
+      }
       setTimeout(() => setLastWrong(null), 700);
     }
-  }, [mode, playerSequence, correctSequence, onSequenceComplete]);
+  }, [mode, playerSequence, correctSequence, onSequenceComplete, onStep, onError]);
 
   const getNodeState = (node) => {
     const id = node.id;
@@ -124,6 +132,7 @@ export default function MapRoute({
       >
         {/* SVG connections layer */}
         <svg
+          aria-hidden="true"
           className="absolute inset-0 w-full h-full pointer-events-none"
           viewBox="0 0 100 100"
           preserveAspectRatio="none"

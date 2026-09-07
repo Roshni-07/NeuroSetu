@@ -104,7 +104,7 @@ const EMOTION_ROUNDS = [
   }
 ];
 
-export default function WhoseEmotion({ onComplete, language = 'en' }) {
+export default function WhoseEmotion({ onComplete, onExit, language = 'en' }) {
   const [roundIdx, setRoundIdx] = useState(0);
   const [selectedId, setSelectedId] = useState(null);
   const [roundScores, setRoundScores] = useState([]);
@@ -157,6 +157,19 @@ export default function WhoseEmotion({ onComplete, language = 'en' }) {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+      {onExit && (
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       {/* Round Header & Emotion Portrait */}
       <div className="p-6 rounded-3xl bg-teal-50 border-3 border-teal-300 shadow-sm text-center space-y-4">
         <div className="flex items-center justify-between text-sm font-bold text-teal-900">

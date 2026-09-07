@@ -36,8 +36,13 @@ export default function PatientLayout({
       {/* Top Patient Bar (High Contrast, Large Targets, Clean Apple Health Design) */}
       <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 sticky top-0 z-30 shadow-soft">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-          {/* Logo & Patient Identity */}
-          <div className="flex items-center space-x-3">
+          {/* Logo & Patient Identity (Click to return to Home) */}
+          <button
+            type="button"
+            onClick={() => onNavigate ? onNavigate('home') : (window.location.hash = '#/home')}
+            aria-label="Return to NeuroSetu Home"
+            className="flex items-center space-x-3 text-left hover:opacity-85 transition rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+          >
             <div className="w-10 h-10 bg-teal-50 text-teal-700 border border-teal-200/80 rounded-xl flex items-center justify-center text-lg font-bold shadow-soft">
               ন
             </div>
@@ -49,7 +54,7 @@ export default function PatientLayout({
                 👤 {profileName}
               </span>
             </div>
-          </div>
+          </button>
 
           {/* Quick Controls: Language Switcher, Audio Guide & SOS Call Trigger */}
           <div className="flex items-center space-x-2">

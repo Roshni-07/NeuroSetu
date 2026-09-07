@@ -210,7 +210,7 @@ export default function RemindersHub({
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Read Aloud Button */}
           <button
             type="button"
@@ -308,7 +308,9 @@ export default function RemindersHub({
             <p className="font-medium leading-relaxed">{voiceFeedback}</p>
           </div>
           <button
+            type="button"
             onClick={() => setVoiceFeedback('')}
+            aria-label="Dismiss feedback"
             className="text-teal-700 hover:text-teal-900 font-bold ml-2 text-xs"
           >
             ✕

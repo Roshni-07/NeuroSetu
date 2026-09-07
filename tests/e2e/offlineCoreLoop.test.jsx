@@ -8,6 +8,7 @@ import {
   getGameSessions,
   getUnsyncedTelemetry
 } from '../../src/db/indexedDb.js';
+import { createSession } from '../../src/services/authService.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -26,6 +27,7 @@ describe('Task 32–34: Full Offline Core Loop & Multi-Surface E2E Suite', () =>
   });
 
   it('1. Multi-surface navigation: Switches cleanly between Patient, Dashboard, and Marketing surfaces', async () => {
+    createSession('Caregiver Maya', 'caregiver');
     render(<App />);
 
     // 1. Initially on Home surface (unauthenticated first load, English default)

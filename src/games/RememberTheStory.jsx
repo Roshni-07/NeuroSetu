@@ -23,25 +23,45 @@ const STORIES = [
     questions: [
       {
         question: "What did Rupali smell from the kitchen when she woke up?",
-        options: ["Tea leaves", "Fresh mustard oil", "Burning wood", "Sweet pitha"],
+        options: [
+          { label: "Tea leaves", icon: "🍃" },
+          { label: "Fresh mustard oil", icon: "🫒" },
+          { label: "Burning wood", icon: "🪵" },
+          { label: "Sweet pitha", icon: "🥟" }
+        ],
         correctIndex: 1,
         explanation: "The story says 'the smell of fresh mustard oil drifted from the kitchen'."
       },
       {
         question: "What cloth was Rupali wearing?",
-        options: ["Gamosa", "Mekhela chador", "Dokhona", "Riha"],
+        options: [
+          { label: "Gamosa", icon: "🧣" },
+          { label: "Mekhela chador", icon: "👘" },
+          { label: "Dokhona", icon: "👗" },
+          { label: "Riha", icon: "🥻" }
+        ],
         correctIndex: 1,
         explanation: "She wore a mekhela chador — red and white silk with golden patterns."
       },
       {
         question: "Who helped Rupali put a flower in her hair?",
-        options: ["Her sister", "Her daughter", "Her granddaughter Priya", "A neighbour"],
+        options: [
+          { label: "Her sister", icon: "👧" },
+          { label: "Her daughter", icon: "👩" },
+          { label: "Her granddaughter Priya", icon: "👧" },
+          { label: "A neighbour", icon: "🏡" }
+        ],
         correctIndex: 2,
         explanation: "Her granddaughter Priya helped tie her hair with a white orchid."
       },
       {
         question: "What was served at the village feast?",
-        options: ["Rice, fish and tea", "Rice, pithas and curd", "Bread, dal and vegetables", "Payasam and banana"],
+        options: [
+          { label: "Rice, fish and tea", icon: "🐟" },
+          { label: "Rice, pithas and curd", icon: "🥟" },
+          { label: "Bread, dal and vegetables", icon: "🍲" },
+          { label: "Payasam and banana", icon: "🍌" }
+        ],
         correctIndex: 1,
         explanation: "The village shared a feast of rice, pithas, and curd."
       }
@@ -62,19 +82,34 @@ const STORIES = [
     questions: [
       {
         question: "How far did Moina walk each morning?",
-        options: ["One kilometre", "Two kilometres", "Three kilometres", "Five kilometres"],
+        options: [
+          { label: "One kilometre", icon: "🚶" },
+          { label: "Two kilometres", icon: "🚶" },
+          { label: "Three kilometres", icon: "🚶" },
+          { label: "Five kilometres", icon: "🚶" }
+        ],
         correctIndex: 2,
         explanation: "She walked three kilometres through the mist every morning."
       },
       {
         question: "What was unusual about the leaf she found?",
-        options: ["It was very large and red", "It had silver edges", "It was shaped like a flower", "It glowed in the dark"],
+        options: [
+          { label: "It was very large and red", icon: "🍂" },
+          { label: "It had silver edges", icon: "✨" },
+          { label: "It was shaped like a flower", icon: "🌸" },
+          { label: "It glowed in the dark", icon: "💡" }
+        ],
         correctIndex: 1,
         explanation: "The leaf was dark with silver edges — the manager said it was rare."
       },
       {
         question: "What was Moina given as a reward?",
-        options: ["Money and flowers", "Extra rice and a silk gamosa", "A new basket", "A gold necklace"],
+        options: [
+          { label: "Money and flowers", icon: "💐" },
+          { label: "Extra rice and a silk gamosa", icon: "🌾" },
+          { label: "A new basket", icon: "🧺" },
+          { label: "A gold necklace", icon: "📿" }
+        ],
         correctIndex: 1,
         explanation: "She received an extra measure of rice and a silk gamosa."
       }
@@ -82,7 +117,7 @@ const STORIES = [
   }
 ];
 
-export default function RememberTheStory({ onComplete, language = 'en' }) {
+export default function RememberTheStory({ onComplete, onExit, language = 'en' }) {
   const [storyIndex, setStoryIndex] = useState(0);
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
@@ -114,7 +149,21 @@ After reading, you will answer a few questions about what happened in the story.
       result={result}
       onRetry={handleRetry}
       onComplete={onComplete}
+      onBack={onExit}
     >
+      {onExit && (
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       {/* Story selector */}
       <div className="flex justify-center gap-2 mb-4 flex-wrap">
         {STORIES.map((s, i) => (

@@ -3,6 +3,14 @@
  * Built for NeuroSetu (Prototype Tier: No external OAuth/ABDM dependency)
  */
 
+export const ROLES = {
+  PATIENT: 'patient',
+  CAREGIVER: 'caregiver',
+  ASHA_WORKER: 'asha_worker'
+};
+
+export const VALID_ROLES = Object.values(ROLES);
+
 const STORAGE_KEYS = {
   PIN_HASH: 'neurosetu_pin_hash',
   PIN_SALT: 'neurosetu_pin_salt',
@@ -13,6 +21,19 @@ const STORAGE_KEYS = {
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 30 * 1000; // 30 seconds
+
+/**
+ * Get role-specific localStorage keys
+ */
+export function getRoleStorageKeys(role = ROLES.PATIENT) {
+  const normalized = VALID_ROLES.includes(role) ? role : ROLES.PATIENT;
+  return {
+    PIN_HASH: `neurosetu_pin_hash_${normalized}`,
+    PIN_SALT: `neurosetu_pin_salt_${normalized}`,
+    ATTEMPTS: `neurosetu_auth_attempts_${normalized}`,
+    LOCKOUT_UNTIL: `neurosetu_auth_lockout_${normalized}`
+  };
+}
 
 /**
  * Generate a random salt for PIN hashing
@@ -59,20 +80,26 @@ export function validatePinFormat(pin) {
 }
 
 /**
- * Check if a profile PIN has been configured
+ * Check if a profile PIN has been configured for a role
  */
-export function hasConfiguredPin() {
+export function hasConfiguredPin(role = ROLES.PATIENT) {
   try {
-    return Boolean(localStorage.getItem(STORAGE_KEYS.PIN_HASH));
+    const keys = getRoleStorageKeys(role);
+    const hasRolePin = Boolean(localStorage.getItem(keys.PIN_HASH));
+    if (hasRolePin) return true;
+    if (role === ROLES.PATIENT) {
+      return Boolean(localStorage.getItem(STORAGE_KEYS.PIN_HASH));
+    }
+    return false;
   } catch (e) {
     return false;
   }
 }
 
 /**
- * Configure or reset a new 4-digit PIN
+ * Configure or reset a new 4-digit PIN for a specific role
  */
-export async function setProfilePin(pin) {
+export async function setProfilePin(pin, role = ROLES.PATIENT) {
   if (!validatePinFormat(pin)) {
     throw new Error('PIN must be exactly 4 numeric digits (0-9).');
   }
@@ -80,19 +107,29 @@ export async function setProfilePin(pin) {
   const salt = generateSalt();
   const hash = await hashPin(pin, salt);
 
-  localStorage.setItem(STORAGE_KEYS.PIN_SALT, salt);
-  localStorage.setItem(STORAGE_KEYS.PIN_HASH, hash);
-  localStorage.removeItem(STORAGE_KEYS.ATTEMPTS);
-  localStorage.removeItem(STORAGE_KEYS.LOCKOUT_UNTIL);
+  const keys = getRoleStorageKeys(role);
+  localStorage.setItem(keys.PIN_SALT, salt);
+  localStorage.setItem(keys.PIN_HASH, hash);
+  localStorage.removeItem(keys.ATTEMPTS);
+  localStorage.removeItem(keys.LOCKOUT_UNTIL);
+
+  if (role === ROLES.PATIENT) {
+    localStorage.removeItem(STORAGE_KEYS.ATTEMPTS);
+    localStorage.removeItem(STORAGE_KEYS.LOCKOUT_UNTIL);
+  }
 
   return true;
 }
 
 /**
- * Check if currently in a lockout state due to repeated failed attempts
+ * Check if currently in a lockout state for a specific role
  */
-export function getLockoutStatus() {
-  const lockoutUntil = parseInt(localStorage.getItem(STORAGE_KEYS.LOCKOUT_UNTIL) || '0', 10);
+export function getLockoutStatus(role = ROLES.PATIENT) {
+  const keys = getRoleStorageKeys(role);
+  let lockoutUntil = parseInt(localStorage.getItem(keys.LOCKOUT_UNTIL) || '0', 10);
+  if (lockoutUntil === 0 && role === ROLES.PATIENT) {
+    lockoutUntil = parseInt(localStorage.getItem(STORAGE_KEYS.LOCKOUT_UNTIL) || '0', 10);
+  }
   const now = Date.now();
   if (lockoutUntil > now) {
     return {
@@ -104,14 +141,14 @@ export function getLockoutStatus() {
 }
 
 /**
- * Authenticate entered PIN against stored hash
+ * Authenticate entered PIN against stored hash for a role
  */
-export async function authenticatePin(pin, profileName = 'Primary Patient') {
+export async function authenticatePin(pin, profileName = 'Primary Patient', role = ROLES.PATIENT) {
   if (!validatePinFormat(pin)) {
     return { success: false, error: 'PIN must be exactly 4 numeric digits.' };
   }
 
-  const lockout = getLockoutStatus();
+  const lockout = getLockoutStatus(role);
   if (lockout.isLocked) {
     return {
       success: false,
@@ -120,13 +157,20 @@ export async function authenticatePin(pin, profileName = 'Primary Patient') {
     };
   }
 
-  const storedHash = localStorage.getItem(STORAGE_KEYS.PIN_HASH);
-  const storedSalt = localStorage.getItem(STORAGE_KEYS.PIN_SALT);
+  const keys = getRoleStorageKeys(role);
+  let storedHash = localStorage.getItem(keys.PIN_HASH);
+  let storedSalt = localStorage.getItem(keys.PIN_SALT);
 
-  // If no PIN is configured yet, auto-configure this PIN as initial profile PIN
+  // Fallback for legacy patient key
+  if ((!storedHash || !storedSalt) && role === ROLES.PATIENT) {
+    storedHash = localStorage.getItem(STORAGE_KEYS.PIN_HASH);
+    storedSalt = localStorage.getItem(STORAGE_KEYS.PIN_SALT);
+  }
+
+  // If no PIN is configured yet for this role, auto-configure this PIN as initial profile PIN
   if (!storedHash || !storedSalt) {
-    await setProfilePin(pin);
-    const session = createSession(profileName);
+    await setProfilePin(pin, role);
+    const session = createSession(profileName, role);
     return { success: true, session, isInitialSetup: true };
   }
 
@@ -134,19 +178,33 @@ export async function authenticatePin(pin, profileName = 'Primary Patient') {
 
   if (enteredHash === storedHash) {
     // Reset failed attempts on success
-    localStorage.removeItem(STORAGE_KEYS.ATTEMPTS);
-    localStorage.removeItem(STORAGE_KEYS.LOCKOUT_UNTIL);
-    const session = createSession(profileName);
+    localStorage.removeItem(keys.ATTEMPTS);
+    localStorage.removeItem(keys.LOCKOUT_UNTIL);
+    if (role === ROLES.PATIENT) {
+      localStorage.removeItem(STORAGE_KEYS.ATTEMPTS);
+      localStorage.removeItem(STORAGE_KEYS.LOCKOUT_UNTIL);
+    }
+    const session = createSession(profileName, role);
     return { success: true, session };
   }
 
-  // Increment failed attempts
-  const currentAttempts = parseInt(localStorage.getItem(STORAGE_KEYS.ATTEMPTS) || '0', 10) + 1;
-  localStorage.setItem(STORAGE_KEYS.ATTEMPTS, currentAttempts.toString());
+  // Increment failed attempts for this role
+  let currentAttempts = parseInt(localStorage.getItem(keys.ATTEMPTS) || '0', 10);
+  if (currentAttempts === 0 && role === ROLES.PATIENT) {
+    currentAttempts = parseInt(localStorage.getItem(STORAGE_KEYS.ATTEMPTS) || '0', 10);
+  }
+  currentAttempts += 1;
+  localStorage.setItem(keys.ATTEMPTS, currentAttempts.toString());
+  if (role === ROLES.PATIENT) {
+    localStorage.setItem(STORAGE_KEYS.ATTEMPTS, currentAttempts.toString());
+  }
 
   if (currentAttempts >= MAX_FAILED_ATTEMPTS) {
     const lockUntil = Date.now() + LOCKOUT_DURATION_MS;
-    localStorage.setItem(STORAGE_KEYS.LOCKOUT_UNTIL, lockUntil.toString());
+    localStorage.setItem(keys.LOCKOUT_UNTIL, lockUntil.toString());
+    if (role === ROLES.PATIENT) {
+      localStorage.setItem(STORAGE_KEYS.LOCKOUT_UNTIL, lockUntil.toString());
+    }
     return {
       success: false,
       error: `Too many failed attempts. Locked for 30 seconds.`,
@@ -163,11 +221,13 @@ export async function authenticatePin(pin, profileName = 'Primary Patient') {
 }
 
 /**
- * Create and persist an active session
+ * Create and persist an active session with role
  */
-export function createSession(profileName) {
+export function createSession(profileName, role = ROLES.PATIENT) {
+  const normalizedRole = VALID_ROLES.includes(role) ? role : ROLES.PATIENT;
   const session = {
     profileName,
+    role: normalizedRole,
     authenticatedAt: new Date().toISOString(),
     token: `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   };
@@ -199,6 +259,10 @@ export function logout() {
  * Clear all authentication and profile data (for test/reset only)
  */
 export function resetAllAuthData() {
+  VALID_ROLES.forEach(r => {
+    const keys = getRoleStorageKeys(r);
+    Object.values(keys).forEach(k => localStorage.removeItem(k));
+  });
   Object.values(STORAGE_KEYS).forEach(k => {
     localStorage.removeItem(k);
     sessionStorage.removeItem(k);

@@ -124,7 +124,12 @@ export default function SosEmergencyButton({
               <div>
                 <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider">ৰাষ্ট্ৰীয় বৃদ্ধ কল্যাণ হেল্পলাইন</span>
                 <p className="text-base font-bold text-slate-900 mt-0.5">Elderline (এল্ডাৰলাইন)</p>
-                <span className="text-xs font-semibold text-teal-700">টোল-ফ্ৰী নম্বৰ: 14567</span>
+                <span className="text-xs font-semibold text-teal-700">
+                  টোল-ফ্ৰী নম্বৰ:{' '}
+                  <a href="tel:14567" className="underline hover:text-teal-900 font-bold">
+                    14567
+                  </a>
+                </span>
               </div>
               <a
                 href="tel:14567"
@@ -139,7 +144,14 @@ export default function SosEmergencyButton({
               <div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">পৰিয়ালৰ যোগাযোগ (Caregiver)</span>
                 <p className="text-sm font-bold text-slate-900 mt-0.5">মুখ্য সেৱাকাৰী (Family)</p>
-                <span className="text-xs text-slate-600 font-medium">{caregiverPhone}</span>
+                <span className="text-xs text-slate-600 font-medium">
+                  <a
+                    href={`tel:${caregiverPhone.replace(/\s+/g, '')}`}
+                    className="underline hover:text-slate-900"
+                  >
+                    {caregiverPhone}
+                  </a>
+                </span>
               </div>
               <a
                 href={`tel:${caregiverPhone.replace(/\s+/g, '')}`}

@@ -159,7 +159,10 @@ export default function StoryQuiz({
 
           <div className="grid gap-3">
             {currentQ.options.map((opt, i) => {
-              let cls = 'min-h-[60px] w-full rounded-2xl border-3 px-4 py-3 text-left text-lg font-semibold transition-all cursor-pointer';
+              const optLabel = typeof opt === 'object' && opt !== null ? (opt.label || opt.text || '') : opt;
+              const optIcon = typeof opt === 'object' && opt !== null ? opt.icon : null;
+
+              let cls = 'min-h-[60px] w-full rounded-2xl border-3 px-4 py-3 text-left text-lg font-semibold transition-all cursor-pointer flex items-center gap-3';
               if (selected === null) {
                 cls += ' bg-white border-slate-300 hover:border-teal-400 hover:bg-teal-50 text-slate-800 active:scale-98';
               } else if (i === questions[qIndex].correctIndex) {
@@ -171,12 +174,22 @@ export default function StoryQuiz({
               }
               return (
                 <div key={i} className="flex gap-2 items-stretch">
-                  <button type="button" className={`${cls} flex-1`} onClick={() => handleSelectAnswer(i)}>
-                    <span className="mr-2 font-bold text-base opacity-60">{String.fromCharCode(65 + i)}.</span>
-                    {opt}
+                  <button
+                    type="button"
+                    className={`${cls} flex-1`}
+                    onClick={() => handleSelectAnswer(i)}
+                    aria-label={`${String.fromCharCode(65 + i)}: ${optLabel}`}
+                  >
+                    <span className="font-bold text-base opacity-60 flex-shrink-0">{String.fromCharCode(65 + i)}.</span>
+                    {optIcon && (
+                      <span className="text-2xl flex-shrink-0 w-8 h-8 flex items-center justify-center select-none" aria-hidden="true">
+                        {optIcon}
+                      </span>
+                    )}
+                    <span className="flex-1 text-left leading-snug">{optLabel}</span>
                   </button>
                   {selected !== null && i === questions[qIndex].correctIndex && (
-                    <span className="ml-2 text-emerald-600">✓</span>
+                    <span className="ml-2 text-emerald-600 flex items-center text-xl font-bold">✓</span>
                   )}
                 </div>
               );

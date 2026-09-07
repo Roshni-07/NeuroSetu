@@ -62,7 +62,14 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     expect(screen.getByText(/৪\. প্ৰিয় উৎসৱ আৰু খাদ্য/i)).toBeInTheDocument();
     expect(screen.getByText(/Phase 2 Feature Notice/i)).toBeInTheDocument();
 
-    // Save profile
+    // Next to Step 5: Elder's Daily Routine
+    fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
+
+    // Step 5: Elder's Daily Routine
+    expect(screen.getByText(/৫\. দৈনন্দিন কাৰ্যসূচী/i)).toBeInTheDocument();
+    expect(screen.getByText(/দৈনন্দিন ক্ৰম নিৰ্ধাৰণ/i)).toBeInTheDocument();
+
+    // Save profile from Step 5
     const saveBtn = screen.getByRole('button', { name: /সংৰক্ষণ কৰক/i });
     fireEvent.click(saveBtn);
 
@@ -78,6 +85,9 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     expect(fromDB.villageTown).toBe('Sualkuchi');
     expect(fromDB.formerOccupation).toBe('weaver');
     expect(fromDB.familyMembers[0].name).toBe('Rumi');
+    expect(fromDB.dailyRoutine).toBeDefined();
+    expect(fromDB.dailyRoutine.length).toBeGreaterThanOrEqual(4);
+    expect(fromDB.starting_difficulty_tier).toBe(1);
   });
 
   it('2. MemoryRecallGame personalizes prompts dynamically with family name and hometown', async () => {

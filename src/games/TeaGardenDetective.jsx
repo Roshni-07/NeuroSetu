@@ -20,7 +20,7 @@ const DECOYS = [
   { icon: '🌾', label: 'Grass Stem' }
 ];
 
-export default function TeaGardenDetective({ onComplete, language = 'en' }) {
+export default function TeaGardenDetective({ onComplete, onExit, language = 'en' }) {
   const [levelIndex, setLevelIndex] = useState(0);
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
@@ -52,7 +52,21 @@ Take your time — watch each item carefully.`;
       result={result}
       onRetry={handleRetry}
       onComplete={onComplete}
+      onBack={onExit}
     >
+      {onExit && (
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       {/* Level selector */}
       <div className="flex justify-center gap-2 mb-4">
         {LEVELS.map((l, i) => (

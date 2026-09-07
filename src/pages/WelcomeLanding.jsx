@@ -140,7 +140,7 @@ export default function WelcomeLanding({
 
       {/* Footer Navigation Links */}
       <footer className="max-w-4xl mx-auto w-full pt-4 pb-2 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-        <span>NeuroSetu Cognitive Health Platform • Built for Rural NER Healthcare</span>
+        <span>© {new Date().getFullYear()} NeuroSetu Cognitive Health Platform • Built for Rural NER Healthcare (SIH PS26003)</span>
         <div className="flex items-center space-x-4">
           {onLaunchPatient && (
             <button type="button" onClick={onLaunchPatient} className="hover:text-slate-700 underline transition">

@@ -53,6 +53,14 @@ export async function getDB() {
   return dbPromise;
 }
 
+export const DEFAULT_DAILY_ROUTINE = [
+  { id: 'morning_tea', label: 'Morning Chai', icon: '☕', time: 'Dawn (6:00 AM)', subtext: 'Dawn tea on the veranda', correctSlot: 'slot_1' },
+  { id: 'garden_walk', label: 'Tending Garden', icon: '🌿', time: 'Morning (7:30 AM)', subtext: 'Watering tea plants & herbs', correctSlot: 'slot_2' },
+  { id: 'morning_medicine', label: 'Taking Medicine', icon: '💊', time: 'Forenoon (9:00 AM)', subtext: 'Prescribed morning pills', correctSlot: 'slot_3' },
+  { id: 'midday_lunch', label: 'Midday Meal', icon: '🍲', time: 'Afternoon (1:00 PM)', subtext: 'Rice, lentils, and garden greens', correctSlot: 'slot_4' },
+  { id: 'night_rest', label: 'Night Rest', icon: '🌙', time: 'Night (9:00 PM)', subtext: 'Prayer lamp and quiet sleep', correctSlot: 'slot_5' }
+];
+
 export const DEFAULT_PROFILE = {
   id: 'default_patient',
   name: 'Bhaben Kalita',
@@ -66,7 +74,9 @@ export const DEFAULT_PROFILE = {
   ],
   formerOccupation: 'farmer',
   favoriteFestival: 'Rongali Bihu',
-  favoriteFood: 'Masor Tenga & Pitha'
+  favoriteFood: 'Masor Tenga & Pitha',
+  starting_difficulty_tier: 1,
+  dailyRoutine: DEFAULT_DAILY_ROUTINE
 };
 
 /**

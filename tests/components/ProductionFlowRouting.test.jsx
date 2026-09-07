@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import App from '../../src/App.jsx';
 import { clearAllLocalData, closeDB } from '../../src/db/indexedDb.js';
+import { createSession } from '../../src/services/authService.js';
 
 describe('Production Flow Routing & Initial View (Home as Default)', () => {
   beforeEach(async () => {
@@ -29,6 +30,7 @@ describe('Production Flow Routing & Initial View (Home as Default)', () => {
   });
 
   it('2. In-page CTA: "ASHA Dashboard" routes to ASHA Dashboard and allows returning to Home', async () => {
+    createSession('Caregiver Maya', 'caregiver');
     render(<App />);
 
     // Click the in-page ASHA Dashboard button

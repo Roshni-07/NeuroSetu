@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getAllProgress } from '../utils/storage.js';
 import { sounds } from '../utils/soundEffects.js';
 import SpeakButton from './SpeakButton.jsx';
@@ -9,6 +9,7 @@ import {
   getUIString,
   getGameVoiceExplanation
 } from '../data/gamesLocalization.js';
+import { assignDailyGames } from '../engine/dailyAssignmentEngine.js';
 
 export const CATEGORIES = [
   { id: 'Memory', title: 'Memory', titleAs: 'স্মৃতি অনুশীলন', icon: '🧠', color: 'from-teal-500 to-teal-600' },
@@ -31,13 +32,23 @@ export const CATEGORY_IDS = CATEGORIES;
  */
 export default function Hub({
   games = [],
+  patientProfile = null,
   onSelectGame,
   onOpenSettings = null,
   language = 'en',
-  onLanguageChange = null
+  onLanguageChange = null,
+  isLoading = false
 }) {
   const [progress, setProgress] = useState({});
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+
+  const dailyAssignedGames = useMemo(() => {
+    return assignDailyGames({
+      patientProfile,
+      gamesConfig: games,
+      date: new Date()
+    });
+  }, [patientProfile, games]);
 
   const currentLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0];
 
@@ -130,7 +141,7 @@ export default function Hub({
           </div>
 
           {/* Activity Badge */}
-          <div className="flex-shrink-0 bg-white/90 backdrop-blur-md border-2 border-teal-200 rounded-2xl p-4 sm:p-5 text-center min-w-[190px] shadow-sm">
+          <div className="flex-shrink-0 bg-white/90 backdrop-blur-md border-2 border-teal-200 rounded-2xl p-4 sm:p-5 text-center w-full sm:w-auto min-w-[190px] shadow-sm">
             <div className="text-xs font-bold uppercase tracking-wider text-teal-700">
               {getUIString('exercisesDone', language)}
             </div>
@@ -146,6 +157,101 @@ export default function Hub({
 
       {/* Main Content Area */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 mt-8 space-y-12">
+        {isLoading ? (
+          <div data-testid="hub-loading" className="space-y-6 animate-pulse">
+            <div className="h-32 bg-teal-50 border-2 border-teal-200 rounded-3xl" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-44 bg-slate-100 rounded-2xl border border-slate-200" />
+              ))}
+            </div>
+          </div>
+        ) : (!games || games.length === 0) ? (
+          <div data-testid="hub-empty" className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-soft space-y-3">
+            <span className="text-4xl block">🎮</span>
+            <h2 className="text-lg font-bold text-slate-800">No games found in the suite</h2>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              No games are currently loaded. Please ensure the game configuration is active.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Prescribed 5-Domain Daily Cognitive Plan */}
+            {dailyAssignedGames.length > 0 && (
+              <section className="bg-gradient-to-br from-teal-50/90 via-white to-teal-50/50 border-2 border-teal-300 rounded-3xl p-5 sm:p-6 shadow-soft space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-teal-200/80 pb-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-700 text-white text-xs font-bold uppercase tracking-wider mb-1">
+                  <span>✨</span>
+                  <span>Today's Prescribed 5-Domain Plan</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+                  {patientProfile?.name ? `${patientProfile.name}'s Daily Regimen` : "Today's Prescribed Regimen"}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium">
+                  Curated daily set covering all 5 cognitive domains, tailored to your starting tier.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="px-3.5 py-1.5 bg-teal-100 text-teal-900 border border-teal-300 rounded-xl text-xs font-bold text-center">
+                  <span className="block text-[10px] uppercase text-teal-700 font-semibold">Assigned Tier</span>
+                  Tier {dailyAssignedGames[0]?.assignedTier || 1} • {dailyAssignedGames[0]?.tierMetadata?.name || 'Standard'}
+                </div>
+              </div>
+            </div>
+
+            {/* 5 Daily Games Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {dailyAssignedGames.map((game) => {
+                const localizedGame = getLocalizedGame(game, language);
+                const gameProgress = progress[game.id];
+                const isCompleted = gameProgress?.completed;
+
+                return (
+                  <div
+                    key={game.id}
+                    onClick={() => {
+                      sounds.playGentleTap();
+                      onSelectGame(game);
+                    }}
+                    className="p-3 bg-white rounded-2xl border-2 border-teal-200/80 hover:border-teal-500 hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-2">
+                        <span className="text-2xl p-1.5 bg-teal-50 rounded-xl group-hover:scale-110 transition-transform">
+                          {game.icon}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                          {game.category.split('/')[0]}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                        {localizedGame.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-1 font-medium">
+                        {game.culturalTag}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                      {isCompleted ? (
+                        <span className="text-emerald-700 font-bold flex items-center gap-1">
+                          <span>✓</span> Done
+                        </span>
+                      ) : (
+                        <span className="text-teal-700 font-bold group-hover:underline">
+                          Play Today ➔
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {CATEGORY_IDS.map((catItem) => {
           const categoryGames = getCategoryGames(catItem.id);
           if (categoryGames.length === 0) return null;
@@ -275,6 +381,8 @@ export default function Hub({
             </section>
           );
         })}
+          </>
+        )}
       </main>
     </div>
   );

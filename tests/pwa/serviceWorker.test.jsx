@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import App from '../../src/App.jsx';
 import { registerSW } from '../../src/registerServiceWorker.js';
+import { createSession } from '../../src/services/authService.js';
 
 describe('Task 3 & 4: PWA, Service Worker & Offline Shell Verification', () => {
   const originalEnv = process.env.NODE_ENV;
@@ -87,6 +88,7 @@ describe('Task 3 & 4: PWA, Service Worker & Offline Shell Verification', () => {
   });
 
   it('5. App Shell allows navigating from Home to ASHA Dashboard and Patient surface', () => {
+    createSession('Caregiver Maya', 'caregiver');
     render(<App />);
 
     // Verify initial Home surface with English default

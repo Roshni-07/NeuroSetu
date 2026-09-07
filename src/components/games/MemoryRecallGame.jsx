@@ -47,7 +47,7 @@ export default function MemoryRecallGame({ profileId = 'default_patient', patien
       <div className="text-center space-y-2">
         <span className="text-4xl">{task.icon}</span>
         <p className="text-xs font-semibold text-teal-700">পৰ্যায় {initialTier}: {initialTier === 2 ? 'মানক' : 'সহজ'}</p>
-        <button type="button" aria-label="(?) সহায়" onClick={() => {}} className="text-xs text-teal-700">(?) সহায়</button>
+        <button type="button" aria-label="(?) সহায়" onClick={handleSpeak} className="text-xs text-teal-700 hover:text-teal-900 underline font-semibold transition cursor-pointer">(?) সহায়</button>
         <p className="text-xs font-semibold uppercase text-teal-700">{questionTitle}</p>
         <div className="flex items-center justify-center gap-3">
           <h2 className="text-lg font-bold text-slate-900">{prompt}</h2>

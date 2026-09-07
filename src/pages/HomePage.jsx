@@ -5,10 +5,12 @@ export default function HomePage({
   onLaunchDashboard = null,
   onLaunchHub = null,
   onOpenSetup = null,
+  onOpenRoleSelector = null,
   initialLanguage = 'en',
   onLanguageChange = null
 }) {
   const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage || 'en');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLanguageToggle = (lang) => {
     setSelectedLanguage(lang);
@@ -24,16 +26,25 @@ export default function HomePage({
       {/* 1. Home Navigation Bar */}
       <nav className="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md sticky top-0 z-30 px-6 py-3.5">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            onClick={() => {
+              window.location.hash = '#/home';
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            aria-label="NeuroSetu Home"
+            className="flex items-center space-x-3 text-left hover:opacity-90 transition rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+          >
             <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold text-lg shadow-inner">
               ন
             </div>
             <span className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
               NeuroSetu <span className="text-[11px] font-semibold text-teal-400 px-2 py-0.5 rounded-full bg-teal-950/80 border border-teal-800/60">NER Edition</span>
             </span>
-          </div>
+          </button>
 
-          <div className="flex items-center flex-wrap gap-2.5">
+          {/* Desktop Nav Items (hidden on screens < sm) */}
+          <div className="hidden sm:flex items-center flex-wrap gap-2.5">
             {/* Quick Language Toggle & Multilingual Selector */}
             <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 text-xs">
               <button
@@ -80,6 +91,16 @@ export default function HomePage({
               </button>
             )}
 
+            {onOpenRoleSelector && (
+              <button
+                type="button"
+                onClick={onOpenRoleSelector}
+                className="text-xs font-semibold text-teal-300 hover:text-teal-200 border border-teal-500/40 bg-teal-950/40 hover:bg-teal-900/40 px-3 py-1.5 rounded-xl transition cursor-pointer"
+              >
+                👥 {isEn ? 'Role Login' : 'ভূমিকা প্ৰৱেশ'}
+              </button>
+            )}
+
             {onOpenSetup && (
               <button
                 type="button"
@@ -110,7 +131,114 @@ export default function HomePage({
               </button>
             )}
           </div>
+
+          {/* Mobile Hamburger Toggle (< sm) */}
+          <div className="flex sm:hidden items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMobileMenuOpen}
+              className="min-h-touch min-w-touch px-3 py-1.5 text-slate-200 bg-slate-900 border border-slate-800 rounded-xl flex items-center gap-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <span className="text-base leading-none" aria-hidden="true">{isMobileMenuOpen ? '✕' : '☰'}</span>
+              <span>{isMobileMenuOpen ? (isEn ? 'Close' : 'বন্ধ') : (isEn ? 'Menu' : 'মেনু')}</span>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Dropdown Menu (< sm) */}
+        {isMobileMenuOpen && (
+          <div className="sm:hidden mt-3 pt-3 border-t border-slate-800 space-y-2.5 max-w-6xl mx-auto animate-fadeIn">
+            {/* Mobile Language Toggle */}
+            <div className="flex items-center justify-between gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800">
+              <span className="text-xs text-slate-400 font-semibold">{isEn ? 'Language:' : 'ভাষা:'}</span>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => handleLanguageToggle(e.target.value)}
+                className="bg-slate-950 text-slate-200 border border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none focus:border-teal-500"
+                aria-label="Select Language"
+              >
+                <option value="en">🇬🇧 English</option>
+                <option value="as">🌿 অসমীয়া (Assamese)</option>
+                <option value="bn">🌸 বাংলা (Bengali)</option>
+                <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+                <option value="mni">🌺 মৈতৈলোন্ (Manipuri)</option>
+                <option value="lus">🌄 Mizo (Mizoram)</option>
+                <option value="kha">🌧️ Khasi (Meghalaya)</option>
+                <option value="grt">🥁 Garo (A·chik)</option>
+                <option value="brx">🌾 बर’ (Bodo)</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 gap-1.5">
+              {onLaunchPatient && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onLaunchPatient();
+                  }}
+                  className="min-h-touch w-full py-2.5 px-3 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold text-center shadow-soft transition"
+                >
+                  {isEn ? '🎮 Launch Patient App →' : '🎮 খেল আৰম্ভ কৰক →'}
+                </button>
+              )}
+
+              {onLaunchHub && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onLaunchHub();
+                  }}
+                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-bold text-teal-300 bg-teal-950/60 border border-teal-600/50 hover:bg-teal-900/60 rounded-xl transition"
+                >
+                  🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
+                </button>
+              )}
+
+              {onOpenRoleSelector && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenRoleSelector();
+                  }}
+                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-teal-300 hover:text-teal-200 border border-teal-500/40 bg-teal-950/40 hover:bg-teal-900/40 rounded-xl transition"
+                >
+                  👥 {isEn ? 'Role Login' : 'ভূমিকা প্ৰৱেশ'}
+                </button>
+              )}
+
+              {onOpenSetup && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenSetup();
+                  }}
+                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-slate-300 hover:bg-slate-900 rounded-xl transition"
+                >
+                  ⚙️ {isEn ? 'Profile Setup' : 'প্ৰফাইল ছেটিংছ'}
+                </button>
+              )}
+
+              {onLaunchDashboard && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onLaunchDashboard();
+                  }}
+                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-slate-300 hover:bg-slate-900 rounded-xl transition"
+                >
+                  📊 {isEn ? 'ASHA Dashboard' : 'আশা ডেচবৰ্ড'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* 2. Hero Section */}
@@ -161,6 +289,16 @@ export default function HomePage({
             </button>
           )}
 
+          {onOpenRoleSelector && (
+            <button
+              type="button"
+              onClick={onOpenRoleSelector}
+              className="min-h-[50px] px-6 py-3.5 bg-teal-950/70 hover:bg-teal-900/80 border border-teal-500/50 text-teal-200 hover:text-white rounded-2xl text-sm font-semibold shadow-soft transition active:scale-95 flex items-center gap-2 cursor-pointer"
+            >
+              <span>👥 {isEn ? 'Select Role & Log In' : 'ভূমিকা বাছক আৰু প্ৰৱেশ কৰক'}</span>
+            </button>
+          )}
+
           {onOpenSetup && (
             <button
               type="button"
@@ -176,7 +314,9 @@ export default function HomePage({
         <div className="pt-6 flex flex-wrap items-center justify-center gap-5 text-xs text-slate-400">
           <span className="flex items-center gap-1.5">✓ WCAG 2.1 AA Gerontology-Tuned</span>
           <span className="flex items-center gap-1.5">✓ Zero-Punitive Errorless Learning</span>
-          <span className="flex items-center gap-1.5">✓ Elderline (14567) SOS Routing</span>
+          <span className="flex items-center gap-1.5">
+            ✓ Elderline (<a href="tel:14567" className="text-teal-400 hover:text-teal-300 underline font-semibold">14567</a>) SOS Routing
+          </span>
           <span className="flex items-center gap-1.5">✓ 100% Offline Service Worker PWA</span>
         </div>
       </section>
@@ -287,22 +427,45 @@ export default function HomePage({
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="space-y-1 text-center sm:text-left">
             <p className="font-semibold text-slate-300">NeuroSetu (নিওৰোসেতু) — North East India Dementia Stimulation Platform</p>
-            <p>National Toll-Free Senior Helpline: <span className="text-teal-400 font-bold">Elderline (14567)</span></p>
+            <p>
+              National Toll-Free Senior Helpline:{' '}
+              <a
+                href="tel:14567"
+                className="text-teal-400 hover:text-teal-300 font-bold underline focus:outline-none focus:ring-1 focus:ring-teal-500 rounded"
+              >
+                Elderline (14567)
+              </a>
+            </p>
+            <p className="text-slate-400 text-[11px]">
+              © {new Date().getFullYear()} NeuroSetu. All rights reserved. Smart India Hackathon PS26003.
+            </p>
           </div>
 
           <div className="flex items-center space-x-4">
             {onLaunchPatient && (
-              <button onClick={onLaunchPatient} className="hover:text-white underline transition">
+              <button
+                type="button"
+                onClick={onLaunchPatient}
+                className="hover:text-white underline transition"
+              >
                 Patient App
               </button>
             )}
             {onLaunchDashboard && (
-              <button onClick={onLaunchDashboard} className="hover:text-white underline transition">
+              <button
+                type="button"
+                onClick={onLaunchDashboard}
+                className="hover:text-white underline transition"
+              >
                 ASHA Dashboard
               </button>
             )}
             {onOpenSetup && (
-              <button onClick={onOpenSetup} className="hover:text-white underline transition">
+              <button
+                type="button"
+                onClick={onOpenSetup}
+                className="hover:text-white underline transition"
+              >
                 Profile Setup
               </button>
             )}

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import TapSelectGrid from '../shared/TapSelectGrid.jsx';
 import { sounds } from '../utils/soundEffects.js';
+import { resolvePatientStartingTier } from '../engine/dailyAssignmentEngine.js';
 
 const ALL_MARKET_ITEMS = [
   { id: 'tea', label: 'Assam CTC Tea', subtext: 'চাহ পাত (Freshly plucked)', icon: '☕' },
@@ -15,18 +16,38 @@ const ALL_MARKET_ITEMS = [
   { id: 'pitha', label: 'Rice Flour Pitha', subtext: 'তিল পিঠা (Festival sweet)', icon: '🥟' }
 ];
 
-export default function GrandmasShoppingList({ onComplete, language = 'en' }) {
-  const [phase, setPhase] = useState('preview'); // 'preview' | 'selection'
-  const [targetList, setTargetList] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [countdown, setCountdown] = useState(6);
+export default function GrandmasShoppingList({
+  onComplete,
+  onExit,
+  language = 'en',
+  tier = null,
+  startingTier = null,
+  initialTier = null,
+  patientProfile = null
+}) {
+  const effectiveTier = (tier || startingTier || initialTier)
+    ? Number(tier || startingTier || initialTier)
+    : patientProfile
+    ? resolvePatientStartingTier(patientProfile)
+    : 2;
 
-  // Setup random 4 items for Grandma's list
-  useEffect(() => {
+  const targetCount = effectiveTier === 1 ? 2 : effectiveTier === 3 ? 6 : 4;
+  const initialCountdown = effectiveTier === 1 ? 10 : effectiveTier === 3 ? 5 : 6;
+
+  const [phase, setPhase] = useState('preview'); // 'preview' | 'selection'
+  const [targetList] = useState(() => {
     const shuffled = [...ALL_MARKET_ITEMS].sort(() => 0.5 - Math.random());
-    const targets = shuffled.slice(0, 4);
-    setTargetList(targets);
-  }, []);
+    return shuffled.slice(0, targetCount);
+  });
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [countdown, setCountdown] = useState(initialCountdown);
+
+  const selectionPool = useMemo(() => {
+    if (effectiveTier !== 1) return ALL_MARKET_ITEMS;
+    const targetIds = targetList.map((t) => t.id);
+    const nonTargets = ALL_MARKET_ITEMS.filter((item) => !targetIds.includes(item.id));
+    return [...targetList, ...nonTargets.slice(0, 2)].sort((a, b) => a.label.localeCompare(b.label));
+  }, [effectiveTier, targetList]);
 
   // Countdown timer for preview
   useEffect(() => {
@@ -75,6 +96,19 @@ export default function GrandmasShoppingList({ onComplete, language = 'en' }) {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+      {onExit && (
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+            aria-label="Exit to hub"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span>Exit to Hub</span>
+          </button>
+        </div>
+      )}
       {phase === 'preview' ? (
         /* Preview Phase */
         <div className="bg-teal-50/90 border-4 border-teal-300 rounded-3xl p-6 sm:p-8 shadow-xl text-center space-y-6">
@@ -146,7 +180,7 @@ export default function GrandmasShoppingList({ onComplete, language = 'en' }) {
 
           <TapSelectGrid
             language={language}
-            items={ALL_MARKET_ITEMS}
+            items={selectionPool}
             selectedIds={selectedIds}
             onToggle={handleToggle}
             columns={2}
