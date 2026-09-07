@@ -100,6 +100,103 @@ export function evaluateDifficulty(currentTier = 1, {
   };
 }
 
+/**
+ * Compute continuous 1-10 difficulty level from 0-100 masteryScore
+ * Formula: getLevel(masteryScore) => Math.min(10, Math.max(1, Math.ceil(masteryScore / 10)))
+ * 
+ * @param {number} masteryScore - Integer 0-100 (defaults to 50)
+ * @returns {number} Level from 1 to 10
+ */
+export function getLevel(masteryScore = 50) {
+  const safeScore = Number.isFinite(Number(masteryScore)) ? Number(masteryScore) : 50;
+  return Math.min(10, Math.max(1, Math.ceil(safeScore / 10)));
+}
+
+/**
+ * Pure function to evaluate and update masteryScore based on gameplay events.
+ * 
+ * Promotion: 3 consecutive correct answers with response time under 10s -> masteryScore += 8 (cap at 100)
+ * Demotion: 1 timeout (>15s) OR 2 consecutive errors -> masteryScore -= 12 (floor at 0)
+ * 
+ * @param {number|Object} currentScore - Current masteryScore (0-100) or state object { score, consecutiveFast, consecutiveErrors }
+ * @param {'correct_fast'|'correct_slow'|'error'|'timeout'} event - Turn outcome event
+ * @param {Object} [context] - Optional streak context when currentScore is a number
+ * @param {number} [context.consecutiveFast] - Count of consecutive fast correct turns (<10s)
+ * @param {number} [context.consecutiveErrors] - Count of consecutive error turns
+ * @returns {number|Object} Updated score (or updated state object if object was provided)
+ */
+export function updateMasteryScore(currentScore, event, context = {}) {
+  const isObjectState = typeof currentScore === 'object' && currentScore !== null;
+  const rawScore = isObjectState ? currentScore.score : currentScore;
+  const score = Number.isFinite(Number(rawScore)) ? Number(rawScore) : 50;
+
+  let consecutiveFast = isObjectState
+    ? (currentScore.consecutiveFast || 0)
+    : (context.consecutiveFast ?? (event === 'correct_fast' ? 3 : 0));
+
+  let consecutiveErrors = isObjectState
+    ? (currentScore.consecutiveErrors || 0)
+    : (context.consecutiveErrors ?? (event === 'error' ? 2 : 0));
+
+  let newScore = score;
+
+  switch (event) {
+    case 'correct_fast': {
+      if (isObjectState) {
+        consecutiveFast += 1;
+        consecutiveErrors = 0;
+        if (consecutiveFast >= 3) {
+          newScore = Math.min(100, score + 8);
+          consecutiveFast = 0;
+        }
+      } else {
+        if (consecutiveFast >= 3) {
+          newScore = Math.min(100, score + 8);
+        }
+      }
+      break;
+    }
+    case 'correct_slow': {
+      consecutiveFast = 0;
+      consecutiveErrors = 0;
+      break;
+    }
+    case 'error': {
+      if (isObjectState) {
+        consecutiveErrors += 1;
+        consecutiveFast = 0;
+        if (consecutiveErrors >= 2) {
+          newScore = Math.max(0, score - 12);
+          consecutiveErrors = 0;
+        }
+      } else {
+        if (consecutiveErrors >= 2) {
+          newScore = Math.max(0, score - 12);
+        }
+      }
+      break;
+    }
+    case 'timeout': {
+      consecutiveFast = 0;
+      newScore = Math.max(0, score - 12);
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (isObjectState) {
+    return {
+      score: newScore,
+      level: getLevel(newScore),
+      consecutiveFast,
+      consecutiveErrors
+    };
+  }
+
+  return newScore;
+}
+
 export {
   assignDailyGames,
   COGNITIVE_DOMAINS,

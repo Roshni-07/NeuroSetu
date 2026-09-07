@@ -225,9 +225,11 @@ export default function RemindersHub({
             <button
               type="button"
               onClick={onExit}
-              className="text-xs font-medium text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+              aria-label={isHi ? 'वापस' : (isEn ? 'Back' : 'উভতি যাওক')}
             >
-              {isHi ? 'वापस' : (isEn ? 'Back' : 'উভতি যাওক')}
+              <span className="text-lg leading-none">←</span>
+              <span>{isHi ? 'वापस' : (isEn ? 'Back' : 'উভতি যাওক')}</span>
             </button>
           )}
         </div>

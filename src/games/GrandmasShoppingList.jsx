@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import TapSelectGrid from '../shared/TapSelectGrid.jsx';
 import { sounds } from '../utils/soundEffects.js';
-import { resolvePatientStartingTier } from '../engine/dailyAssignmentEngine.js';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
 const ALL_MARKET_ITEMS = [
   { id: 'tea', label: 'Assam CTC Tea', subtext: 'চাহ পাত (Freshly plucked)', icon: '☕' },
@@ -20,19 +21,42 @@ export default function GrandmasShoppingList({
   onComplete,
   onExit,
   language = 'en',
+  level = null,
+  masteryScore = null,
   tier = null,
   startingTier = null,
   initialTier = null,
-  patientProfile = null
+  patientProfile = null,
+  onLevelChange = null
 }) {
-  const effectiveTier = (tier || startingTier || initialTier)
-    ? Number(tier || startingTier || initialTier)
-    : patientProfile
-    ? resolvePatientStartingTier(patientProfile)
-    : 2;
+  const currentLevel = useMemo(() => {
+    if (level && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [level, masteryScore, patientProfile, tier, startingTier, initialTier]);
 
-  const targetCount = effectiveTier === 1 ? 2 : effectiveTier === 3 ? 6 : 4;
-  const initialCountdown = effectiveTier === 1 ? 10 : effectiveTier === 3 ? 5 : 6;
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const params = useMemo(() => {
+    return getDifficultyParams('grandmas-shopping-list', currentLevel);
+  }, [currentLevel]);
+
+  const targetCount = params.itemCount;
+  const initialCountdown = useMemo(() => {
+    if (currentLevel <= 2) return 10;
+    if (currentLevel >= 9) return 5;
+    return 6;
+  }, [currentLevel]);
 
   const [phase, setPhase] = useState('preview'); // 'preview' | 'selection'
   const [targetList] = useState(() => {
@@ -43,11 +67,11 @@ export default function GrandmasShoppingList({
   const [countdown, setCountdown] = useState(initialCountdown);
 
   const selectionPool = useMemo(() => {
-    if (effectiveTier !== 1) return ALL_MARKET_ITEMS;
     const targetIds = targetList.map((t) => t.id);
     const nonTargets = ALL_MARKET_ITEMS.filter((item) => !targetIds.includes(item.id));
-    return [...targetList, ...nonTargets.slice(0, 2)].sort((a, b) => a.label.localeCompare(b.label));
-  }, [effectiveTier, targetList]);
+    const distractors = nonTargets.slice(0, params.distractorCount);
+    return [...targetList, ...distractors].sort((a, b) => a.label.localeCompare(b.label));
+  }, [targetList, params.distractorCount]);
 
   // Countdown timer for preview
   useEffect(() => {
@@ -89,6 +113,7 @@ export default function GrandmasShoppingList({
       score,
       maxScore: 100,
       accuracy,
+      level: currentLevel,
       message,
       subtext: `Target: ${targetIds.length} items. You matched ${correctCount} correctly.`
     });
@@ -96,8 +121,8 @@ export default function GrandmasShoppingList({
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      {onExit && (
-        <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4">
+        {onExit ? (
           <button
             type="button"
             onClick={onExit}
@@ -107,8 +132,11 @@ export default function GrandmasShoppingList({
             <span className="text-lg leading-none">←</span>
             <span>Exit to Hub</span>
           </button>
-        </div>
-      )}
+        ) : <div />}
+        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+          Level {currentLevel}/10
+        </span>
+      </div>
       {phase === 'preview' ? (
         /* Preview Phase */
         <div className="bg-teal-50/90 border-4 border-teal-300 rounded-3xl p-6 sm:p-8 shadow-xl text-center space-y-6">

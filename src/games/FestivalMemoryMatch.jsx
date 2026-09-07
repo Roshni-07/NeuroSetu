@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import FlipCard from '../shared/FlipCard.jsx';
 import { sounds } from '../utils/soundEffects.js';
-import { resolvePatientStartingTier } from '../engine/dailyAssignmentEngine.js';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
 const FESTIVAL_PAIRS = [
   { id: 'dhol', label: 'Bihu Dhol', icon: '🥁' },
@@ -16,19 +17,38 @@ export default function FestivalMemoryMatch({
   onComplete,
   onExit,
   language = 'en',
+  level = null,
+  masteryScore = null,
   tier = null,
   startingTier = null,
   initialTier = null,
-  patientProfile = null
+  patientProfile = null,
+  onLevelChange = null
 }) {
-  const effectiveTier = (tier || startingTier || initialTier)
-    ? Number(tier || startingTier || initialTier)
-    : patientProfile
-    ? resolvePatientStartingTier(patientProfile)
-    : 2;
+  const currentLevel = useMemo(() => {
+    if (level && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [level, masteryScore, patientProfile, tier, startingTier, initialTier]);
 
-  const targetPairsCount = effectiveTier === 1 ? 2 : effectiveTier === 3 ? 6 : 4;
-  const resetDelayMs = effectiveTier === 1 ? 1500 : effectiveTier === 3 ? 800 : 1100;
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const params = useMemo(() => {
+    return getDifficultyParams('festival-memory-match', currentLevel);
+  }, [currentLevel]);
+
+  const targetPairsCount = params.itemCount;
+  const resetDelayMs = params.previewTimeMs;
 
   const [cards, setCards] = useState([]);
   const [flippedIndices, setFlippedIndices] = useState([]);
@@ -83,6 +103,7 @@ export default function FestivalMemoryMatch({
               score,
               maxScore: 100,
               accuracy,
+              level: currentLevel,
               message: 'Well done! You remembered and matched all festival treasures.',
               subtext: `Completed in ${turns + 1} turns.`
             });
@@ -101,8 +122,8 @@ export default function FestivalMemoryMatch({
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      {onExit && (
-        <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
+        {onExit ? (
           <button
             type="button"
             onClick={onExit}
@@ -112,8 +133,11 @@ export default function FestivalMemoryMatch({
             <span className="text-lg leading-none">←</span>
             <span>Exit to Hub</span>
           </button>
-        </div>
-      )}
+        ) : <div />}
+        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+          Level {currentLevel}/10
+        </span>
+      </div>
       {/* Game Header Bar */}
       <div className="p-4 rounded-2xl bg-teal-50 border-2 border-teal-300 flex items-center justify-between">
         <div>

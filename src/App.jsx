@@ -38,6 +38,7 @@ export default function App() {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [isRoleSelectorOpen, setIsRoleSelectorOpen] = useState(false);
   const [authRole, setAuthRole] = useState(ROLES.PATIENT);
+  const [pinOpenedFromRoleSelector, setPinOpenedFromRoleSelector] = useState(false);
   const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
   const [isSosOpen, setIsSosOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -111,6 +112,7 @@ export default function App() {
   const handleAuthSuccess = (newSession) => {
     setSession(newSession);
     setIsPinModalOpen(false);
+    setPinOpenedFromRoleSelector(false);
     setIsCheckModalOpen(false);
     setIsRoleSelectorOpen(false);
 
@@ -124,7 +126,21 @@ export default function App() {
   const handleSelectRole = (role) => {
     setAuthRole(role);
     setIsRoleSelectorOpen(false);
+    setPinOpenedFromRoleSelector(true);
     setIsPinModalOpen(true);
+  };
+
+  const handleBackToRoleSelector = () => {
+    setIsPinModalOpen(false);
+    setPinOpenedFromRoleSelector(false);
+    setIsRoleSelectorOpen(true);
+  };
+
+  const handleOnboardingBack = () => {
+    setIsOnboardingOpen(false);
+    if (isOnboardingInitialSignup) {
+      setIsCheckModalOpen(true);
+    }
   };
 
   const handleLogout = () => {
@@ -999,7 +1015,10 @@ export default function App() {
       {/* Accessible PIN Authentication Modal */}
       <PinAuthModal
         isOpen={isPinModalOpen}
-        onClose={() => setIsPinModalOpen(false)}
+        onClose={() => {
+          setIsPinModalOpen(false);
+          setPinOpenedFromRoleSelector(false);
+        }}
         onSuccess={handleAuthSuccess}
         profileName={
           authRole === ROLES.CAREGIVER
@@ -1009,10 +1028,9 @@ export default function App() {
             : (patientProfile?.name || 'Elderly Patient')
         }
         role={authRole}
-        onChangeRole={() => {
-          setIsPinModalOpen(false);
-          setIsRoleSelectorOpen(true);
-        }}
+        openedFromRoleSelector={pinOpenedFromRoleSelector}
+        onBackToRoleSelector={handleBackToRoleSelector}
+        onChangeRole={handleBackToRoleSelector}
       />
 
       {/* One-Touch Voice SOS Emergency Assistance Modal */}
@@ -1031,6 +1049,7 @@ export default function App() {
         isInitialSignup={isOnboardingInitialSignup}
         initialProfile={patientProfile}
         onClose={() => setIsOnboardingOpen(false)}
+        onBack={handleOnboardingBack}
         onSave={(updatedProfile) => {
           setPatientProfile(updatedProfile);
           setIsOnboardingOpen(false);

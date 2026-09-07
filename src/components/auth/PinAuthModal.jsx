@@ -11,7 +11,9 @@ export default function PinAuthModal({
   onClose,
   profileName = 'Primary Patient',
   role = 'patient',
-  onChangeRole = null
+  onChangeRole = null,
+  openedFromRoleSelector = false,
+  onBackToRoleSelector = null
 }) {
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -248,17 +250,40 @@ export default function PinAuthModal({
           </button>
         </div>
 
-        {/* Optional Cancel/Close Button if provided */}
-        {onClose && (
-          <div className="mt-4 pt-3 border-t border-slate-100">
+        {/* Back to Role Selection (when opened from RoleSelector in this session) OR Cancel */}
+        {(openedFromRoleSelector || onBackToRoleSelector) ? (
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={onClose}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 py-1.5 px-4 rounded-xl transition"
+              onClick={onBackToRoleSelector || onChangeRole}
+              className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+              aria-label="Back to role selection"
             >
-              Cancel
+              <span className="text-lg leading-none">←</span>
+              <span>Back to role selection</span>
             </button>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-xs font-semibold text-slate-400 hover:text-slate-700 py-1.5 px-3 rounded-xl transition"
+              >
+                Cancel
+              </button>
+            )}
           </div>
+        ) : (
+          onClose && (
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 py-1.5 px-4 rounded-xl transition"
+              >
+                Cancel
+              </button>
+            </div>
+          )
         )}
       </div>
     </div>

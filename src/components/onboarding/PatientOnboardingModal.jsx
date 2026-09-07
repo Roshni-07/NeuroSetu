@@ -8,6 +8,7 @@ export default function PatientOnboardingModal({
   isOpen = false,
   isInitialSignup = false,
   onClose = null,
+  onBack = null,
   onSave = null,
   initialProfile = null
 }) {
@@ -590,18 +591,22 @@ export default function PatientOnboardingModal({
               <button
                 type="button"
                 onClick={handleBack}
-                className="min-h-[44px] px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+                aria-label="Go back"
               >
-                ← পিছলৈ (Back)
+                <span className="text-lg leading-none">←</span>
+                <span>পিছলৈ (Back)</span>
               </button>
             ) : (
-              onClose && (
+              (onBack || onClose) && (
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="min-h-[44px] px-4 py-2 text-slate-400 hover:text-slate-700 font-semibold text-xs transition"
+                  onClick={onBack || onClose}
+                  className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+                  aria-label={onBack ? "Go back" : "Cancel onboarding"}
                 >
-                  বাতিল (Cancel)
+                  <span className="text-lg leading-none">←</span>
+                  <span>{onBack ? 'পিছলৈ (Back)' : 'বাতিল (Cancel)'}</span>
                 </button>
               )
             )}

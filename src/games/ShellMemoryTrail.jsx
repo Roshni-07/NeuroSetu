@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import HighlightRecall from '../shared/HighlightRecall.jsx';
-import { resolvePatientStartingTier } from '../engine/dailyAssignmentEngine.js';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
 const ALL_RIVER_SHELLS = [
   { id: 'shell_1', label: 'Cowrie', icon: '🐚' },
@@ -15,34 +16,47 @@ export default function ShellMemoryTrail({
   onComplete,
   onExit,
   language = 'en',
+  level = null,
+  masteryScore = null,
   tier = null,
   startingTier = null,
   initialTier = null,
-  patientProfile = null
+  patientProfile = null,
+  onLevelChange = null
 }) {
-  const effectiveTier = (tier || startingTier || initialTier)
-    ? Number(tier || startingTier || initialTier)
-    : patientProfile?.starting_difficulty_tier || patientProfile?.startingTier
-    ? Number(patientProfile.starting_difficulty_tier || patientProfile.startingTier)
-    : patientProfile?.status === 'critical'
-    ? 1
-    : patientProfile?.status === 'attention'
-    ? 2
-    : patientProfile?.status === 'stable'
-    ? 3
-    : 2; // Default baseline Tier 2
+  const currentLevel = useMemo(() => {
+    if (level && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [level, masteryScore, patientProfile, tier, startingTier, initialTier]);
+
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const params = useMemo(() => {
+    return getDifficultyParams('shell-memory-trail', currentLevel);
+  }, [currentLevel]);
 
   const activeItems = useMemo(() => {
-    if (effectiveTier === 1) {
-      return [ALL_RIVER_SHELLS[0], ALL_RIVER_SHELLS[2], ALL_RIVER_SHELLS[4]]; // 3 visually distinct items
+    if (currentLevel <= 3) {
+      return [ALL_RIVER_SHELLS[0], ALL_RIVER_SHELLS[2], ALL_RIVER_SHELLS[4]]; // 3 visually distinct items (low distractor similarity)
     }
-    if (effectiveTier === 3) {
+    if (currentLevel >= 8) {
       return ALL_RIVER_SHELLS; // 6 items
     }
     return ALL_RIVER_SHELLS.slice(0, 5); // 5 items
-  }, [effectiveTier]);
+  }, [currentLevel]);
 
-  const highlightTime = effectiveTier === 1 ? 3500 : effectiveTier === 3 ? 1600 : 2400;
+  const highlightTime = params.previewTimeMs;
 
   const [round, setRound] = useState(1); // 3 rounds total
   const [targetId, setTargetId] = useState(() => activeItems[0].id);
@@ -50,14 +64,9 @@ export default function ShellMemoryTrail({
   const [gameVersion, setGameVersion] = useState(0);
 
   const shuffleCount = useMemo(() => {
-    if (effectiveTier === 1) {
-      return round === 1 ? 1 : 2;
-    }
-    if (effectiveTier === 3) {
-      return round === 1 ? 3 : round === 2 ? 4 : 5;
-    }
-    return round === 1 ? 2 : round === 2 ? 3 : 4;
-  }, [effectiveTier, round]);
+    const baseShuffles = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+    return baseShuffles + (round - 1);
+  }, [currentLevel, round]);
 
   const startNextRound = (isCorrect) => {
     const updatedResults = [...roundResults, isCorrect];
@@ -80,6 +89,7 @@ export default function ShellMemoryTrail({
         score,
         maxScore: 100,
         accuracy,
+        level: currentLevel,
         message,
         subtext: `Found the pearl in ${correctRounds} of 3 rounds.`
       });
@@ -94,8 +104,8 @@ export default function ShellMemoryTrail({
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      {onExit && (
-        <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
+        {onExit ? (
           <button
             type="button"
             onClick={onExit}
@@ -105,8 +115,11 @@ export default function ShellMemoryTrail({
             <span className="text-lg leading-none">←</span>
             <span>Exit to Hub</span>
           </button>
-        </div>
-      )}
+        ) : <div />}
+        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+          Level {currentLevel}/10
+        </span>
+      </div>
       {/* Top Banner with Round indicators */}
       <div className="p-4 rounded-2xl bg-teal-50 border-2 border-teal-300 flex items-center justify-between">
         <div>

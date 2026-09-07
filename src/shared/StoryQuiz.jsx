@@ -121,12 +121,25 @@ export default function StoryQuiz({
             ))}
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-500 font-medium">Page {readingPage + 1} of {totalPages}</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {readingPage > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setReadingPage(p => Math.max(0, p - 1))}
+                  className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+                  aria-label="Previous page"
+                >
+                  <span className="text-lg leading-none">←</span>
+                  <span>Previous Page</span>
+                </button>
+              )}
+              <span className="text-sm text-slate-500 font-medium">Page {readingPage + 1} of {totalPages}</span>
+            </div>
             <button
               type="button"
               onClick={handleNextPage}
-              className="min-h-[52px] px-8 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xl font-bold shadow-lg active:scale-95 transition-transform"
+              className="min-h-[52px] px-8 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xl font-bold shadow-lg active:scale-95 transition-transform cursor-pointer"
             >
               {readingPage < totalPages - 1 ? 'Next →' : 'Answer Questions →'}
             </button>

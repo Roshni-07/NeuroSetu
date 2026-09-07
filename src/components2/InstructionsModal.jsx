@@ -16,6 +16,8 @@ import { getUIString } from '../data/gamesLocalization.js';
 export default function InstructionsModal({
   isOpen = true,
   onClose,
+  onBackToHub = null,
+  onExit = null,
   title = '',
   gameName = '',
   culturalTag = '',
@@ -90,8 +92,24 @@ export default function InstructionsModal({
           <span>{modalTip}</span>
         </div>
 
-        {/* Big Start Button */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        {/* Actions: Back to Hub & Big Start Button */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          {(onBackToHub || onExit) && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playGentleTap();
+                if (onBackToHub) onBackToHub();
+                else if (onExit) onExit();
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+              aria-label="Exit to hub"
+            >
+              <span className="text-lg leading-none">←</span>
+              <span>{getUIString('gamesHub', language) || 'Exit to Hub'}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleStart}

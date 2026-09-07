@@ -76,6 +76,7 @@ export const DEFAULT_PROFILE = {
   favoriteFestival: 'Rongali Bihu',
   favoriteFood: 'Masor Tenga & Pitha',
   starting_difficulty_tier: 1,
+  masteryScore: 50,
   dailyRoutine: DEFAULT_DAILY_ROUTINE
 };
 

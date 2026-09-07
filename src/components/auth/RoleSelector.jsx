@@ -139,13 +139,15 @@ export default function RoleSelector({
 
         {/* Optional Cancel/Dismiss button */}
         {onClose && (
-          <div className="pt-2 border-t border-slate-100">
+          <div className="pt-3 border-t border-slate-100 flex justify-center">
             <button
               type="button"
               onClick={onClose}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 py-1.5 px-4 rounded-xl transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+              aria-label={isEn ? 'Cancel' : 'বাতিল কৰক (Cancel)'}
             >
-              {isEn ? 'Cancel' : 'বাতিল কৰক (Cancel)'}
+              <span className="text-lg leading-none">←</span>
+              <span>{isEn ? 'Cancel' : 'বাতিল কৰক (Cancel)'}</span>
             </button>
           </div>
         )}

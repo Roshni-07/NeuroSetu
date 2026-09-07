@@ -1,44 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DragDropZone from '../shared/DragDropZone.jsx';
 import { getActiveProfile } from '../db/indexedDb.js';
-import { resolvePatientStartingTier } from '../engine/dailyAssignmentEngine.js';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
-const ROUTINE_ITEMS_TIER_2 = [
-  { id: 'tea', label: 'Morning Chai', icon: '☕', subtext: 'Dawn tea on the veranda', correctSlot: 'slot_1' },
-  { id: 'garden', label: 'Tending Garden', icon: '🌿', subtext: 'Watering tea plants & herbs', correctSlot: 'slot_2' },
-  { id: 'medicine', label: 'Taking Medicine', icon: '💊', subtext: 'Prescribed morning pills', correctSlot: 'slot_3' },
-  { id: 'lunch', label: 'Midday Meal', icon: '🍲', subtext: 'Rice, lentils, and garden greens', correctSlot: 'slot_4' },
-  { id: 'bedtime', label: 'Night Rest', icon: '🌙', subtext: 'Prayer lamp and quiet sleep', correctSlot: 'slot_5' }
+const MASTER_ROUTINE_ITEMS = [
+  { id: 'tea', label: 'Morning Chai', icon: '☕', subtext: 'Dawn tea on the veranda' },
+  { id: 'garden', label: 'Tending Garden', icon: '🌿', subtext: 'Watering tea plants & herbs' },
+  { id: 'medicine', label: 'Taking Medicine', icon: '💊', subtext: 'Prescribed morning pills' },
+  { id: 'lunch', label: 'Midday Meal', icon: '🍲', subtext: 'Rice, lentils, and garden greens' },
+  { id: 'rest', label: 'Afternoon Rest', icon: '🛏️', subtext: 'Veranda rest & quiet' },
+  { id: 'bedtime', label: 'Night Rest', icon: '🌙', subtext: 'Prayer lamp and quiet sleep' }
 ];
 
-const ROUTINE_ITEMS_TIER_1 = [
-  { id: 'tea', label: 'Morning Chai', icon: '☕', subtext: 'Dawn tea on the veranda', correctSlot: 'slot_1' },
-  { id: 'bedtime', label: 'Night Rest', icon: '🌙', subtext: 'Prayer lamp and quiet sleep', correctSlot: 'slot_2' }
-];
-
-const ROUTINE_ITEMS_TIER_3 = [
-  { id: 'tea', label: 'Morning Chai', icon: '☕', subtext: 'Dawn tea on the veranda', correctSlot: 'slot_1' },
-  { id: 'garden', label: 'Tending Garden', icon: '🌿', subtext: 'Watering tea plants & herbs', correctSlot: 'slot_2' },
-  { id: 'medicine', label: 'Taking Medicine', icon: '💊', subtext: 'Prescribed morning pills', correctSlot: 'slot_3' },
-  { id: 'lunch', label: 'Midday Meal', icon: '🍲', subtext: 'Rice, lentils, and garden greens', correctSlot: 'slot_4' },
-  { id: 'rest', label: 'Afternoon Rest', icon: '🛏️', subtext: 'Veranda rest & quiet', correctSlot: 'slot_5' },
-  { id: 'bedtime', label: 'Night Rest', icon: '🌙', subtext: 'Prayer lamp and quiet sleep', correctSlot: 'slot_6' }
-];
-
-const ORDER_ZONES_TIER_2 = [
-  { id: 'slot_1', title: '1st • Early Morning', subtitle: 'At dawn', icon: '🌅' },
-  { id: 'slot_2', title: '2nd • Morning Routine', subtitle: 'Forenoon work', icon: '🐓' },
-  { id: 'slot_3', title: '3rd • Midday Care', subtitle: 'Daily health', icon: '💊' },
-  { id: 'slot_4', title: '4th • Afternoon Lunch', subtitle: 'Midday nutrition', icon: '🍲' },
-  { id: 'slot_5', title: '5th • Night Rest', subtitle: 'Bedtime peaceful sleep', icon: '🌙' }
-];
-
-const ORDER_ZONES_TIER_1 = [
-  { id: 'slot_1', title: '1st • Early Morning', subtitle: 'At dawn', icon: '🌅' },
-  { id: 'slot_2', title: '2nd • Night Rest', subtitle: 'Bedtime peaceful sleep', icon: '🌙' }
-];
-
-const ORDER_ZONES_TIER_3 = [
+const MASTER_ORDER_ZONES = [
   { id: 'slot_1', title: '1st • Early Morning', subtitle: 'At dawn', icon: '🌅' },
   { id: 'slot_2', title: '2nd • Morning Routine', subtitle: 'Forenoon work', icon: '🐓' },
   { id: 'slot_3', title: '3rd • Midday Care', subtitle: 'Daily health', icon: '💊' },
@@ -51,23 +26,36 @@ export default function DailyRoutineRecall({
   onComplete,
   onExit,
   language = 'en',
+  level = null,
+  masteryScore = null,
   tier = null,
   startingTier = null,
   initialTier = null,
   patientProfile = null,
-  profileId = null
+  profileId = null,
+  onLevelChange = null
 }) {
-  const effectiveTier = (tier || startingTier || initialTier)
-    ? Number(tier || startingTier || initialTier)
-    : patientProfile?.starting_difficulty_tier || patientProfile?.startingTier
-    ? Number(patientProfile.starting_difficulty_tier || patientProfile.startingTier)
-    : patientProfile?.status === 'critical'
-    ? 1
-    : patientProfile?.status === 'attention'
-    ? 2
-    : patientProfile?.status === 'stable'
-    ? 3
-    : 2; // Standard baseline (Tier 2)
+  const currentLevel = useMemo(() => {
+    if (level && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [level, masteryScore, patientProfile, tier, startingTier, initialTier]);
+
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const params = useMemo(() => {
+    return getDifficultyParams('daily-routine-recall', currentLevel);
+  }, [currentLevel]);
 
   const [profile, setProfile] = useState(patientProfile);
   const [assignments, setAssignments] = useState({}); // { [itemId]: zoneId }
@@ -82,45 +70,78 @@ export default function DailyRoutineRecall({
     }
   }, [patientProfile, profileId]);
 
-  // Use captured patient routine if available (3-6 items), else fallback to generic per-tier ROUTINE_ITEMS
+  // Use captured patient routine if available, else fallback to master list scaled by params.itemCount
   const hasCustomRoutine = Boolean(
-    profile?.dailyRoutine && Array.isArray(profile.dailyRoutine) && profile.dailyRoutine.length >= 3
+    profile?.dailyRoutine && Array.isArray(profile.dailyRoutine) && profile.dailyRoutine.length >= 2
   );
 
   const activeRoutineItems = useMemo(() => {
-    if (!hasCustomRoutine) {
-      if (effectiveTier === 1) return ROUTINE_ITEMS_TIER_1;
-      if (effectiveTier === 3) return ROUTINE_ITEMS_TIER_3;
-      return ROUTINE_ITEMS_TIER_2;
+    if (hasCustomRoutine) {
+      const itemsToTake = currentLevel <= 3 ? 2 : currentLevel >= 8 ? 6 : Math.min(5, profile.dailyRoutine.length);
+      const sliced = profile.dailyRoutine.slice(0, itemsToTake);
+      return sliced.map((item, idx) => ({
+        id: item.id || `custom_routine_${idx + 1}`,
+        label: item.label,
+        icon: item.icon || '⏰',
+        subtext: item.time || `Daily step ${idx + 1}`,
+        time: item.time,
+        correctSlot: `slot_${idx + 1}`
+      }));
     }
 
-    const itemsToTake = effectiveTier === 1 ? 2 : effectiveTier === 3 ? 6 : Math.min(5, profile.dailyRoutine.length);
-    const sliced = profile.dailyRoutine.slice(0, itemsToTake);
+    if (currentLevel <= 3) {
+      return [
+        { ...MASTER_ROUTINE_ITEMS[0], correctSlot: 'slot_1' },
+        { ...MASTER_ROUTINE_ITEMS[5], correctSlot: 'slot_2' }
+      ];
+    }
 
-    return sliced.map((item, idx) => ({
-      id: item.id || `custom_routine_${idx + 1}`,
-      label: item.label,
-      icon: item.icon || '⏰',
-      subtext: item.time || `Daily step ${idx + 1}`,
-      time: item.time,
-      correctSlot: `slot_${idx + 1}`
-    }));
-  }, [hasCustomRoutine, profile, effectiveTier]);
+    if (currentLevel >= 8) {
+      return MASTER_ROUTINE_ITEMS.map((item, idx) => ({
+        ...item,
+        correctSlot: `slot_${idx + 1}`
+      }));
+    }
+
+    return [
+      { ...MASTER_ROUTINE_ITEMS[0], correctSlot: 'slot_1' },
+      { ...MASTER_ROUTINE_ITEMS[1], correctSlot: 'slot_2' },
+      { ...MASTER_ROUTINE_ITEMS[2], correctSlot: 'slot_3' },
+      { ...MASTER_ROUTINE_ITEMS[3], correctSlot: 'slot_4' },
+      { ...MASTER_ROUTINE_ITEMS[5], correctSlot: 'slot_5' }
+    ];
+  }, [hasCustomRoutine, profile, currentLevel]);
 
   const activeOrderZones = useMemo(() => {
-    if (!hasCustomRoutine) {
-      if (effectiveTier === 1) return ORDER_ZONES_TIER_1;
-      if (effectiveTier === 3) return ORDER_ZONES_TIER_3;
-      return ORDER_ZONES_TIER_2;
+    if (hasCustomRoutine) {
+      const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
+      return activeRoutineItems.map((item, idx) => ({
+        id: `slot_${idx + 1}`,
+        title: `${ordinals[idx] || `${idx + 1}th`} • ${item.subtext || `Step ${idx + 1}`}`,
+        subtitle: item.time ? `Scheduled: ${item.time}` : 'Daily order',
+        icon: item.icon || '🌅'
+      }));
     }
-    const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
-    return activeRoutineItems.map((item, idx) => ({
-      id: `slot_${idx + 1}`,
-      title: `${ordinals[idx] || `${idx + 1}th`} • ${item.subtext || `Step ${idx + 1}`}`,
-      subtitle: item.time ? `Scheduled: ${item.time}` : 'Daily order',
-      icon: item.icon || '🌅'
-    }));
-  }, [hasCustomRoutine, activeRoutineItems, effectiveTier]);
+
+    if (activeRoutineItems.length === 2) {
+      return [
+        { id: 'slot_1', title: '1st • Early Morning', subtitle: 'At dawn', icon: '🌅' },
+        { id: 'slot_2', title: '2nd • Night Rest', subtitle: 'Bedtime peaceful sleep', icon: '🌙' }
+      ];
+    }
+
+    if (activeRoutineItems.length === 6) {
+      return MASTER_ORDER_ZONES;
+    }
+
+    return [
+      MASTER_ORDER_ZONES[0],
+      MASTER_ORDER_ZONES[1],
+      MASTER_ORDER_ZONES[2],
+      MASTER_ORDER_ZONES[3],
+      { id: 'slot_5', title: '5th • Night Rest', subtitle: 'Bedtime peaceful sleep', icon: '🌙' }
+    ];
+  }, [hasCustomRoutine, activeRoutineItems]);
 
   const handleAssign = (itemId, zoneId) => {
     setAssignments((prev) => {
@@ -162,6 +183,7 @@ export default function DailyRoutineRecall({
       score,
       maxScore: 100,
       accuracy,
+      level: currentLevel,
       message,
       subtext: `${correctCount} of ${activeRoutineItems.length} routine steps placed in order.`
     });
@@ -171,8 +193,8 @@ export default function DailyRoutineRecall({
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {onExit && (
-        <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
+        {onExit ? (
           <button
             type="button"
             onClick={onExit}
@@ -182,8 +204,11 @@ export default function DailyRoutineRecall({
             <span className="text-lg leading-none">←</span>
             <span>Exit to Hub</span>
           </button>
-        </div>
-      )}
+        ) : <div />}
+        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+          Level {currentLevel}/10
+        </span>
+      </div>
       <div className="p-4 rounded-2xl bg-teal-50 border-2 border-teal-300 flex items-center justify-between">
         <div>
           <h3 className="text-xl sm:text-2xl font-bold text-slate-900">

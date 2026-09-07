@@ -206,6 +206,8 @@ export default function GameWrapper({
         <InstructionsModal
           isOpen={showInstructions}
           onClose={() => setShowInstructions(false)}
+          onBackToHub={onExit || onBack}
+          onExit={onExit || onBack}
           gameName={displayConfig.name}
           culturalTag={displayConfig.culturalTag}
           language={language}
