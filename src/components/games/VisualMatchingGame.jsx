@@ -4,7 +4,16 @@ import SpeakButton from '../../components2/SpeakButton.jsx';
 
 const task = TEXTILE_PATTERN_TASKS[0];
 
-export default function PatternMatchingGame({ patientProfile = null, onComplete = null, onExit = null }) {
+/**
+ * VisualMatchingGame.jsx - Cultural Textile Pattern Matching Game
+ * 
+ * Modernized replacement for legacy PatternMatchingGame.
+ */
+export default function VisualMatchingGame({
+  patientProfile = null,
+  onComplete = null,
+  onExit = null
+}) {
   const language = patientProfile?.language || 'as';
   const isEnglish = language === 'en';
   const isHindi = language === 'hi';
@@ -37,7 +46,11 @@ export default function PatternMatchingGame({ patientProfile = null, onComplete 
           {isEnglish ? 'Traditional Patterns' : isHindi ? 'पारंपरिक वस्त्र पैटर्न' : 'বস্ত্ৰ চানেকি'}
         </span>
         {onExit && (
-          <button type="button" onClick={onExit} className="text-sm text-slate-500 hover:text-slate-800">
+          <button
+            type="button"
+            onClick={onExit}
+            className="text-sm text-slate-500 hover:text-slate-800 min-h-[48px] px-3 cursor-pointer"
+          >
             {isEnglish ? 'Exit' : isHindi ? 'बाहर जाएं' : 'বন্ধ কৰক'}
           </button>
         )}
@@ -59,13 +72,19 @@ export default function PatternMatchingGame({ patientProfile = null, onComplete 
       </div>
 
       {selected && (
-        <div data-testid="success-banner" className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-center font-semibold">
+        <div
+          data-testid="success-banner"
+          className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-center font-semibold"
+        >
           🌟 {isEnglish ? 'Correct textile match!' : isHindi ? 'शानदार! आपका उत्तर बिल्कुल सही है।' : 'নিখুঁত মিল! আপোনাৰ বাছনি শুদ্ধ হৈছে।'}
         </div>
       )}
 
       {!selected && eliminated.length > 0 && (
-        <div data-testid="gentle-hint-banner" className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700">
+        <div
+          data-testid="gentle-hint-banner"
+          className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700"
+        >
           💡 {isEnglish ? 'Look carefully at the weave colour.' : isHindi ? (task.hintHi || 'रंग और बुनाई को ध्यान से देखें।') : task.gentlePrompt}
         </div>
       )}
@@ -77,10 +96,10 @@ export default function PatternMatchingGame({ patientProfile = null, onComplete 
             type="button"
             disabled={selected === option.id || eliminated.includes(option.id) || Boolean(selected)}
             onClick={() => handleSelect(option)}
-            className="min-h-[100px] rounded-2xl border-2 border-slate-200 bg-white font-semibold hover:bg-amber-50 disabled:opacity-40 p-3 transition active:scale-95"
+            className="min-h-[100px] rounded-2xl border-2 border-slate-200 bg-white font-semibold hover:bg-amber-50 disabled:opacity-40 p-3 transition active:scale-95 cursor-pointer"
           >
             <span
-              className="block w-10 h-10 mx-auto mb-2 rounded-full border-2 border-white shadow"
+              className="block w-10 h-10 mx-auto mb-2 rounded-full border-2 border-white shadow-xs"
               style={{ backgroundColor: option.colorHex }}
             />
             {getLabel(option)}

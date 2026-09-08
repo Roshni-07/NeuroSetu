@@ -80,7 +80,8 @@ export default function FestivalMemoryMatch({
 
     if (newFlipped.length === 2) {
       setIsBusy(true);
-      setTurns((t) => t + 1);
+      const currentTurnCount = turns + 1;
+      setTurns(currentTurnCount);
 
       const [firstIdx, secondIdx] = newFlipped;
       const firstCard = cards[firstIdx];
@@ -97,15 +98,15 @@ export default function FestivalMemoryMatch({
         // Check if all pairs matched
         if (nextMatched.length === targetPairsCount) {
           setTimeout(() => {
-            const accuracy = Math.min(100, Math.round((targetPairsCount / Math.max(targetPairsCount, turns + 1)) * 100));
-            const score = Math.max(50, 100 - (turns - targetPairsCount) * 10);
+            const accuracy = Math.min(100, Math.round((targetPairsCount / Math.max(targetPairsCount, currentTurnCount)) * 100));
+            const score = Math.max(50, 100 - (currentTurnCount - targetPairsCount) * 10);
             onComplete({
               score,
               maxScore: 100,
               accuracy,
               level: currentLevel,
               message: 'Well done! You remembered and matched all festival treasures.',
-              subtext: `Completed in ${turns + 1} turns.`
+              subtext: `Completed in ${currentTurnCount} turns.`
             });
           }, 800);
         }

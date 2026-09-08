@@ -25,11 +25,13 @@ describe('Item 6: Form Validation & Inline Error States', () => {
       />
     );
 
-    // Enter 4 digits to trigger auto-submit
+    // Enter 6 digits to trigger auto-submit
     fireEvent.click(screen.getByRole('button', { name: '1' }));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
     fireEvent.click(screen.getByRole('button', { name: '3' }));
     fireEvent.click(screen.getByRole('button', { name: '4' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
+    fireEvent.click(screen.getByRole('button', { name: '6' }));
 
     await waitFor(() => {
       const alertEl = screen.getByRole('alert');
@@ -79,7 +81,10 @@ describe('Item 6: Form Validation & Inline Error States', () => {
         initialProfile={{
           name: 'Bhaben Kalita',
           villageTown: 'Sualkuchi',
+          homeState: 'Assam',
+          language: 'as',
           familyMembers: [{ name: 'Rumi', relationship: 'daughter' }],
+          formerOccupation: 'farmer',
           dailyRoutine: [
             { id: '1', label: 'Tea', time: '6 AM', icon: '☕' },
             { id: '2', label: 'Walk', time: '7 AM', icon: '🌿' },
@@ -99,11 +104,11 @@ describe('Item 6: Form Validation & Inline Error States', () => {
     fireEvent.click(nextBtn); // step 6
 
     // On Step 6: enter mismatched PINs
-    const pinInput = screen.getByLabelText(/New 4-Digit PIN/i);
-    const confirmInput = screen.getByLabelText(/Confirm 4-Digit PIN/i);
+    const pinInput = screen.getByLabelText(/(New 6-Digit PIN|New 4-Digit PIN|৬-সংখ্যাৰ নতুন পিন)/i);
+    const confirmInput = screen.getByLabelText(/(Confirm 6-Digit PIN|Confirm 4-Digit PIN|পিন পুনৰ দিয়ক)/i);
 
-    fireEvent.change(pinInput, { target: { value: '1234' } });
-    fireEvent.change(confirmInput, { target: { value: '5678' } });
+    fireEvent.change(pinInput, { target: { value: '123456' } });
+    fireEvent.change(confirmInput, { target: { value: '654321' } });
 
     // Submit
     const saveBtn = screen.getByRole('button', { name: /(সংৰক্ষণ|Save)/i });

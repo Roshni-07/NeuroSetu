@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   getDifficultyParams,
   GAME_DIFFICULTY_ENDPOINTS,
-  GLOBAL_MIN_TIMING_MS
+  GLOBAL_MIN_TIMING_MS,
+  Multiplier,
+  getDifficultyMultiplier,
+  calculateLevelFromScore
 } from '../../src/engine/difficultyScaling.js';
 
 describe('Shared Difficulty Scaling Engine (10 Levels)', () => {
@@ -32,6 +35,15 @@ describe('Shared Difficulty Scaling Engine (10 Levels)', () => {
     });
   });
 
+  it('implements exact exponential scaling Multiplier(L) = Math.pow(1.08, level - 1)', () => {
+    expect(Multiplier(1)).toBe(1);
+    expect(Multiplier(2)).toBeCloseTo(1.08, 5);
+    expect(Multiplier(5)).toBeCloseTo(Math.pow(1.08, 4), 5);
+    expect(Multiplier(10)).toBeCloseTo(Math.pow(1.08, 9), 5);
+    expect(getDifficultyMultiplier(1)).toBe(1);
+    expect(getDifficultyMultiplier(10)).toBeCloseTo(Math.pow(1.08, 9), 5);
+  });
+
   it('enforces global 2000ms minimum floor on timing fields across all games', () => {
     Object.keys(GAME_DIFFICULTY_ENDPOINTS).forEach((gameId) => {
       for (let lvl = 1; lvl <= 10; lvl++) {
@@ -50,7 +62,7 @@ describe('Shared Difficulty Scaling Engine (10 Levels)', () => {
     expect(lvl10.previewTimeMs).toBe(2400);
   });
 
-  it('interpolates linearly across levels 1 to 10 for Grandmas Shopping List', () => {
+  it('scales base parameters and applies inverse time scaling across levels 1 to 10 for Grandmas Shopping List', () => {
     const l1 = getDifficultyParams('grandmas-shopping-list', 1);
     const l5 = getDifficultyParams('grandmas-shopping-list', 5);
     const l10 = getDifficultyParams('grandmas-shopping-list', 10);
@@ -61,10 +73,10 @@ describe('Shared Difficulty Scaling Engine (10 Levels)', () => {
     expect(l1.previewTimeMs).toBe(10000);
     expect(l1.distractorSimilarity).toBe('low');
 
-    // Level 5: middle
+    // Level 5: middle (+8% exponential scaling)
     expect(l5.itemCount).toBe(4);
     expect(l5.distractorCount).toBe(4);
-    expect(l5.previewTimeMs).toBe(7778); // 10000 - 4/9 * 5000 = 7778
+    expect(l5.previewTimeMs).toBe(7350); // 10000 / 1.08^4 = 7350
     expect(l5.distractorSimilarity).toBe('medium');
 
     // Level 10: hardest
@@ -81,5 +93,24 @@ describe('Shared Difficulty Scaling Engine (10 Levels)', () => {
     expect(getDifficultyParams('festival-memory-match', 7).distractorSimilarity).toBe('medium');
     expect(getDifficultyParams('festival-memory-match', 8).distractorSimilarity).toBe('high');
     expect(getDifficultyParams('festival-memory-match', 10).distractorSimilarity).toBe('high');
+  });
+
+  it('calculates level progression via calculateLevelFromScore (+1 on 3 wins, -1 on 2 losses)', () => {
+    // 3 consecutive wins -> +1 level
+    expect(calculateLevelFromScore(5, 3, 0)).toBe(6);
+    expect(calculateLevelFromScore(10, 3, 0)).toBe(10); // clamped at 10
+
+    // 2 consecutive losses -> -1 level
+    expect(calculateLevelFromScore(5, 0, 2)).toBe(4);
+    expect(calculateLevelFromScore(1, 0, 2)).toBe(1); // clamped at 1
+
+    // Streaks not met -> unchanged
+    expect(calculateLevelFromScore(5, 2, 1)).toBe(5);
+
+    // Optional accuracy checks (>=80% for wins, <50% for losses)
+    expect(calculateLevelFromScore(5, 3, 0, 85)).toBe(6);
+    expect(calculateLevelFromScore(5, 3, 0, 75)).toBe(5);
+    expect(calculateLevelFromScore(5, 0, 2, 40)).toBe(4);
+    expect(calculateLevelFromScore(5, 0, 2, 60)).toBe(5);
   });
 });

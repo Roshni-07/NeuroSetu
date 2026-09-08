@@ -33,6 +33,22 @@ export default function InstructionsModal({
     onClose();
   };
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        sounds.playGentleTap();
+        if (onBackToHub) onBackToHub();
+        else if (onExit) onExit();
+        else if (onClose) onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onBackToHub, onExit, onClose]);
+
   const modalHeading = gameName || title || getUIString('howToPlay', language);
   const modalTip = tip || getUIString('tipRelax', language);
   const speechText = voiceText || `${modalHeading}. ${steps.join('. ')}. ${modalTip}`;
@@ -94,16 +110,17 @@ export default function InstructionsModal({
 
         {/* Actions: Back to Hub & Big Start Button */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          {(onBackToHub || onExit) && (
+          {(onBackToHub || onExit || onClose) && (
             <button
               type="button"
               onClick={() => {
                 sounds.playGentleTap();
                 if (onBackToHub) onBackToHub();
                 else if (onExit) onExit();
+                else if (onClose) onClose();
               }}
               className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
-              aria-label="Exit to hub"
+              aria-label="Exit to Hub"
             >
               <span className="text-lg leading-none">←</span>
               <span>{getUIString('gamesHub', language) || 'Exit to Hub'}</span>

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import MemoryRecallGame from '../../src/components/games/MemoryRecallGame.jsx';
-import PatternMatchingGame from '../../src/components/games/PatternMatchingGame.jsx';
-import SequencingGame from '../../src/components/games/SequencingGame.jsx';
+import GridMemoryGame from '../../src/components/games/GridMemoryGame.jsx';
+import VisualMatchingGame from '../../src/components/games/VisualMatchingGame.jsx';
+import SequenceOrderGame from '../../src/components/games/SequenceOrderGame.jsx';
 import { clearAllLocalData, closeDB } from '../../src/db/indexedDb.js';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,8 +18,8 @@ describe('Task 22–25: Cognitive Game Modules & Cultural Reminiscence Tests', (
     await closeDB();
   });
 
-  it('1. MemoryRecallGame renders Bihu prompt, accepts correct touch answer and advances', async () => {
-    render(<MemoryRecallGame profileId="patient_01" initialTier={1} promptDurationMs={10} rewardDurationMs={50} />);
+  it('1. GridMemoryGame renders Bihu prompt, accepts correct touch answer and advances', async () => {
+    render(<GridMemoryGame profileId="patient_01" initialTier={1} promptDurationMs={10} rewardDurationMs={50} />);
 
     // Wait for task prompt and listening state
     await waitFor(() => {
@@ -39,8 +39,8 @@ describe('Task 22–25: Cognitive Game Modules & Cultural Reminiscence Tests', (
     });
   });
 
-  it('2. MemoryRecallGame provides gentle non-punitive hint and distractor elimination on error', async () => {
-    render(<MemoryRecallGame profileId="patient_01" initialTier={2} promptDurationMs={10} rewardDurationMs={50} />);
+  it('2. GridMemoryGame provides gentle non-punitive hint and distractor elimination on error', async () => {
+    render(<GridMemoryGame profileId="patient_01" initialTier={2} promptDurationMs={10} rewardDurationMs={50} />);
 
     await waitFor(() => {
       expect(screen.getByText(/বিহুৰ বাদ্য/i)).toBeInTheDocument();
@@ -59,8 +59,8 @@ describe('Task 22–25: Cognitive Game Modules & Cultural Reminiscence Tests', (
     });
   });
 
-  it('3. PatternMatchingGame renders textile swatch and matches Muga silk', async () => {
-    render(<PatternMatchingGame profileId="patient_01" initialTier={2} promptDurationMs={10} rewardDurationMs={50} />);
+  it('3. VisualMatchingGame renders textile swatch and matches Muga silk', async () => {
+    render(<VisualMatchingGame profileId="patient_01" initialTier={2} promptDurationMs={10} rewardDurationMs={50} />);
 
     await waitFor(() => {
       expect(screen.getByText(/সোণালী মুগা বস্ত্ৰ/i)).toBeInTheDocument();
@@ -77,9 +77,9 @@ describe('Task 22–25: Cognitive Game Modules & Cultural Reminiscence Tests', (
     });
   });
 
-  it('4. SequencingGame allows ordering daily tea routine and completes sequence', async () => {
+  it('4. SequenceOrderGame allows ordering daily tea routine and completes sequence', async () => {
     const handleComplete = vi.fn();
-    render(<SequencingGame profileId="patient_01" onComplete={handleComplete} />);
+    render(<SequenceOrderGame profileId="patient_01" onComplete={handleComplete} />);
 
     expect(screen.getByText(/সোৱাদভৰা অসমীয়া চাহ/i)).toBeInTheDocument();
 

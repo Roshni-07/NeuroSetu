@@ -16,6 +16,9 @@ export default function StoryQuiz({
   story = { title: '', paragraphs: [], icon: '📖' },
   questions = [],
   onComplete,
+  onBack = null,
+  onClose = null,
+  onExit = null,
   readAloud = false,
   language = 'en',
   className = ''
@@ -80,6 +83,18 @@ export default function StoryQuiz({
     }
   };
 
+  const handlePrevQuestion = () => {
+    setSelected(null);
+    setShowFeedback(false);
+    if (qIndex > 0) {
+      setQIndex(qIndex - 1);
+      setAnswers(prev => prev.filter(a => a.qIndex !== qIndex - 1 && a.qIndex !== qIndex));
+    } else {
+      setPhase('reading');
+      setReadingPage(Math.max(0, totalPages - 1));
+    }
+  };
+
   // Trigger onComplete
   useEffect(() => {
     if (phase !== 'done' || !onComplete) return;
@@ -123,7 +138,7 @@ export default function StoryQuiz({
 
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              {readingPage > 0 && (
+              {readingPage > 0 ? (
                 <button
                   type="button"
                   onClick={() => setReadingPage(p => Math.max(0, p - 1))}
@@ -133,6 +148,22 @@ export default function StoryQuiz({
                   <span className="text-lg leading-none">←</span>
                   <span>Previous Page</span>
                 </button>
+              ) : (
+                (onBack || onClose || onExit) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onBack) onBack();
+                      else if (onClose) onClose();
+                      else if (onExit) onExit();
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+                    aria-label="Back to story selection"
+                  >
+                    <span className="text-lg leading-none">←</span>
+                    <span>Back</span>
+                  </button>
+                )
               )}
               <span className="text-sm text-slate-500 font-medium">Page {readingPage + 1} of {totalPages}</span>
             </div>
@@ -222,15 +253,27 @@ export default function StoryQuiz({
             </div>
           )}
 
-          {selected !== null && (
+          <div className="flex items-center justify-between gap-3 pt-2">
             <button
               type="button"
-              onClick={handleNext}
-              className="min-h-[56px] rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xl font-bold shadow-lg active:scale-95 transition-transform"
+              onClick={handlePrevQuestion}
+              className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
+              aria-label={qIndex > 0 ? 'Previous question' : 'Back to story'}
             >
-              {qIndex < questions.length - 1 ? 'Next Question →' : 'See Results →'}
+              <span className="text-lg leading-none">←</span>
+              <span>{qIndex > 0 ? 'Previous Question' : 'Back to Story'}</span>
             </button>
-          )}
+
+            {selected !== null && (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="min-h-[48px] px-6 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-lg font-bold shadow-lg active:scale-95 transition-transform cursor-pointer"
+              >
+                {qIndex < questions.length - 1 ? 'Next Question →' : 'See Results →'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

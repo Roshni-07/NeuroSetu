@@ -200,6 +200,8 @@ export function updateMasteryScore(currentScore, event, context = {}) {
 export {
   assignDailyGames,
   COGNITIVE_DOMAINS,
-  resolvePatientStartingTier
+  resolvePatientStartingTier,
+  resolveDailyGameCount,
+  buildSessionDifficultyCurve
 } from './dailyAssignmentEngine.js';
 

@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import PatientOnboardingModal from '../../src/components/onboarding/PatientOnboardingModal.jsx';
-import MemoryRecallGame from '../../src/components/games/MemoryRecallGame.jsx';
-import SequencingGame from '../../src/components/games/SequencingGame.jsx';
+import GridMemoryGame from '../../src/components/games/GridMemoryGame.jsx';
+import SequenceOrderGame from '../../src/components/games/SequenceOrderGame.jsx';
 import { clearAllLocalData, closeDB, getProfile } from '../../src/db/indexedDb.js';
 
 describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
@@ -34,8 +34,14 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     const nameInput = screen.getByLabelText(/ৰোগীৰ সম্পূৰ্ণ নাম/i);
     fireEvent.change(nameInput, { target: { value: 'Padmeswar Deka' } });
 
+    const stateSelect = screen.getByLabelText(/NER State/i);
+    fireEvent.change(stateSelect, { target: { value: 'Assam' } });
+
     const villageInput = screen.getByLabelText(/গৃহগাঁও বা চহৰ/i);
     fireEvent.change(villageInput, { target: { value: 'Sualkuchi' } });
+
+    const langSelect = screen.getByLabelText(/Preferred Language/i);
+    fireEvent.change(langSelect, { target: { value: 'as' } });
 
     // Next to Step 2
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
@@ -47,12 +53,15 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     const familyInput = screen.getByLabelText(/নিকট আত্মীয়ৰ নাম/i);
     fireEvent.change(familyInput, { target: { value: 'Rumi' } });
 
+    const relSelect = screen.getByLabelText(/Relationship/i);
+    fireEvent.change(relSelect, { target: { value: 'daughter' } });
+
     // Next to Step 3
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
     // Step 3: Occupation selector (select Handloom Weaver)
     expect(screen.getByText(/৩\. পূৰ্বৰ জীৱিকা/i)).toBeInTheDocument();
-    const weaverBtn = screen.getByText(/তাঁতশিল্পী \/ শাল বোৱা/i);
+    const weaverBtn = screen.getByRole('button', { name: /তাঁতী \/ শিপিনী/i });
     fireEvent.click(weaverBtn);
 
     // Next to Step 4
@@ -90,7 +99,7 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     expect(fromDB.starting_difficulty_tier).toBe(1);
   });
 
-  it('2. MemoryRecallGame personalizes prompts dynamically with family name and hometown', async () => {
+  it('2. GridMemoryGame personalizes prompts dynamically with family name and hometown', async () => {
     const personalizedProfile = {
       name: 'Padmeswar Deka',
       homeState: 'Assam',
@@ -99,7 +108,7 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     };
 
     render(
-      <MemoryRecallGame
+      <GridMemoryGame
         profileId="patient_deka"
         patientProfile={personalizedProfile}
         promptDurationMs={10}
@@ -114,7 +123,7 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     });
   });
 
-  it('3. MemoryRecallGame loads state-specific cultural assets (e.g. Manipur Pena for Manipur patient)', async () => {
+  it('3. GridMemoryGame loads state-specific cultural assets (e.g. Manipur Pena for Manipur patient)', async () => {
     const manipurProfile = {
       name: 'Tombi Devi',
       homeState: 'Manipur',
@@ -123,7 +132,7 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     };
 
     render(
-      <MemoryRecallGame
+      <GridMemoryGame
         profileId="patient_tombi"
         patientProfile={manipurProfile}
         promptDurationMs={10}
@@ -139,14 +148,14 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     });
   });
 
-  it('4. SequencingGame maps task steps to patient occupation (Weaver vs Teacher)', () => {
+  it('4. SequenceOrderGame maps task steps to patient occupation (Weaver vs Teacher)', () => {
     // 1. Handloom Weaver profile
     const weaverProfile = {
       formerOccupation: 'weaver'
     };
 
     const { rerender } = render(
-      <SequencingGame
+      <SequenceOrderGame
         profileId="patient_weaver"
         patientProfile={weaverProfile}
       />
@@ -161,7 +170,7 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     };
 
     rerender(
-      <SequencingGame
+      <SequenceOrderGame
         profileId="patient_teacher"
         patientProfile={teacherProfile}
       />

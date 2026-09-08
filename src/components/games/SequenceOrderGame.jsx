@@ -1,8 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { CULINARY_SEQUENCING_TASKS, getSequencingTaskByOccupation } from '../../data/reminiscenceContent.js';
+import {
+  CULINARY_SEQUENCING_TASKS,
+  getSequencingTaskByOccupation
+} from '../../data/reminiscenceContent.js';
 import SpeakButton from '../../components2/SpeakButton.jsx';
 
-export default function SequencingGame({ patientProfile = null, onComplete = null, onExit = null }) {
+/**
+ * SequenceOrderGame.jsx - Occupation & Cultural Activity Step Sequencing Game
+ * 
+ * Modernized replacement for legacy SequencingGame.
+ */
+export default function SequenceOrderGame({
+  patientProfile = null,
+  onComplete = null,
+  onExit = null
+}) {
   const task = useMemo(
     () =>
       patientProfile?.formerOccupation
@@ -18,8 +30,16 @@ export default function SequencingGame({ patientProfile = null, onComplete = nul
   const complete = selected.length === task.steps.length;
 
   const text = (step) => (isEnglish || isHindi ? step.textEn : step.textAs);
-  const prompt = isEnglish ? task.promptEn : isHindi ? (task.promptHi || task.promptEn) : task.promptAs;
-  const title = isEnglish ? 'Daily Routine Sequencing' : isHindi ? 'दैनिक क्रम खेल' : 'দৈনন্দিন অভ্যাস ক্ৰম';
+  const prompt = isEnglish
+    ? task.promptEn
+    : isHindi
+    ? task.promptHi || task.promptEn
+    : task.promptAs;
+  const title = isEnglish
+    ? 'Daily Routine Sequencing'
+    : isHindi
+    ? 'दैनिक क्रम खेल'
+    : 'দৈনন্দিন অভ্যাস ক্ৰম';
 
   const choose = (step) => {
     const expected = selected.length + 1;
@@ -31,7 +51,13 @@ export default function SequencingGame({ patientProfile = null, onComplete = nul
         onComplete({ score: 100, maxScore: 100, accuracy: 100 });
       }
     } else {
-      setHint(isEnglish ? 'Think about what should happen first.' : isHindi ? 'सोचिए कि पहले कौन सा काम किया जाता है।' : task.gentlePrompt);
+      setHint(
+        isEnglish
+          ? 'Think about what should happen first.'
+          : isHindi
+          ? 'सोचिए कि पहले कौन सा काम किया जाता है।'
+          : task.gentlePrompt
+      );
     }
   };
 
@@ -40,7 +66,11 @@ export default function SequencingGame({ patientProfile = null, onComplete = nul
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-teal-700 uppercase tracking-wider">{title}</span>
         {onExit && (
-          <button type="button" onClick={onExit} className="text-sm text-slate-500 hover:text-slate-800">
+          <button
+            type="button"
+            onClick={onExit}
+            className="text-sm text-slate-500 hover:text-slate-800 min-h-[48px] px-3 cursor-pointer"
+          >
             {isEnglish ? 'Exit' : isHindi ? 'बाहर जाएं' : 'বন্ধ কৰক'}
           </button>
         )}
@@ -62,10 +92,14 @@ export default function SequencingGame({ patientProfile = null, onComplete = nul
 
       <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200">
         <p className="text-xs font-semibold text-slate-500 mb-2">
-          {isEnglish ? 'Your ordered steps' : isHindi ? 'आपके द्वारा सजाया गया क्रम' : 'আপুনি সজোৱা ক্ৰম'}: {selected.length} / {task.steps.length}
+          {isEnglish ? 'Your ordered steps' : isHindi ? 'आपके द्वारा सजाया गया क्रम' : 'আপুনি সজোৱা ক্ৰম'}:{' '}
+          {selected.length} / {task.steps.length}
         </p>
         {selected.map((step, index) => (
-          <div key={step.id} className="p-3 mb-2 rounded-xl bg-white border border-emerald-200 shadow-xs">
+          <div
+            key={step.id}
+            className="p-3 mb-2 rounded-xl bg-white border border-emerald-200 shadow-xs"
+          >
             <b>{index + 1}.</b> {step.icon} {text(step)}
           </div>
         ))}
@@ -80,7 +114,7 @@ export default function SequencingGame({ patientProfile = null, onComplete = nul
                 key={step.id}
                 type="button"
                 onClick={() => choose(step)}
-                className="min-h-[58px] rounded-2xl border-2 border-slate-200 bg-white text-left px-4 font-semibold hover:bg-teal-50 transition active:scale-95"
+                className="min-h-[58px] rounded-2xl border-2 border-slate-200 bg-white text-left px-4 font-semibold hover:bg-teal-50 transition active:scale-95 cursor-pointer"
               >
                 {step.icon} {text(step)}
               </button>
@@ -90,7 +124,9 @@ export default function SequencingGame({ patientProfile = null, onComplete = nul
 
       {complete && (
         <div className="text-center p-5 rounded-2xl bg-emerald-50 text-emerald-800 font-bold">
-          <h2 className="text-2xl">{isEnglish ? 'Sequence Completed!' : isHindi ? 'क्रम पूरा हुआ!' : 'চাহ প্ৰস্তুত হ’ল!'}</h2>
+          <h2 className="text-2xl">
+            {isEnglish ? 'Sequence Completed!' : isHindi ? 'क्रम पूरा हुआ!' : 'চাহ প্ৰস্তুত হ’ল!'}
+          </h2>
           <p>১০০% শুদ্ধ (100% Correct)</p>
         </div>
       )}

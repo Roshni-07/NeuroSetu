@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NER_STATES } from '../../data/reminiscenceContent.js';
+import { NER_STATES, NER_OCCUPATIONS } from '../../data/reminiscenceContent.js';
 import { SUPPORTED_LANGUAGES } from '../../data/multilingualAudioHelp.js';
 import { saveProfile } from '../../db/indexedDb.js';
 import { setProfilePin, validatePinFormat, createSession } from '../../services/authService.js';
@@ -15,30 +15,38 @@ export default function PatientOnboardingModal({
   const [step, setStep] = useState(1);
   const maxSteps = isInitialSignup ? 6 : 5;
 
-  const [formData, setFormData] = useState({
-    id: initialProfile?.id || `patient_${Date.now()}`,
-    name: initialProfile?.name || '',
-    homeState: initialProfile?.homeState || NER_STATES.ASSAM,
-    villageTown: initialProfile?.villageTown || '',
-    language: initialProfile?.language || 'en',
-    age: initialProfile?.age || '',
-    familyMemberName: initialProfile?.familyMembers?.[0]?.name || '',
-    familyMemberRel: initialProfile?.familyMembers?.[0]?.relationship || 'daughter',
-    formerOccupation: initialProfile?.formerOccupation || 'farmer',
-    favoriteFestival: initialProfile?.favoriteFestival || '',
-    favoriteFood: initialProfile?.favoriteFood || '',
-    dailyRoutine: initialProfile?.dailyRoutine && initialProfile.dailyRoutine.length >= 4
-      ? initialProfile.dailyRoutine
-      : [
-          { id: 'act_1', label: 'পুৱাৰ চাহ (Morning Chai)', time: 'Dawn (6:00 AM)', icon: '☕' },
-          { id: 'act_2', label: 'বাৰীত ফুৰা (Garden Walk & Flowers)', time: 'Early Morning (7:30 AM)', icon: '🌿' },
-          { id: 'act_3', label: 'দৰব গ্ৰহণ (Morning Medicine)', time: 'Forenoon (9:00 AM)', icon: '💊' },
-          { id: 'act_4', label: 'দুপৰীয়াৰ আহাৰ (Midday Lunch)', time: 'Afternoon (1:00 PM)', icon: '🍲' },
-          { id: 'act_5', label: 'ৰাতিৰ বিশ্ৰাম (Night Rest & Sleep)', time: 'Night (9:00 PM)', icon: '🌙' }
-        ],
-    starting_difficulty_tier: initialProfile?.starting_difficulty_tier || 1,
-    pin: '',
-    confirmPin: ''
+  const [formData, setFormData] = useState(() => {
+    const occ = initialProfile?.formerOccupation || '';
+    const isStandardOcc = NER_OCCUPATIONS.some(o => o.id === occ && o.id !== 'other');
+    const initialFormerOcc = isStandardOcc ? occ : (occ ? 'other' : '');
+    const initialOtherOcc = initialProfile?.otherOccupation || (!isStandardOcc ? occ : '');
+
+    return {
+      id: initialProfile?.id || `patient_${Date.now()}`,
+      name: initialProfile?.name || '',
+      homeState: initialProfile?.homeState || '',
+      villageTown: initialProfile?.villageTown || '',
+      language: initialProfile?.language || '',
+      age: initialProfile?.age || '',
+      familyMemberName: initialProfile?.familyMembers?.[0]?.name || '',
+      familyMemberRel: initialProfile?.familyMembers?.[0]?.relationship || '',
+      formerOccupation: initialFormerOcc,
+      otherOccupation: initialOtherOcc,
+      favoriteFestival: initialProfile?.favoriteFestival || '',
+      favoriteFood: initialProfile?.favoriteFood || '',
+      dailyRoutine: initialProfile?.dailyRoutine && initialProfile.dailyRoutine.length >= 2
+        ? initialProfile.dailyRoutine
+        : [
+            { id: 'act_1', label: 'পুৱাৰ চাহ (Morning Chai)', time: 'Dawn (6:00 AM)', icon: '☕' },
+            { id: 'act_2', label: 'বাৰীত ফুৰা (Garden Walk & Flowers)', time: 'Early Morning (7:30 AM)', icon: '🌿' },
+            { id: 'act_3', label: 'দৰব গ্ৰহণ (Morning Medicine)', time: 'Forenoon (9:00 AM)', icon: '💊' },
+            { id: 'act_4', label: 'দুপৰীয়াৰ আহাৰ (Midday Lunch)', time: 'Afternoon (1:00 PM)', icon: '🍲' },
+            { id: 'act_5', label: 'ৰাতিৰ বিশ্ৰাম (Night Rest & Sleep)', time: 'Night (9:00 PM)', icon: '🌙' }
+          ],
+      starting_difficulty_tier: initialProfile?.starting_difficulty_tier || 1,
+      pin: '',
+      confirmPin: ''
+    };
   });
 
   const [validationError, setValidationError] = useState('');
@@ -55,16 +63,31 @@ export default function PatientOnboardingModal({
       if (!formData.name.trim()) {
         errors.name = 'অনুগ্ৰহ কৰি ৰোগীৰ নামটো দিয়ক (Please enter patient name)';
       }
+      if (!formData.homeState) {
+        errors.homeState = 'অনুগ্ৰহ কৰি ৰাজ্য বাছনি কৰক (Please select state)';
+      }
       if (!formData.villageTown.trim()) {
         errors.villageTown = 'অনুগ্ৰহ কৰি গৃহগাঁও বা চহৰৰ নাম দিয়ক (Please enter village/town)';
+      }
+      if (!formData.language) {
+        errors.language = 'অনুগ্ৰহ কৰি ভাষা বাছনি কৰক (Please select preferred language)';
       }
     } else if (step === 2) {
       if (!formData.familyMemberName.trim()) {
         errors.familyMemberName = 'অনুগ্ৰহ কৰি এজন পৰিয়ালৰ সদস্যৰ নাম দিয়ক (Please enter family member name)';
       }
+      if (!formData.familyMemberRel) {
+        errors.familyMemberRel = 'অনুগ্ৰহ কৰি সম্পৰ্ক বাছনি কৰক (Please select relationship)';
+      }
+    } else if (step === 3) {
+      if (!formData.formerOccupation) {
+        errors.formerOccupation = 'অনুগ্ৰহ কৰি পূৰ্বৰ কৰ্ম বা জীৱিকা বাছনি কৰক (Please select former occupation / life background)';
+      } else if (formData.formerOccupation === 'other' && !formData.otherOccupation.trim()) {
+        errors.otherOccupation = 'অনুগ্ৰহ কৰি আপোনাৰ জীৱিকা উল্লেখ কৰক (Please specify your occupation)';
+      }
     } else if (step === 5) {
-      if (!formData.dailyRoutine || formData.dailyRoutine.length < 4 || formData.dailyRoutine.length > 6) {
-        errors.dailyRoutine = 'অনুগ্ৰহ কৰি ৪ৰ পৰা ৬টা দৈনন্দিন কাৰ্যসূচী ৰাখক (Please maintain 4 to 6 daily routine activities)';
+      if (!formData.dailyRoutine || formData.dailyRoutine.length < 2) {
+        errors.dailyRoutine = 'অনুগ্ৰহ কৰি কমেও ২টা দৈনন্দিন কাৰ্যসূচী ৰাখক (Please maintain at least 2 daily routine activities)';
       } else if (formData.dailyRoutine.some(act => !act.label.trim())) {
         errors.dailyRoutine = 'অনুগ্ৰহ কৰি সকলো কাৰ্যৰ বিৱৰণ দিয়ক (Please provide description for each routine activity)';
       }
@@ -91,14 +114,14 @@ export default function PatientOnboardingModal({
     const errors = {};
 
     // Validate daily routine
-    if (!formData.dailyRoutine || formData.dailyRoutine.length < 4 || formData.dailyRoutine.length > 6) {
-      errors.dailyRoutine = 'অনুগ্ৰহ কৰি ৪ৰ পৰা ৬টা দৈনন্দিন কাৰ্যসূচী ৰাখক (Please maintain 4 to 6 daily routine activities)';
+    if (!formData.dailyRoutine || formData.dailyRoutine.length < 2) {
+      errors.dailyRoutine = 'অনুগ্ৰহ কৰি কমেও ২টা দৈনন্দিন কাৰ্যসূচী ৰাখক (Please maintain at least 2 daily routine activities)';
     }
 
     // If initial signup, validate PIN setup in Step 6
     if (isInitialSignup) {
       if (!validatePinFormat(formData.pin)) {
-        errors.pin = 'পিনটো ঠিক ৪টা সংখ্যা হ’ব লাগিব (PIN must be exactly 4 numeric digits)';
+        errors.pin = 'পিনটো ঠিক ৬টা সংখ্যা হ’ব লাগিব (PIN must be exactly 6 numeric digits)';
       }
       if (formData.pin !== formData.confirmPin) {
         errors.confirmPin = 'দুয়োটা পিন মিল খোৱা নাই (PINs do not match)';
@@ -110,6 +133,10 @@ export default function PatientOnboardingModal({
       setValidationError(Object.values(errors)[0]);
       return;
     }
+
+    const resolvedOccupation = formData.formerOccupation === 'other'
+      ? (formData.otherOccupation.trim() || 'other')
+      : formData.formerOccupation;
 
     const profileToSave = {
       id: formData.id,
@@ -124,7 +151,8 @@ export default function PatientOnboardingModal({
           relationship: formData.familyMemberRel
         }
       ],
-      formerOccupation: formData.formerOccupation,
+      formerOccupation: resolvedOccupation,
+      otherOccupation: formData.formerOccupation === 'other' ? formData.otherOccupation.trim() : '',
       favoriteFestival: formData.favoriteFestival.trim() || 'Traditional Festival',
       favoriteFood: formData.favoriteFood.trim() || 'Regional Food',
       starting_difficulty_tier: Number(formData.starting_difficulty_tier) || 1,
@@ -168,7 +196,7 @@ export default function PatientOnboardingModal({
               {step === 3 && '৩. পূৰ্বৰ জীৱিকা (Life Background)'}
               {step === 4 && '৪. প্ৰিয় উৎসৱ আৰু খাদ্য (Cultural Anchors)'}
               {step === 5 && '৫. দৈনন্দিন কাৰ্যসূচী (Elder\'s Daily Routine)'}
-              {step === 6 && '৬. ৪-সংখ্যাৰ পিন নিৰ্ধাৰণ (Set 4-Digit Security PIN)'}
+              {step === 6 && '৬. ৬-সংখ্যাৰ পিন নিৰ্ধাৰণ (Set 6-Digit Security PIN)'}
             </h2>
           </div>
           <span className="text-xs font-bold px-3 py-1 bg-teal-50 text-teal-700 rounded-xl border border-teal-200/70 shrink-0">
@@ -220,13 +248,27 @@ export default function PatientOnboardingModal({
               <select
                 id="patient-state"
                 value={formData.homeState}
-                onChange={e => setFormData({ ...formData, homeState: e.target.value })}
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition cursor-pointer"
+                onChange={e => {
+                  setFormData({ ...formData, homeState: e.target.value });
+                  if (fieldErrors.homeState) setFieldErrors(prev => ({ ...prev, homeState: '' }));
+                }}
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition cursor-pointer ${
+                  fieldErrors.homeState
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               >
+                <option value="">ৰাজ্য বাছনি কৰক (Select State)...</option>
                 {Object.values(NER_STATES).map(st => (
                   <option key={st} value={st}>{st}</option>
                 ))}
               </select>
+              {fieldErrors.homeState && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.homeState}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -263,15 +305,29 @@ export default function PatientOnboardingModal({
               <select
                 id="patient-language"
                 value={formData.language}
-                onChange={e => setFormData({ ...formData, language: e.target.value })}
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition cursor-pointer"
+                onChange={e => {
+                  setFormData({ ...formData, language: e.target.value });
+                  if (fieldErrors.language) setFieldErrors(prev => ({ ...prev, language: '' }));
+                }}
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition cursor-pointer ${
+                  fieldErrors.language
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               >
+                <option value="">ভাষা বাছনি কৰক (Select Language)...</option>
                 {SUPPORTED_LANGUAGES.map((langItem) => (
                   <option key={langItem.code} value={langItem.code}>
                     {langItem.icon} {langItem.nativeName} ({langItem.label}) — {langItem.region}
                   </option>
                 ))}
               </select>
+              {fieldErrors.language && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.language}</span>
+                </p>
+              )}
               <p className="text-[11px] text-slate-500 mt-1 font-normal">
                 All game prompts, voice audio help, and daily reminders will speak in your chosen language.
               </p>
@@ -320,14 +376,30 @@ export default function PatientOnboardingModal({
               <select
                 id="family-rel"
                 value={formData.familyMemberRel}
-                onChange={e => setFormData({ ...formData, familyMemberRel: e.target.value })}
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition cursor-pointer"
+                onChange={e => {
+                  setFormData({ ...formData, familyMemberRel: e.target.value });
+                  if (fieldErrors.familyMemberRel) setFieldErrors(prev => ({ ...prev, familyMemberRel: '' }));
+                }}
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition cursor-pointer ${
+                  fieldErrors.familyMemberRel
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               >
+                <option value="">সম্পৰ্ক বাছনি কৰক (Select Relationship)...</option>
                 <option value="daughter">জীয়েক (Daughter)</option>
                 <option value="son">পুতেক (Son)</option>
                 <option value="spouse">স্বামী/পত্নী (Spouse)</option>
                 <option value="grandchild">নাতি/নাতিনী (Grandchild)</option>
+                <option value="caregiver">যত্নকৰ্তা (Caregiver)</option>
+                <option value="other">অন্যান্য (Other)</option>
               </select>
+              {fieldErrors.familyMemberRel && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.familyMemberRel}</span>
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -336,31 +408,73 @@ export default function PatientOnboardingModal({
         {step === 3 && (
           <div className="space-y-4 text-left">
             <p className="text-xs text-slate-500 font-normal">
-              ৰোগীৰ পূৰ্বৰ কৰ্মৰ লগত মিলাই দৈনন্দিন ক্ৰম সজোৱা খেলসমূহ নিৰ্বাচন কৰা হ’ব (Daily sequencing games will match former work habits):
+              ৰোগীৰ পূৰ্বৰ কৰ্মৰ লগত মিলাই দৈনন্দিন ক্ৰম সজোৱা খেলসমূহ নিৰ্বাচন কৰা হ’ব (Daily sequencing games will match former work habits) *:
             </p>
 
-            <div className="grid grid-cols-1 gap-2.5">
-              {[
-                { id: 'farmer', title: 'চাহ বাগিচাৰ কৰ্মী / কৃষক', subtitle: 'Tea Worker / Farmer (Leaf plucking & sorting)' },
-                { id: 'weaver', title: 'তাঁতশিল্পী / শাল বোৱা', subtitle: 'Handloom Weaver (Loom & bobbin threading)' },
-                { id: 'teacher_clerk', title: 'শিক্ষক / কাৰ্যালয় কৰ্মী', subtitle: 'Teacher / Clerk (Lesson & register prep)' },
-                { id: 'homemaker', title: 'গৃহিণী / পৰিয়াল যতন', subtitle: 'Homemaker (Tea & traditional cooking)' }
-              ].map(occ => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {NER_OCCUPATIONS.map(occ => (
                 <button
                   key={occ.id}
                   type="button"
-                  onClick={() => setFormData({ ...formData, formerOccupation: occ.id })}
+                  onClick={() => {
+                    setFormData({ ...formData, formerOccupation: occ.id });
+                    if (fieldErrors.formerOccupation) setFieldErrors(prev => ({ ...prev, formerOccupation: '' }));
+                  }}
                   className={`min-h-[50px] p-3.5 rounded-2xl border text-left transition-all ${
                     formData.formerOccupation === occ.id
-                      ? 'border-teal-600 bg-teal-50/50 shadow-soft'
+                      ? 'border-teal-600 bg-teal-50/50 shadow-soft ring-1 ring-teal-600/30'
                       : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
-                  <span className="font-bold text-slate-900 text-sm block">{occ.title}</span>
-                  <span className="text-xs text-slate-500 font-normal">{occ.subtitle}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl" aria-hidden="true">{occ.icon}</span>
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm block">{occ.labelAs}</span>
+                      <span className="text-xs text-slate-500 font-normal">{occ.label}</span>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
+
+            {fieldErrors.formerOccupation && (
+              <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                <span>⚠️</span>
+                <span>{fieldErrors.formerOccupation}</span>
+              </p>
+            )}
+
+            {/* Conditionally reveal free-text input when "Other" is selected */}
+            {formData.formerOccupation === 'other' && (
+              <div className="mt-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl animate-fade-in">
+                <label htmlFor="other-occupation" className="text-xs font-bold text-slate-800 block mb-1.5">
+                  জীৱিকাৰ বিৱৰণ দিয়ক (Specify Occupation / Livelihood) *
+                </label>
+                {/* NOTE: Stored locally in profile (formerOccupation + otherOccupation). Will map to future other_occupation column when backend migration lands. */}
+                <input
+                  id="other-occupation"
+                  data-testid="other-occupation-input"
+                  type="text"
+                  value={formData.otherOccupation}
+                  onChange={e => {
+                    setFormData({ ...formData, otherOccupation: e.target.value });
+                    if (fieldErrors.otherOccupation) setFieldErrors(prev => ({ ...prev, otherOccupation: '' }));
+                  }}
+                  placeholder="e.g. Traditional herbalist, pottery artisan, bamboo craftsman, folk musician..."
+                  className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition ${
+                    fieldErrors.otherOccupation
+                      ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                      : 'bg-white border border-slate-200 focus:border-teal-600 focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                  }`}
+                />
+                {fieldErrors.otherOccupation && (
+                  <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>{fieldErrors.otherOccupation}</span>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -402,11 +516,11 @@ export default function PatientOnboardingModal({
           </div>
         )}
 
-        {/* Step 5: Elder's Daily Routine (4-6 Ordered Activities) */}
+        {/* Step 5: Elder's Daily Routine (Ordered Activities) */}
         {step === 5 && (
           <div className="space-y-4 text-left">
             <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-2xl text-xs text-teal-900 leading-relaxed">
-              🗓️ <strong>দৈনন্দিন ক্ৰম নিৰ্ধাৰণ (Daily Rhythm Setup):</strong> বৃদ্ধ সদস্যজনৰ প্ৰকৃত দিনটোৰ ৪-৬টা নিয়মীয়া কাম নিৰ্বাচন বা সম্পাদনা কৰক। এই ক্ৰমটো তেওঁৰ ব্যক্তিগত স্মৃতি-ক্ৰম খেলত ব্যৱহাৰ হ’ব। (Capture the elder's actual 4–6 daily activities to personalize their Daily Routine Recall game.)
+              🗓️ <strong>দৈনন্দিন ক্ৰম নিৰ্ধাৰণ (Daily Rhythm Setup):</strong> বৃদ্ধ সদস্যজনৰ প্ৰকৃত দিনটোৰ নিয়মীয়া কামসমূহ নিৰ্বাচন বা সম্পাদনা কৰক। এই ক্ৰমটো তেওঁৰ ব্যক্তিগত স্মৃতি-ক্ৰম খেলত ব্যৱহাৰ হ’ব। (Capture the elder's actual daily activities to personalize their Daily Routine Recall game. Add as many activities as needed.)
             </div>
 
             <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
@@ -479,9 +593,9 @@ export default function PatientOnboardingModal({
                   </div>
                   <button
                     type="button"
-                    disabled={formData.dailyRoutine.length <= 4}
+                    disabled={formData.dailyRoutine.length <= 2}
                     onClick={() => {
-                      if (formData.dailyRoutine.length <= 4) return;
+                      if (formData.dailyRoutine.length <= 2) return;
                       const updated = formData.dailyRoutine.filter((_, i) => i !== idx);
                       setFormData({ ...formData, dailyRoutine: updated });
                     }}
@@ -494,52 +608,49 @@ export default function PatientOnboardingModal({
               ))}
             </div>
 
-            {formData.dailyRoutine.length < 6 && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (formData.dailyRoutine.length >= 6) return;
-                  const newActivity = {
-                    id: `act_${Date.now()}`,
-                    label: '',
-                    time: '',
-                    icon: '⏰'
-                  };
-                  setFormData({
-                    ...formData,
-                    dailyRoutine: [...formData.dailyRoutine, newActivity]
-                  });
-                }}
-                className="w-full min-h-[44px] py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span>＋</span>
-                <span>নতুন কাৰ্য যোগ কৰক (Add Routine Activity — {formData.dailyRoutine.length}/6)</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                const newActivity = {
+                  id: `act_${Date.now()}`,
+                  label: '',
+                  time: '',
+                  icon: '⏰'
+                };
+                setFormData({
+                  ...formData,
+                  dailyRoutine: [...formData.dailyRoutine, newActivity]
+                });
+              }}
+              className="w-full min-h-[44px] py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>＋</span>
+              <span>নতুন কাৰ্য যোগ কৰক (Add Routine Activity — {formData.dailyRoutine.length})</span>
+            </button>
           </div>
         )}
 
-        {/* Step 6 (Only during initial signup): Set 4-Digit Security PIN */}
+        {/* Step 6 (Only during initial signup): Set 6-Digit Security PIN */}
         {step === 6 && isInitialSignup && (
           <div className="space-y-4 text-left">
             <div className="p-3.5 bg-teal-50/60 border border-teal-200/70 rounded-2xl text-xs text-teal-900">
-              🔑 <strong>সুৰক্ষা পিন নিৰ্ধাৰণ (Create Security PIN):</strong> ৰোগীৰ পৰিচয় আৰু তথ্যৰ সুৰক্ষাৰ বাবে এটা সহজ ৪-সংখ্যাৰ পিন নিৰ্বাচন কৰক। (Set a simple 4-digit PIN to lock and protect this profile.)
+              🔑 <strong>সুৰক্ষা পিন নিৰ্ধাৰণ (Create Security PIN):</strong> ৰোগীৰ পৰিচয় আৰু তথ্যৰ সুৰক্ষাৰ বাবে এটা সহজ ৬-সংখ্যাৰ পিন নিৰ্বাচন কৰক। (Set a simple 6-digit PIN to lock and protect this profile.)
             </div>
 
             <div>
               <label htmlFor="signup-pin" className="text-xs font-bold text-slate-800 block mb-1.5">
-                ৪-সংখ্যাৰ নতুন পিন (New 4-Digit PIN) *
+                ৬-সংখ্যাৰ নতুন পিন (New 6-Digit PIN) *
               </label>
               <input
                 id="signup-pin"
                 type="password"
-                maxLength={4}
+                maxLength={6}
                 value={formData.pin}
                 onChange={e => {
                   setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '') });
                   if (fieldErrors.pin) setFieldErrors(prev => ({ ...prev, pin: '' }));
                 }}
-                placeholder="••••"
+                placeholder="••••••"
                 className={`w-full min-h-[48px] px-4 py-2 rounded-xl text-center text-2xl tracking-widest font-mono font-bold text-slate-900 focus-visible:outline-none transition ${
                   fieldErrors.pin
                     ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
@@ -556,18 +667,18 @@ export default function PatientOnboardingModal({
 
             <div>
               <label htmlFor="confirm-pin" className="text-xs font-bold text-slate-800 block mb-1.5">
-                পিন পুনৰ দিয়ক (Confirm 4-Digit PIN) *
+                পিন পুনৰ দিয়ক (Confirm 6-Digit PIN) *
               </label>
               <input
                 id="confirm-pin"
                 type="password"
-                maxLength={4}
+                maxLength={6}
                 value={formData.confirmPin}
                 onChange={e => {
                   setFormData({ ...formData, confirmPin: e.target.value.replace(/\D/g, '') });
                   if (fieldErrors.confirmPin) setFieldErrors(prev => ({ ...prev, confirmPin: '' }));
                 }}
-                placeholder="••••"
+                placeholder="••••••"
                 className={`w-full min-h-[48px] px-4 py-2 rounded-xl text-center text-2xl tracking-widest font-mono font-bold text-slate-900 focus-visible:outline-none transition ${
                   fieldErrors.confirmPin
                     ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
@@ -598,15 +709,18 @@ export default function PatientOnboardingModal({
                 <span>পিছলৈ (Back)</span>
               </button>
             ) : (
-              (onBack || onClose) && (
+              (onClose || onBack) && (
                 <button
                   type="button"
-                  onClick={onBack || onClose}
+                  onClick={() => {
+                    if (onBack) onBack();
+                    if (onClose) onClose();
+                  }}
                   className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
-                  aria-label={onBack ? "Go back" : "Cancel onboarding"}
+                  aria-label="Go back"
                 >
                   <span className="text-lg leading-none">←</span>
-                  <span>{onBack ? 'পিছলৈ (Back)' : 'বাতিল (Cancel)'}</span>
+                  <span>পিছলৈ (Back)</span>
                 </button>
               )
             )}

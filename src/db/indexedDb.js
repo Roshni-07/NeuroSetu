@@ -1,4 +1,6 @@
 import { openDB } from 'idb';
+import { PRESET_PATIENTS } from '../data/presetPatients.js';
+import { updateMasteryScore } from '../engine/ddaEngine.js';
 
 const DB_NAME = 'NeuroSetuDB';
 const DB_VERSION = 1;
@@ -64,10 +66,13 @@ export const DEFAULT_DAILY_ROUTINE = [
 export const DEFAULT_PROFILE = {
   id: 'default_patient',
   name: 'Bhaben Kalita',
+  pin: '400400',
+  stage: 'Mild / Early Stage',
   homeState: 'Assam',
   villageTown: 'Hajo',
   language: 'en',
   age: 72,
+  dailyCap: 3,
   familyMembers: [
     { name: 'Rumi', relationship: 'daughter' },
     { name: 'Dipak', relationship: 'son' }
@@ -77,8 +82,43 @@ export const DEFAULT_PROFILE = {
   favoriteFood: 'Masor Tenga & Pitha',
   starting_difficulty_tier: 1,
   masteryScore: 50,
+  gameMasteryScores: {},
   dailyRoutine: DEFAULT_DAILY_ROUTINE
 };
+
+/**
+ * Non-destructively seed preset profiles into IndexedDB.
+ * Only creates a preset profile if it does not already exist, preserving
+ * any caregiver edits, daily routine modifications, or updated mastery scores.
+ */
+export async function seedPresetProfiles() {
+  try {
+    const db = await getDB();
+    const presetsToSeed = [
+      ...PRESET_PATIENTS.map(p => ({
+        ...p,
+        gameMasteryScores: {},
+        dailyRoutine: DEFAULT_DAILY_ROUTINE,
+        createdAt: new Date().toISOString()
+      })),
+      {
+        ...DEFAULT_PROFILE,
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    for (const preset of presetsToSeed) {
+      const existing = await db.get(STORES.PROFILES, preset.id);
+      if (!existing) {
+        await db.put(STORES.PROFILES, preset);
+      }
+    }
+  } catch (e) {
+    if (e?.name !== 'InvalidStateError') {
+      console.warn('[IndexedDB] seedPresetProfiles error:', e);
+    }
+  }
+}
 
 /**
  * Save or update a patient profile
@@ -107,10 +147,31 @@ export async function getProfile(id) {
 export async function getActiveProfile(id = 'default_patient') {
   try {
     const db = await getDB();
-    const found = await db.get(STORES.PROFILES, id);
+    let found = await db.get(STORES.PROFILES, id);
     if (found) return found;
+
+    // Check preset patients list if not yet written to db
+    const preset = PRESET_PATIENTS.find(p => p.id === id || p.name === id);
+    if (preset) {
+      const newProfile = {
+        ...preset,
+        gameMasteryScores: {},
+        dailyRoutine: DEFAULT_DAILY_ROUTINE,
+        createdAt: new Date().toISOString()
+      };
+      await db.put(STORES.PROFILES, newProfile);
+      return newProfile;
+    }
+
+    if (id === 'default_patient') {
+      const bhaben = { ...DEFAULT_PROFILE, createdAt: new Date().toISOString() };
+      await db.put(STORES.PROFILES, bhaben);
+      return bhaben;
+    }
   } catch (e) {
-    console.warn('[IndexedDB] getActiveProfile fallback:', e);
+    if (e?.name !== 'InvalidStateError') {
+      console.warn('[IndexedDB] getActiveProfile fallback:', e);
+    }
   }
   return { ...DEFAULT_PROFILE, id };
 }
@@ -148,7 +209,7 @@ export async function saveGameSession(session) {
   const db = await getDB();
   const sessionRecord = {
     id: session.id || `session_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-    profileId: session.profileId || 'default_patient',
+    profileId: session.profileId || session.patientId || 'default_patient',
     gameType: session.gameType, // 'memory_recall' | 'pattern_matching' | 'sequencing'
     difficultyTier: session.difficultyTier ?? 1,
     score: session.score ?? 0,
@@ -157,6 +218,41 @@ export async function saveGameSession(session) {
   };
   await db.put(STORES.GAME_SESSIONS, sessionRecord);
   return sessionRecord;
+}
+
+/**
+ * Update patient mastery scores scoped per patient and per game.
+ * Updates gameMasteryScores[gameId] and recomputes the aggregate profile.masteryScore.
+ */
+export async function updatePatientMastery(patientId, gameId, event, context = {}) {
+  const db = await getDB();
+  const profile = await getActiveProfile(patientId);
+  const currentScores = profile.gameMasteryScores || {};
+  const currentGameScore = currentScores[gameId] ?? (profile.masteryScore || 50);
+
+  const updatedGameResult = updateMasteryScore(currentGameScore, event, context);
+  const newScore = typeof updatedGameResult === 'object' ? updatedGameResult.score : updatedGameResult;
+
+  const newGameMasteryScores = {
+    ...currentScores,
+    [gameId]: newScore
+  };
+
+  // Recompute aggregate patient-level mastery score
+  const scores = Object.values(newGameMasteryScores);
+  const aggregateScore = scores.length > 0
+    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+    : profile.masteryScore;
+
+  const updatedProfile = {
+    ...profile,
+    masteryScore: aggregateScore,
+    gameMasteryScores: newGameMasteryScores,
+    updatedAt: new Date().toISOString()
+  };
+
+  await db.put(STORES.PROFILES, updatedProfile);
+  return updatedProfile;
 }
 
 /**

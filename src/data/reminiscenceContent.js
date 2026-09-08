@@ -420,6 +420,21 @@ export const STATE_TEXTILE_TASKS = {
 };
 
 /**
+ * 2b. North East Region (NER) Elderly Demographic Livelihoods
+ */
+export const NER_OCCUPATIONS = [
+  { id: 'farmer', label: 'Farmer / Tea Plantation Worker', labelAs: 'কৃষক / চাহ বাগিচাৰ কৰ্মী', icon: '🌾' },
+  { id: 'weaver', label: 'Handloom Weaver', labelAs: 'তাঁতী / শিপিনী', icon: '🧵' },
+  { id: 'teacher_clerk', label: 'Teacher / Clerk', labelAs: 'শিক্ষক / কৰ্মচাৰী', icon: '📚' },
+  { id: 'homemaker', label: 'Homemaker', labelAs: 'গৃহিণী', icon: '🏡' },
+  { id: 'artisan', label: 'Artisan / Craftsman', labelAs: 'কাৰিকৰ / হস্তশিল্পী (বাঁহ-বেত)', icon: '🪵' },
+  { id: 'govt_service', label: 'Government Service', labelAs: 'চৰকাৰী কৰ্মচাৰী / বিষয়া', icon: '🏛️' },
+  { id: 'business_trader', label: 'Small Business / Trader', labelAs: 'ব্যৱসায়ী / দোকানী', icon: '🏪' },
+  { id: 'fisherman', label: 'Fisherman / Boatman', labelAs: 'মাছুৱৈ / নাৱৰীয়া', icon: '🚣' },
+  { id: 'other', label: 'Other (Please specify)', labelAs: 'অন্যান্য (দয়া কৰি উল্লেখ কৰক)', icon: '✨' }
+];
+
+/**
  * 3. Daily Routine & Occupational Sequencing Tasks
  */
 export const OCCUPATION_SEQUENCING_TASKS = {
@@ -516,17 +531,67 @@ export function getCulturalContentByState(stateName = NER_STATES.ASSAM) {
  */
 export function getSequencingTaskByOccupation(occupation = 'homemaker') {
   const occKey = (occupation || '').toLowerCase().replace(/[\s-]+/g, '_');
-  if (occKey.includes('teach') || occKey.includes('clerk') || occKey.includes('school') || occKey.includes('office')) {
+  if (
+    occKey.includes('teach') ||
+    occKey.includes('clerk') ||
+    occKey.includes('school') ||
+    occKey.includes('office') ||
+    occKey.includes('govt') ||
+    occKey.includes('business') ||
+    occKey.includes('trader')
+  ) {
     return OCCUPATION_SEQUENCING_TASKS.teacher_clerk;
   }
-  if (occKey.includes('weav') || occKey.includes('loom') || occKey.includes('craft') || occKey.includes('tailor')) {
+  if (
+    occKey.includes('weav') ||
+    occKey.includes('loom') ||
+    occKey.includes('craft') ||
+    occKey.includes('artisan') ||
+    occKey.includes('tailor')
+  ) {
     return OCCUPATION_SEQUENCING_TASKS.weaver;
   }
-  if (occKey.includes('plantation') || occKey.includes('tea_garden') || occKey.includes('farm') || occKey.includes('cultiv') || occKey.includes('plucking')) {
+  if (
+    occKey.includes('plantation') ||
+    occKey.includes('tea_garden') ||
+    occKey.includes('farm') ||
+    occKey.includes('cultiv') ||
+    occKey.includes('plucking') ||
+    occKey.includes('fisher') ||
+    occKey.includes('boat')
+  ) {
     return OCCUPATION_SEQUENCING_TASKS.farmer;
   }
   // Fallback to homemaker / tea routine
   return OCCUPATION_SEQUENCING_TASKS.homemaker;
+}
+
+/**
+ * Helper: Format patient's occupation label for UI display
+ */
+export function formatOccupationDisplay(profileOrOccupation, customOther) {
+  let occId = '';
+  let custom = '';
+  if (typeof profileOrOccupation === 'object' && profileOrOccupation !== null) {
+    occId = profileOrOccupation.formerOccupation || profileOrOccupation.former_occupation || '';
+    custom = profileOrOccupation.otherOccupation || profileOrOccupation.other_occupation || '';
+  } else {
+    occId = profileOrOccupation || '';
+    custom = customOther || '';
+  }
+
+  if (!occId && !custom) return '';
+
+  if (occId === 'other') {
+    return custom ? `Other: ${custom}` : 'Other';
+  }
+
+  const found = NER_OCCUPATIONS.find(o => o.id === occId);
+  if (found) {
+    return found.label;
+  }
+
+  return custom || occId;
 }
 
 /**

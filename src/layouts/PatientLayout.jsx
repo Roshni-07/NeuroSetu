@@ -10,6 +10,7 @@ export default function PatientLayout({
   activeSection = 'games', // 'games' | 'reminders' | 'progress' | 'help'
   onNavigate = null,
   onOpenSos = null,
+  onLogout = null,
   isOnline = true
 }) {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -103,6 +104,30 @@ export default function PatientLayout({
               )}
             </div>
 
+            {/* Reminders / Roadmap View Toggle Button (Relocated from bottom nav) */}
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate(activeSection === 'reminders' ? 'games' : 'reminders')}
+                aria-label={activeSection === 'reminders' ? 'Switch to Roadmap Games' : 'Switch to Reminders and Routine'}
+                title={activeSection === 'reminders' ? 'Roadmap Games' : 'Reminders'}
+                className={`min-h-touch px-3 py-2 border rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-soft transition cursor-pointer ${
+                  activeSection === 'reminders'
+                    ? 'bg-teal-700 text-white border-teal-800'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                }`}
+              >
+                <span className="text-base" role="img" aria-hidden="true">
+                  {activeSection === 'reminders' ? '🗺️' : '⏰'}
+                </span>
+                <span className="hidden sm:inline">
+                  {activeSection === 'reminders'
+                    ? (isEn ? 'Roadmap' : 'যাত্ৰা')
+                    : (isEn ? 'Reminders' : 'সোঁৱৰণী')}
+                </span>
+              </button>
+            )}
+
             {/* Audio Guide Button */}
             <button
               type="button"
@@ -127,82 +152,28 @@ export default function PatientLayout({
                 <span>SOS</span>
               </button>
             )}
+
+            {/* Lock / Logout Session Button */}
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                aria-label="Lock / Logout"
+                title="Lock / Logout Session"
+                className="min-h-touch px-3 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 active:bg-rose-100 text-slate-700 border border-slate-200 hover:border-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-soft transition cursor-pointer"
+              >
+                <span className="text-sm" role="img" aria-hidden="true">🔒</span>
+                <span className="hidden sm:inline">Lock / Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       {/* 3. Main Patient Surface Viewport (Max 3 levels deep) */}
-      <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 mb-24">
+      <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6">
         {children}
       </main>
-
-      {/* 4. Persistent Labeled Bottom Navigation Bar (WCAG 2.1 AA Dual Coding) */}
-      <nav
-        aria-label="Primary Navigation"
-        className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 py-2 px-4 z-40 shadow-soft-lg"
-      >
-        <div className="max-w-md mx-auto grid grid-cols-4 gap-2">
-          {/* Nav Item 1: Games */}
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('games')}
-            aria-current={activeSection === 'games' ? 'page' : undefined}
-            className={`min-h-touch py-2 px-2 rounded-xl flex flex-col items-center justify-center transition-all ${
-              activeSection === 'games'
-                ? 'bg-teal-50 text-teal-800 font-bold border border-teal-200/80 shadow-soft'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium'
-            }`}
-          >
-            <span className="text-xl" role="img" aria-hidden="true">🎮</span>
-            <span className="text-[11px] mt-0.5">{isEn ? 'Games' : 'খেল'}</span>
-          </button>
-
-          {/* Nav Item 2: Reminders & Daily Routine */}
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('reminders')}
-            aria-current={activeSection === 'reminders' ? 'page' : undefined}
-            className={`min-h-touch py-2 px-2 rounded-xl flex flex-col items-center justify-center transition-all ${
-              activeSection === 'reminders'
-                ? 'bg-teal-50 text-teal-800 font-bold border border-teal-200/80 shadow-soft'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium'
-            }`}
-          >
-            <span className="text-xl" role="img" aria-hidden="true">⏰</span>
-            <span className="text-[11px] mt-0.5">{isEn ? 'Reminders' : 'সোঁৱৰণী'}</span>
-          </button>
-
-          {/* Nav Item 3: Progress */}
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('progress')}
-            aria-current={activeSection === 'progress' ? 'page' : undefined}
-            className={`min-h-touch py-2 px-2 rounded-xl flex flex-col items-center justify-center transition-all ${
-              activeSection === 'progress'
-                ? 'bg-teal-50 text-teal-800 font-bold border border-teal-200/80 shadow-soft'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium'
-            }`}
-          >
-            <span className="text-xl" role="img" aria-hidden="true">📊</span>
-            <span className="text-[11px] mt-0.5">{isEn ? 'Progress' : 'অগ্ৰগতি'}</span>
-          </button>
-
-          {/* Nav Item 4: Caregiver / Helpline Contact */}
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('help')}
-            aria-current={activeSection === 'help' ? 'page' : undefined}
-            className={`min-h-touch py-2 px-2 rounded-xl flex flex-col items-center justify-center transition-all ${
-              activeSection === 'help'
-                ? 'bg-teal-50 text-teal-800 font-bold border border-teal-200/80 shadow-soft'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium'
-            }`}
-          >
-            <span className="text-xl" role="img" aria-hidden="true">🤝</span>
-            <span className="text-[11px] mt-0.5">{isEn ? 'Caregiver' : 'পৰিয়াল'}</span>
-          </button>
-        </div>
-      </nav>
     </div>
   );
 }

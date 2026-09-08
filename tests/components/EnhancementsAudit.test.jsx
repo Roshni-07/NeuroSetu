@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import PatientOnboardingModal from '../../src/components/onboarding/PatientOnboardingModal.jsx';
 import WelcomeLanding from '../../src/pages/WelcomeLanding.jsx';
-import MemoryRecallGame from '../../src/components/games/MemoryRecallGame.jsx';
+import GridMemoryGame from '../../src/components/games/GridMemoryGame.jsx';
 import GameTutorialOverlay from '../../src/components/games/GameTutorialOverlay.jsx';
 import { clearAllLocalData, closeDB } from '../../src/db/indexedDb.js';
 import { hasConfiguredPin, getActiveSession } from '../../src/services/authService.js';
@@ -51,7 +51,7 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     };
 
     render(
-      <MemoryRecallGame
+      <GridMemoryGame
         profileId="patient_en"
         patientProfile={englishProfile}
         promptDurationMs={10}
@@ -116,13 +116,17 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     // Step 1
     fireEvent.change(screen.getByLabelText(/ৰোগীৰ সম্পূৰ্ণ নাম/i), { target: { value: 'Dhiren Das' } });
     fireEvent.change(screen.getByLabelText(/গৃহগাঁও বা চহৰ/i), { target: { value: 'Barpeta' } });
+    fireEvent.change(screen.getByLabelText(/NER State/i), { target: { value: 'Assam' } });
+    fireEvent.change(screen.getByLabelText(/Preferred Language/i), { target: { value: 'as' } });
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
     // Step 2
     fireEvent.change(screen.getByLabelText(/নিকট আত্মীয়ৰ নাম/i), { target: { value: 'Minati' } });
+    fireEvent.change(screen.getByLabelText(/সম্পৰ্ক/i), { target: { value: 'daughter' } });
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
     // Step 3
+    fireEvent.click(screen.getByRole('button', { name: /তাঁতী \/ শিপিনী/i }));
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
     // Step 4
@@ -134,14 +138,14 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
     // Step 6: PIN Setup
-    expect(screen.getByText(/৬\. ৪-সংখ্যাৰ পিন নিৰ্ধাৰণ/i)).toBeInTheDocument();
+    expect(screen.getByText(/৬\. ৬-সংখ্যাৰ পিন নিৰ্ধাৰণ/i)).toBeInTheDocument();
     expect(screen.getByText(/6 \/ 6/i)).toBeInTheDocument();
 
-    const pinInput = screen.getByLabelText(/৪-সংখ্যাৰ নতুন পিন/i);
+    const pinInput = screen.getByLabelText(/৬-সংখ্যাৰ নতুন পিন/i);
     const confirmInput = screen.getByLabelText(/পিন পুনৰ দিয়ক/i);
 
-    fireEvent.change(pinInput, { target: { value: '4321' } });
-    fireEvent.change(confirmInput, { target: { value: '4321' } });
+    fireEvent.change(pinInput, { target: { value: '432100' } });
+    fireEvent.change(confirmInput, { target: { value: '432100' } });
 
     const saveBtn = screen.getByRole('button', { name: /সংৰক্ষণ আৰু প্ৰৱেশ/i });
     fireEvent.click(saveBtn);
@@ -186,7 +190,7 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
 
   it('6. Visible DDA Progression: Renders tier level indicators and help trigger', async () => {
     render(
-      <MemoryRecallGame
+      <GridMemoryGame
         profileId="patient_dda"
         initialTier={2}
         promptDurationMs={10}

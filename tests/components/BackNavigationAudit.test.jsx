@@ -87,7 +87,7 @@ describe('Back Navigation & Visual Consistency Audit Tests', () => {
       render(
         <PatientOnboardingModal
           isOpen={true}
-          initialProfile={{ name: 'Prabin Barman', villageTown: 'Hajo' }}
+          initialProfile={{ name: 'Prabin Barman', villageTown: 'Hajo', homeState: 'Assam', language: 'as' }}
         />
       );
 

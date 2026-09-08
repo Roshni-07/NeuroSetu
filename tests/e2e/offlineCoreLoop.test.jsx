@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import App from '../../src/App.jsx';
+import GridMemoryGame from '../../src/components/games/GridMemoryGame.jsx';
 import {
   clearAllLocalData,
   closeDB,
+  DEFAULT_PROFILE,
   getGameSessions,
   getUnsyncedTelemetry
 } from '../../src/db/indexedDb.js';
@@ -55,22 +57,30 @@ describe('Task 32–34: Full Offline Core Loop & Multi-Surface E2E Suite', () =>
     fireEvent.click(enterPinBtn);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/(Create Profile PIN|Enter 4-Digit PIN)/i)).toBeInTheDocument();
+    expect(screen.getByText(/(Create Profile PIN|Enter [46]-Digit PIN)/i)).toBeInTheDocument();
 
-    // Enter PIN 1-2-3-4
+    // Enter PIN 1-2-3-4-5-6
     fireEvent.click(screen.getByRole('button', { name: '1' }));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
     fireEvent.click(screen.getByRole('button', { name: '3' }));
     fireEvent.click(screen.getByRole('button', { name: '4' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
+    fireEvent.click(screen.getByRole('button', { name: '6' }));
 
     // Wait for auth modal to close
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    // 2. Launch Memory Recall Game
-    const playMemoryBtn = screen.getAllByRole('button', { name: /(Play|খেলক) →/i })[0];
-    fireEvent.click(playMemoryBtn);
+    // 2. Play Memory Recall Game (GridMemoryGame)
+    const handleExitGame = vi.fn();
+    const { unmount: unmountGame } = render(
+      <GridMemoryGame
+        profileId="default_patient"
+        patientProfile={DEFAULT_PROFILE}
+        onExit={handleExitGame}
+      />
+    );
 
     // Wait for question prompt to load
     await waitFor(() => {
@@ -88,8 +98,11 @@ describe('Task 32–34: Full Offline Core Loop & Multi-Surface E2E Suite', () =>
     });
 
     // Exit Game back to Hub
-    const exitBtn = screen.getByRole('button', { name: /(Exit|বন্ধ কৰক)/i });
+    const exitBtn = screen.getByRole('button', { name: /^(Exit|বন্ধ কৰক)$/i });
     fireEvent.click(exitBtn);
+    expect(handleExitGame).toHaveBeenCalledTimes(1);
+
+    unmountGame();
 
     // 3. Test One-Touch SOS Emergency Button
     const sosBtn = screen.getByRole('button', { name: /Emergency Assistance SOS/i });

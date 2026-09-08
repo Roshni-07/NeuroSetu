@@ -91,16 +91,6 @@ export default function HomePage({
               </button>
             )}
 
-            {onOpenRoleSelector && (
-              <button
-                type="button"
-                onClick={onOpenRoleSelector}
-                className="text-xs font-semibold text-teal-300 hover:text-teal-200 border border-teal-500/40 bg-teal-950/40 hover:bg-teal-900/40 px-3 py-1.5 rounded-xl transition cursor-pointer"
-              >
-                👥 {isEn ? 'Role Login' : 'ভূমিকা প্ৰৱেশ'}
-              </button>
-            )}
-
             {onOpenSetup && (
               <button
                 type="button"
@@ -118,16 +108,6 @@ export default function HomePage({
                 className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 transition"
               >
                 {isEn ? 'ASHA Dashboard' : 'আশা ডেচবৰ্ড'}
-              </button>
-            )}
-
-            {onLaunchPatient && (
-              <button
-                type="button"
-                onClick={onLaunchPatient}
-                className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-soft transition active:scale-95"
-              >
-                {isEn ? 'Launch Patient App →' : 'খেল আৰম্ভ কৰক →'}
               </button>
             )}
           </div>
@@ -172,19 +152,6 @@ export default function HomePage({
             </div>
 
             <div className="grid grid-cols-1 gap-1.5">
-              {onLaunchPatient && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onLaunchPatient();
-                  }}
-                  className="min-h-touch w-full py-2.5 px-3 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold text-center shadow-soft transition"
-                >
-                  {isEn ? '🎮 Launch Patient App →' : '🎮 খেল আৰম্ভ কৰক →'}
-                </button>
-              )}
-
               {onLaunchHub && (
                 <button
                   type="button"
@@ -195,19 +162,6 @@ export default function HomePage({
                   className="min-h-touch w-full text-left py-2 px-3 text-xs font-bold text-teal-300 bg-teal-950/60 border border-teal-600/50 hover:bg-teal-900/60 rounded-xl transition"
                 >
                   🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
-                </button>
-              )}
-
-              {onOpenRoleSelector && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onOpenRoleSelector();
-                  }}
-                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-teal-300 hover:text-teal-200 border border-teal-500/40 bg-teal-950/40 hover:bg-teal-900/40 rounded-xl transition"
-                >
-                  👥 {isEn ? 'Role Login' : 'ভূমিকা প্ৰৱেশ'}
                 </button>
               )}
 
@@ -259,16 +213,6 @@ export default function HomePage({
 
         {/* Primary Call-to-Actions */}
         <div className="flex flex-wrap items-center justify-center gap-3.5 pt-3">
-          {onLaunchHub && (
-            <button
-              type="button"
-              onClick={onLaunchHub}
-              className="min-h-[50px] px-7 py-3.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white rounded-2xl text-sm font-bold shadow-lg hover:shadow-xl transition active:scale-95 flex items-center gap-2 cursor-pointer border border-teal-400/40"
-            >
-              <span>🌾 {isEn ? 'Play Cognitive Game Suite (15 Games)' : 'জ্ঞানীয় খেল শৃংখলা (১৫ খেল)'}</span>
-            </button>
-          )}
-
           {onLaunchPatient && (
             <button
               type="button"
@@ -276,16 +220,6 @@ export default function HomePage({
               className="min-h-[50px] px-7 py-3.5 bg-teal-600 hover:bg-teal-500 text-white rounded-2xl text-sm font-bold shadow-soft hover:shadow-soft-lg transition active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               <span>🎮 {isEn ? 'Launch Patient Experience' : 'ৰোগীৰ খেল আৰম্ভ কৰক'}</span>
-            </button>
-          )}
-
-          {onLaunchDashboard && (
-            <button
-              type="button"
-              onClick={onLaunchDashboard}
-              className="min-h-[50px] px-6 py-3.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 hover:text-white rounded-2xl text-sm font-semibold shadow-soft transition active:scale-95 flex items-center gap-2"
-            >
-              <span>📊 {isEn ? 'View ASHA Triage Dashboard' : 'আশা ট্ৰায়াজ ডেচবৰ্ড'}</span>
             </button>
           )}
 
@@ -299,13 +233,13 @@ export default function HomePage({
             </button>
           )}
 
-          {onOpenSetup && (
+          {onLaunchDashboard && (
             <button
               type="button"
-              onClick={onOpenSetup}
-              className="min-h-[50px] px-5 py-3.5 bg-slate-900/60 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-2xl text-sm font-medium transition active:scale-95"
+              onClick={onLaunchDashboard}
+              className="min-h-[50px] px-6 py-3.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 hover:text-white rounded-2xl text-sm font-semibold shadow-soft transition active:scale-95 flex items-center gap-2"
             >
-              ⚙️ {isEn ? 'Setup Profile' : 'ব্যক্তিগত পৰিচয়'}
+              <span>📊 {isEn ? 'View ASHA Triage Dashboard' : 'আশা ট্ৰায়াজ ডেচবৰ্ড'}</span>
             </button>
           )}
         </div>

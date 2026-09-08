@@ -36,7 +36,7 @@ describe('App Entry Flow: Home First, Device Check & Gated Routing', () => {
     fireEvent.click(unlockBtn);
 
     // PinAuthModal should now be open
-    expect(screen.getByRole('heading', { name: /(Create Profile PIN|Enter 4-Digit PIN)/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /(Create Profile PIN|Enter [46]-Digit PIN)/i })).toBeInTheDocument();
   });
 
   it('3. "Launch Patient Experience" opens ProfileCheckModal and routes to Signup when device has no profile', async () => {
@@ -73,7 +73,7 @@ describe('App Entry Flow: Home First, Device Check & Gated Routing', () => {
       villageTown: 'Tezpur',
       language: 'en'
     });
-    await setProfilePin('1234');
+    await setProfilePin('123456');
 
     render(<App />);
 
@@ -95,27 +95,29 @@ describe('App Entry Flow: Home First, Device Check & Gated Routing', () => {
     fireEvent.click(enterPinBtn);
 
     // PinAuthModal opens
-    expect(screen.getByRole('heading', { name: /Enter 4-Digit PIN/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Enter [46]-Digit PIN/i })).toBeInTheDocument();
   });
 
   it('5. Completing PIN authentication unlocks the main Patient App; logging out returns to Home', async () => {
-    await setProfilePin('9876');
+    await setProfilePin('987654');
 
     render(<App />);
 
     // 1. Click Unlock from top bar
     fireEvent.click(screen.getByRole('button', { name: /Enter Profile PIN/i }));
 
-    // 2. Enter PIN digits on 3x4 keypad (auto-submits on 4th digit)
+    // 2. Enter PIN digits on 3x4 keypad (auto-submits on 6th digit)
     fireEvent.click(screen.getByRole('button', { name: '9' }));
     fireEvent.click(screen.getByRole('button', { name: '8' }));
     fireEvent.click(screen.getByRole('button', { name: '7' }));
     fireEvent.click(screen.getByRole('button', { name: '6' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
+    fireEvent.click(screen.getByRole('button', { name: '4' }));
 
     // 3. Unlocks into Patient App (English default)
     await waitFor(() => {
       expect(screen.getByText(/Welcome to NeuroSetu/i)).toBeInTheDocument();
-      expect(screen.getByText(/Cultural Memory Recall/i)).toBeInTheDocument();
+      expect(screen.getByTestId('roadmap-view-container')).toBeInTheDocument();
     });
 
     // 4. Logout / Lock

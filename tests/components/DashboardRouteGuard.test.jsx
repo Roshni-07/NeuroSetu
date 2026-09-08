@@ -29,7 +29,7 @@ describe('Dashboard and Hub Route Guards (Session Authentication Protection)', (
 
     // Authentication Required guard card MUST be rendered
     expect(screen.getByText(/Authentication Required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Please enter your 4-digit PIN or select your role to access the clinical dashboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/Please enter your staff credentials or PIN to access the clinical dashboard/i)).toBeInTheDocument();
 
     const guardCard = screen.getByText(/Authentication Required/i).closest('div');
     expect(within(guardCard).getByRole('button', { name: /Enter Profile PIN/i })).toBeInTheDocument();
