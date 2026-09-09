@@ -24,6 +24,7 @@ describe('Daily Routine Uncapped Entries & Downstream Integration', () => {
           homeState: 'Assam',
           villageTown: 'Hajo',
           language: 'as',
+          sex: 'female',
           familyMembers: [{ name: 'Rumi', relationship: 'daughter' }],
           formerOccupation: 'farmer',
           dailyRoutine: [
@@ -42,6 +43,9 @@ describe('Daily Routine Uncapped Entries & Downstream Integration', () => {
     fireEvent.click(nextBtn); // Step 2
     fireEvent.click(nextBtn); // Step 3
     fireEvent.click(nextBtn); // Step 4
+    // Fill required fields on Step 4
+    fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Bihu' } });
+    fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Masor Tenga' } });
     fireEvent.click(nextBtn); // Step 5: Daily Routine
 
     expect(screen.getByText(/৫\. দৈনন্দিন কাৰ্যসূচী/i)).toBeInTheDocument();
@@ -82,6 +86,7 @@ describe('Daily Routine Uncapped Entries & Downstream Integration', () => {
           homeState: 'Assam',
           villageTown: 'Hajo',
           language: 'as',
+          sex: 'female',
           familyMembers: [{ name: 'Rumi', relationship: 'daughter' }],
           formerOccupation: 'farmer',
           dailyRoutine: [
@@ -100,6 +105,9 @@ describe('Daily Routine Uncapped Entries & Downstream Integration', () => {
     fireEvent.click(nextBtn); // Step 2
     fireEvent.click(nextBtn); // Step 3
     fireEvent.click(nextBtn); // Step 4
+    // Fill required fields on Step 4
+    fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Chapchar Kut' } });
+    fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Bai' } });
     fireEvent.click(nextBtn); // Step 5
 
     // Delete 5th item -> 4 remain (previously this disabled delete)
@@ -137,6 +145,7 @@ describe('Daily Routine Uncapped Entries & Downstream Integration', () => {
           homeState: 'Assam',
           villageTown: 'Nalbari',
           language: 'as',
+          sex: 'female',
           familyMembers: [{ name: 'Anima', relationship: 'daughter' }],
           formerOccupation: 'teacher_clerk',
           dailyRoutine: [
@@ -158,6 +167,9 @@ describe('Daily Routine Uncapped Entries & Downstream Integration', () => {
     fireEvent.click(nextBtn); // Step 2
     fireEvent.click(nextBtn); // Step 3
     fireEvent.click(nextBtn); // Step 4
+    // Fill required fields on Step 4
+    fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Yaoshang' } });
+    fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Kangshoi' } });
     fireEvent.click(nextBtn); // Step 5
 
     expect(screen.getAllByLabelText(/Routine activity/i)).toHaveLength(8);

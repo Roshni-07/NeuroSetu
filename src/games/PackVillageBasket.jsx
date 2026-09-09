@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import TapSelectGrid from '../shared/TapSelectGrid.jsx';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
 import { getLevel } from '../engine/ddaEngine.js';
@@ -134,6 +134,7 @@ export default function PackVillageBasket({
     return Math.max(1, Math.min(6, difficultyParams.distractorCount || 2));
   }, [hasConfig, difficultyParams.distractorCount]);
 
+  const startTime = useRef(Date.now());
   const [missionIndex, setMissionIndex] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -142,6 +143,7 @@ export default function PackVillageBasket({
     const idx = hasConfig ? (currentLevel - 1) % BASKET_MISSIONS.length : Math.floor(Math.random() * BASKET_MISSIONS.length);
     setMissionIndex(idx);
     setSelectedIds([]);
+    startTime.current = Date.now();
   }, [hasConfig, currentLevel]);
 
   const currentMission = BASKET_MISSIONS[missionIndex] || BASKET_MISSIONS[0];
@@ -175,6 +177,10 @@ export default function PackVillageBasket({
     const required = activeRequiredIds;
     const correctPicked = selectedIds.filter((id) => required.includes(id)).length;
     const wrongPicked = selectedIds.filter((id) => !required.includes(id)).length;
+    const missingPicked = Math.max(0, required.length - correctPicked);
+    const errorCount = wrongPicked + missingPicked;
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
 
     const accuracy = Math.max(
       0,
@@ -191,12 +197,19 @@ export default function PackVillageBasket({
 
     if (onComplete) {
       onComplete({
+        gameId: 'pack-village-basket',
         score,
         maxScore: 100,
         accuracy,
+        errorCount,
+        responseTimeMs,
+        latencyMs: responseTimeMs,
         message,
         subtext: `Selected ${correctPicked} of ${required.length} needed items.`,
         level: currentLevel,
+        tier: derivedTier,
+        difficultyTier: derivedTier,
+        sessionLevel: currentLevel,
         difficultyParams
       });
     }

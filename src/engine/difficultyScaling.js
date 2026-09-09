@@ -61,6 +61,10 @@ export const GAME_DIFFICULTY_ENDPOINTS = {
     level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
     level10: { itemCount: 5, distractorCount: 4, previewTimeMs: 5000, distractorSimilarity: 'high' }
   },
+  'care-for-companion': {
+    level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
+    level10: { itemCount: 5, distractorCount: 4, previewTimeMs: 5000, distractorSimilarity: 'high' }
+  },
   'day-in-my-village': {
     level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
     level10: { itemCount: 5, distractorCount: 3, previewTimeMs: 4000, distractorSimilarity: 'high' }

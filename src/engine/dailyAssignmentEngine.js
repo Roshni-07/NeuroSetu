@@ -29,6 +29,44 @@ export const COGNITIVE_DOMAINS = [
   'Emotional Cognition'
 ];
 
+export const FAMILY_GAMES = [
+  'identity_recall',
+  'category_sorting',
+  'family_tree',
+  'life_timeline'
+];
+
+export const FAMILY_GAMES_METADATA = {
+  identity_recall: {
+    id: 'identity_recall',
+    name: 'Identity & Recall',
+    icon: '🖼️',
+    description: 'Recognize family members with affectionate cultural hints and bio stories.',
+    category: 'Family & Identity'
+  },
+  category_sorting: {
+    id: 'category_sorting',
+    name: 'Category Sorting',
+    icon: '🧺',
+    description: 'Sort loved ones into social groups with drag-and-drop or tap-to-select.',
+    category: 'Family & Identity'
+  },
+  family_tree: {
+    id: 'family_tree',
+    name: 'Family Tree Builder',
+    icon: '🌳',
+    description: 'Organize multi-generational tree branches from elders down to grandchildren.',
+    category: 'Family & Identity'
+  },
+  life_timeline: {
+    id: 'life_timeline',
+    name: 'Life Story Timeline',
+    icon: '📜',
+    description: 'Arrange lifetime milestones into chronological sequence.',
+    category: 'Family & Identity'
+  }
+};
+
 export const TIER_DESCRIPTIONS = {
   1: { tier: 1, name: 'High Scaffolding', focus: 'Audio cues, larger touch targets, minimal choices' },
   2: { tier: 2, name: 'Standard Cognitive Exercise', focus: 'Balanced multi-option recall, voice prompts' },
@@ -95,7 +133,7 @@ export function resolveDailyGameCount(patientProfile = {}) {
   }
 
   // 2. dementia_stage field (future DB column) or stage string
-  const rawStage = (patientProfile.dementia_stage || patientProfile.stage || '').toLowerCase();
+  const rawStage = (patientProfile.dementiaStage || patientProfile.dementia_stage || patientProfile.stage || '').toLowerCase();
   if (rawStage.includes('severe') || rawStage.includes('late')) return 2;
   if (rawStage.includes('moderate') || rawStage.includes('middle')) return 3;
   if (rawStage.includes('mild') || rawStage.includes('early')) return 5;
@@ -172,7 +210,48 @@ function getDayIndex(dateInput) {
 }
 
 /**
- * Auto-assigns 2–5 games across cognitive domains, scaled by severity.
+ * Resolves the daily family game from FAMILY_GAMES (round-robin / least-recently-played).
+ * Uses deterministic day-based rotation and patient seed.
+ *
+ * @param {Object} options
+ * @param {Object} [options.patientProfile] - Patient profile object
+ * @param {Date|string} [options.date] - Date for daily rotation (defaults to now)
+ * @param {Array<string>} [options.familyGameHistory] - Recently played family game IDs (most recent first)
+ * @returns {string} Selected family game ID
+ */
+export function resolveDailyFamilyGame({
+  patientProfile = {},
+  date = new Date(),
+  familyGameHistory = []
+} = {}) {
+  const dayIdx = getDayIndex(date);
+  const patientSeed = patientProfile?.id ? hashString(String(patientProfile.id)) : 0;
+  const rawOffset = (dayIdx + (patientSeed % 7)) % FAMILY_GAMES.length;
+
+  if (familyGameHistory && familyGameHistory.length > 0) {
+    let bestCandidate = FAMILY_GAMES[rawOffset];
+    let bestHistoryIndex = -1;
+
+    for (let i = 0; i < FAMILY_GAMES.length; i++) {
+      const candidate = FAMILY_GAMES[(rawOffset + i) % FAMILY_GAMES.length];
+      const histPos = familyGameHistory.indexOf(candidate);
+      if (histPos === -1) {
+        bestCandidate = candidate;
+        break;
+      } else if (histPos > bestHistoryIndex) {
+        bestHistoryIndex = histPos;
+        bestCandidate = candidate;
+      }
+    }
+    return bestCandidate;
+  }
+
+  return FAMILY_GAMES[rawOffset];
+}
+
+/**
+ * Auto-assigns 2–5 games across cognitive domains, scaled by severity,
+ * plus exactly 1 family game (when includeFamilyGame is true).
  * Domain priority order (when count < 5):
  *   Memory → Attention → Reasoning/EF → Visual Reasoning → Emotional Cognition
  *
@@ -181,15 +260,19 @@ function getDayIndex(dateInput) {
  * @param {number} [options.tier] - Explicit tier override (1, 2, or 3)
  * @param {Array} [options.gamesConfig] - Master games catalog (defaults to GAMES_CONFIG)
  * @param {Date|string} [options.date] - Date for daily rotation (defaults to now)
- * @param {Array<string>} [options.gameHistory] - Array of recently played game IDs (most recent first)
- * @returns {Array} Array of game objects (2–5), enriched with assignedTier, domain, assignedDate, and sessionLevel
+ * @param {Array<string>} [options.gameHistory] - Array of recently played core game IDs (most recent first)
+ * @param {Array<string>} [options.familyGameHistory] - Array of recently played family game IDs (most recent first)
+ * @param {boolean} [options.includeFamilyGame=true] - Whether to append the daily family game (+1 slot)
+ * @returns {Array} Array of game objects, enriched with assignedTier, domain, assignedDate, and sessionLevel
  */
 export function assignDailyGames({
   patientProfile = {},
   tier = null,
   gamesConfig = GAMES_CONFIG,
   date = new Date(),
-  gameHistory = []
+  gameHistory = [],
+  familyGameHistory = [],
+  includeFamilyGame = true
 } = {}) {
   const resolvedTier = resolvePatientStartingTier(patientProfile, tier);
   const dailyCount = resolveDailyGameCount(patientProfile);
@@ -261,6 +344,36 @@ export function assignDailyGames({
       sessionLevel: sessionLevels[domainIndex]
     });
   });
+
+  // Flat +1 slot: append exactly 1 family game rotating through FAMILY_GAMES
+  if (includeFamilyGame) {
+    const familyGameId = resolveDailyFamilyGame({
+      patientProfile,
+      date,
+      familyGameHistory
+    });
+
+    const meta = FAMILY_GAMES_METADATA[familyGameId] || {
+      id: familyGameId,
+      name: familyGameId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      icon: '👨‍👩‍👧‍👦',
+      category: 'Family & Identity'
+    };
+
+    assignedGames.push({
+      ...meta,
+      id: familyGameId,
+      isFamilyGame: true,
+      domain: 'Family & Identity',
+      category: 'Family & Identity',
+      culturalTag: 'Family Memory',
+      assignedTier: resolvedTier,
+      startingDifficultyTier: resolvedTier,
+      assignedDate: dateStr,
+      tierMetadata: TIER_DESCRIPTIONS[resolvedTier] || TIER_DESCRIPTIONS[1],
+      sessionLevel: baseLevel
+    });
+  }
 
   return assignedGames;
 }

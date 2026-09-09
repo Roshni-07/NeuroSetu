@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import DragDropZone from '../shared/DragDropZone.jsx';
 import { sounds } from '../utils/soundEffects.js';
@@ -72,6 +72,7 @@ export default function WhoseMorningIsIt({
     return ALL_MORNING_SOUNDS.slice(0, activeSoundCount);
   }, [activeSoundCount]);
 
+  const startTime = useRef(Date.now());
   const [result, setResult] = useState(null);
   const [started, setStarted] = useState(false);
   const [playingIndex, setPlayingIndex] = useState(-1);
@@ -87,6 +88,7 @@ export default function WhoseMorningIsIt({
     setSubmitted(false);
     setResult(null);
     setPlaybackOrder(shuffle(activeSoundPool));
+    startTime.current = Date.now();
   }, [activeSoundPool]);
 
   const instructions = `Listen to ${activeSoundCount} village morning sounds in sequence. When playback finishes, drag or tap each picture into the ${activeSoundCount} boxes in the order you heard it.`;
@@ -121,15 +123,26 @@ export default function WhoseMorningIsIt({
       assignments[sound.id] === `order-${index}` ? total + 1 : total
     ), 0);
     const score = Math.round((correct / playbackOrder.length) * 100);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const errorCount = Math.max(0, playbackOrder.length - correct);
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
     const res = {
+      gameId: 'whose-morning-is-it',
       score,
       maxScore: 100,
       accuracy: score,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
       message: score === 100
         ? 'Perfect listening! You remembered every sound in order.'
         : 'Good listening practice! Sound sequences become easier with practice.',
       subtext: `Placed ${correct} of ${playbackOrder.length} sounds in the correct position.`,
       level: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      sessionLevel: currentLevel,
       difficultyParams
     };
     setSubmitted(true);
@@ -144,6 +157,7 @@ export default function WhoseMorningIsIt({
     setAssignments({});
     setSubmitted(false);
     setPlaybackOrder(shuffle(activeSoundPool));
+    startTime.current = Date.now();
   };
 
   const items = activeSoundPool.map(sound => ({ id: sound.id, label: sound.label, icon: sound.icon }));

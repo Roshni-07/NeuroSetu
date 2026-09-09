@@ -68,6 +68,7 @@ export const DEFAULT_PROFILE = {
   name: 'Bhaben Kalita',
   pin: '400400',
   stage: 'Mild / Early Stage',
+  sex: 'male',
   homeState: 'Assam',
   villageTown: 'Hajo',
   language: 'en',
@@ -267,22 +268,98 @@ export async function getGameSessions(profileId) {
 }
 
 /**
+ * Canonical Game IDs dictionary and normalization map
+ */
+export const CANONICAL_GAME_IDS = [
+  // 15 Core Games
+  'grandmas-shopping-list',
+  'festival-memory-match',
+  'daily-routine-recall',
+  'shell-memory-trail',
+  'remember-the-story',
+  'memory-map-home',
+  'whose-morning-is-it',
+  'find-the-difference',
+  'tea-garden-detective',
+  'what-belongs-here',
+  'pack-village-basket',
+  'day-in-my-village',
+  'care-for-companion',
+  'finish-grandmas-weave',
+  'whose-emotion',
+  // 4 Family & Identity Games
+  'identity_recall',
+  'category_sorting',
+  'family_tree',
+  'life_timeline'
+];
+
+const GAME_ID_ALIAS_MAP = {
+  'care-for-your-companion': 'care-for-companion',
+  'care_for_your_companion': 'care-for-companion',
+  'care_for_companion': 'care-for-companion',
+  'identity-recall': 'identity_recall',
+  'category-sorting': 'category_sorting',
+  'family-tree': 'family_tree',
+  'family-tree-builder': 'family_tree',
+  'family_tree_builder': 'family_tree',
+  'life-timeline': 'life_timeline',
+  'life-story-timeline': 'life_timeline',
+  'life_story_timeline': 'life_timeline'
+};
+
+export function normalizeGameId(rawId) {
+  if (!rawId) return 'unknown';
+  const clean = String(rawId).trim();
+  if (GAME_ID_ALIAS_MAP[clean]) return GAME_ID_ALIAS_MAP[clean];
+  if (CANONICAL_GAME_IDS.includes(clean)) return clean;
+  // Check if replacing underscores with hyphens matches core games
+  const hyphenated = clean.replace(/_/g, '-');
+  if (CANONICAL_GAME_IDS.includes(hyphenated)) return hyphenated;
+  // Check if replacing hyphens with underscores matches family games
+  const underscored = clean.replace(/-/g, '_');
+  if (CANONICAL_GAME_IDS.includes(underscored)) return underscored;
+  return clean;
+}
+
+/**
  * Save a digital biomarker telemetry record
  */
 export async function saveTelemetryLog(log) {
   const db = await getDB();
+  const rawId = log.gameId || log.taskType || 'unknown';
+  const canonicalGameId = normalizeGameId(rawId);
+  const patientIdentifier = log.patientId || log.profileId || 'default_patient';
+  const responseTime = Math.max(0, Number(log.responseTimeMs ?? log.latencyMs) || 0);
+  const safeErrors = Math.max(0, Number(log.errorCount) || 0);
+  const rawAccuracy = Number(log.accuracy);
+  const safeAccuracy = Number.isFinite(rawAccuracy)
+    ? (rawAccuracy <= 1 && rawAccuracy > 0 ? Math.round(rawAccuracy * 100) : Math.max(0, Math.min(100, Math.round(rawAccuracy))))
+    : 100;
+
+  const sessionLvl = Number(log.sessionLevel ?? log.level) || 5;
+  const diffTier = Number(log.difficultyTier ?? log.tier) || (sessionLvl <= 3 ? 1 : sessionLvl <= 7 ? 2 : 3);
+
   const logRecord = {
     id: log.id || `log_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-    profileId: log.profileId || 'default_patient',
+    // Standard Guaranteed Schema
+    gameId: canonicalGameId,
+    patientId: patientIdentifier,
+    accuracy: safeAccuracy,
+    responseTimeMs: responseTime,
+    errorCount: safeErrors,
+    difficultyTier: diffTier,
+    sessionLevel: sessionLvl,
+    timestamp: log.timestamp || new Date().toISOString(),
+    // Backward-Compatible Aliases & Existing Fields
+    profileId: patientIdentifier,
     sessionId: log.sessionId || null,
-    taskType: log.taskType || 'unknown',
-    latencyMs: Number(log.latencyMs) || 0,
-    errorCount: Number(log.errorCount) || 0,
+    taskType: canonicalGameId,
+    latencyMs: responseTime,
     prosodyScore: log.prosodyScore ?? null,
     ddaAdjustment: log.ddaAdjustment || 'none', // 'decreased' | 'increased' | 'maintained'
-    timestamp: log.timestamp || new Date().toISOString(),
     isSynced: Boolean(log.isSynced),
-    alertFlag: Boolean(log.alertFlag)
+    alertFlag: Boolean(log.alertFlag) || responseTime >= 15000 || safeErrors >= 2
   };
   await db.put(STORES.TELEMETRY_LOGS, logRecord);
   return logRecord;

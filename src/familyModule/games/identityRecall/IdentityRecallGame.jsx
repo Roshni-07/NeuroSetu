@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { familyDataService } from '../../data/familyDataService';
 import ProgressRewardHeader from '../../shared/ProgressRewardHeader';
 import DynamicHintDrawer from '../../shared/DynamicHintDrawer';
@@ -6,7 +6,7 @@ import BlurredImageRevealContainer from './BlurredImageRevealContainer';
 import MultipleChoiceNameGrid from './MultipleChoiceNameGrid';
 import SequentialStepper from './SequentialStepper';
 
-const IdentityRecallGame = ({ onBackToMenu }) => {
+const IdentityRecallGame = ({ onBackToMenu, onComplete, patientProfile, profileId, level }) => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -16,6 +16,7 @@ const IdentityRecallGame = ({ onBackToMenu }) => {
   const [answersState, setAnswersState] = useState({});
   const [streak, setStreak] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const startTime = useRef(Date.now());
 
   // Load family members from service
   useEffect(() => {
@@ -113,11 +114,46 @@ const IdentityRecallGame = ({ onBackToMenu }) => {
     }
   };
 
+  useEffect(() => {
+    if (!isFinished || members.length === 0) return;
+    const totalCorrect = Object.values(answersState).filter((a) => a.isCorrect).length;
+    const total = members.length;
+    const accuracy = total > 0 ? Math.round((totalCorrect / total) * 100) : 100;
+    const errorCount = Math.max(0, total - totalCorrect);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const currentLevel = level ? Number(level) : 5;
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
+    const result = {
+      gameId: 'identity_recall',
+      accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
+      score: accuracy,
+      maxScore: 100,
+      level: currentLevel,
+      sessionLevel: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      patientId: profileId || patientProfile?.id || 'demo_patient_001',
+      profileId: profileId || patientProfile?.id || 'demo_patient_001',
+      totalCorrect,
+      totalMembers: total,
+      timestamp: new Date().toISOString()
+    };
+
+    if (onComplete) {
+      onComplete(result);
+    }
+  }, [isFinished, members.length, answersState, level, onComplete, profileId, patientProfile]);
+
   const handleRestart = () => {
     setAnswersState({});
     setCurrentIndex(0);
     setStreak(0);
     setIsFinished(false);
+    startTime.current = Date.now();
     // Reshuffle members
     setMembers((prev) => [...prev].sort(() => 0.5 - Math.random()));
   };

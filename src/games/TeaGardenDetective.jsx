@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import MovingTargetLoop from '../shared/MovingTargetLoop.jsx';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
@@ -61,6 +61,7 @@ export default function TeaGardenDetective({
     return ALL_DECOYS.slice(0, count);
   }, [difficultyParams.distractorCount]);
 
+  const startTime = useRef(Date.now());
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
 
@@ -72,9 +73,22 @@ Do NOT tap for anything else!
 Take your time — watch each item carefully.`;
 
   const handleComplete = (res) => {
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const accuracy = res?.accuracy !== undefined ? res.accuracy : (res?.score || 100);
+    const errorCount = res?.errorCount !== undefined ? res.errorCount : 0;
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
     const enriched = {
+      gameId: 'tea-garden-detective',
       ...res,
+      accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
       level: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      sessionLevel: currentLevel,
       difficultyParams
     };
     setResult(enriched);
@@ -83,6 +97,7 @@ Take your time — watch each item carefully.`;
 
   const handleRetry = () => {
     setResult(null);
+    startTime.current = Date.now();
     setGameKey(k => k + 1);
   };
 

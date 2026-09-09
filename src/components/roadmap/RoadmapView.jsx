@@ -8,7 +8,8 @@ import { GAMES_CONFIG } from '../../data/gamesConfig.js';
 import { getDifficultyParams } from '../../engine/difficultyScaling.js';
 import {
   assignDailyGames,
-  resolveDailyGameCount
+  resolveDailyGameCount,
+  FAMILY_GAMES_METADATA
 } from '../../engine/dailyAssignmentEngine.js';
 import { getScheduledFamilyGames } from '../../utils/familyScheduling.js';
 import { getFamilyGameCompletion } from '../../utils/storage.js';
@@ -21,7 +22,6 @@ const GAME_METADATA_FALLBACK = {
   'daily-routine-recall':    { name: 'Daily Routine Recall',       icon: '🌅', category: 'Memory' },
   'remember-the-story':      { name: 'Remember the Story',         icon: '📖', category: 'Memory' },
   'care-for-companion':      { name: 'Care for Your Companion',    icon: '🌱', category: 'Reasoning' },
-  'care-for-your-companion': { name: 'Care for Your Companion',    icon: '🌱', category: 'Reasoning' },
   'whose-morning-is-it':     { name: 'Whose Morning Is It?',       icon: '🐓', category: 'Attention' },
   'festival-memory-match':   { name: 'Festival Memory Match',      icon: '🪘', category: 'Memory' },
   'shell-memory-trail':      { name: 'Shell Memory Trail',         icon: '🐚', category: 'Attention' },
@@ -127,50 +127,65 @@ export default function RoadmapView({
     return 2;
   }, [level, activePatient]);
 
-  // 3. Resolve daily game count and assigned games via the engine
-  const dailyCap = useMemo(() => resolveDailyGameCount(activePatient), [activePatient]);
-
+  // 3. Resolve daily games via the engine (severity-scaled core + 1 family game)
   const dailyGames = useMemo(() => {
     const assigned = assignDailyGames({
       patientProfile: activePatient,
-      gamesConfig: GAMES_CONFIG
+      gamesConfig: GAMES_CONFIG,
+      date: currentDate || new Date()
     });
 
     // Enrich with fallback metadata for display
     return assigned.map((g) => {
-      const fallback = GAME_METADATA_FALLBACK[g.id] || {
-        name: g.id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-        icon: '🎮',
-        category: 'Cognitive'
+      const fallback = GAME_METADATA_FALLBACK[g.id] || FAMILY_GAMES_METADATA[g.id] || {
+        name: g.id.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        icon: g.isFamilyGame ? '👨‍👩‍👧‍👦' : '🎮',
+        category: g.isFamilyGame ? 'Family & Identity' : 'Cognitive'
       };
       return {
-        id:          g.id,
-        name:        g.name        || fallback.name,
-        icon:        g.icon        || fallback.icon,
-        category:    g.category    || fallback.category,
-        culturalTag: g.culturalTag || '',
-        sessionLevel: g.sessionLevel || currentLevel
+        id:           g.id,
+        name:         g.name        || fallback.name,
+        icon:         g.icon        || fallback.icon,
+        category:     g.category    || fallback.category,
+        culturalTag:  g.culturalTag || (g.isFamilyGame ? 'Family Memory' : ''),
+        sessionLevel: g.sessionLevel || currentLevel,
+        isFamilyGame: Boolean(g.isFamilyGame),
+        domain:       g.domain || fallback.category
       };
     });
-  }, [activePatient, currentLevel]);
+  }, [activePatient, currentLevel, currentDate]);
+
+  const totalDailyTarget = dailyGames.length;
 
   // 4. Track Progression State
   const completedCount = useMemo(() => {
-    return dailyGames.filter(g => completedGameIds.includes(g.id)).length;
-  }, [dailyGames, completedGameIds]);
+    return dailyGames.filter(g => {
+      if (g.isFamilyGame) {
+        return completedGameIds.includes(g.id) || completedFamilyIds.includes(g.id);
+      }
+      return completedGameIds.includes(g.id);
+    }).length;
+  }, [dailyGames, completedGameIds, completedFamilyIds]);
 
   const progressPercentage = Math.min(
     100,
-    Math.round((completedCount / Math.max(1, dailyCap)) * 100)
+    Math.round((completedCount / Math.max(1, totalDailyTarget)) * 100)
   );
 
-  const isDailyGoalAchieved = completedCount >= dailyCap;
+  const isDailyGoalAchieved = completedCount >= totalDailyTarget;
 
   // 5. Handle Game Selection
   const handleLaunchGame = (gameId, nodeLevel) => {
-    const params = getDifficultyParams(gameId, nodeLevel);
-    if (onSelectGame) {
-      onSelectGame(gameId, nodeLevel, params);
+    const targetGame = dailyGames.find(g => g.id === gameId);
+    if (targetGame?.isFamilyGame) {
+      if (onPlayFamilyGame) {
+        onPlayFamilyGame(gameId);
+      }
+    } else {
+      const params = getDifficultyParams(gameId, nodeLevel);
+      if (onSelectGame) {
+        onSelectGame(gameId, nodeLevel, params);
+      }
     }
   };
 
@@ -247,7 +262,7 @@ export default function RoadmapView({
           <div className="flex items-center justify-between text-xs">
             <span data-testid="daily-progress-tracker" className="font-bold text-slate-700 flex items-center gap-1.5">
               <Trophy className="w-4 h-4 text-teal-600" />
-              <span>Daily Progress: {completedCount} / {dailyCap} Games Completed</span>
+              <span>Daily Progress: {completedCount} / {totalDailyTarget} Games Completed</span>
             </span>
             <span className="font-black text-teal-700">{progressPercentage}%</span>
           </div>
@@ -282,12 +297,19 @@ export default function RoadmapView({
         <div className="w-full flex flex-col items-center space-y-2">
           {dailyGames.map((game, index) => {
             // 4-state node status determination
-            const isCompleted   = completedGameIds.includes(game.id);
+            const isCompleted   = game.isFamilyGame
+              ? (completedGameIds.includes(game.id) || completedFamilyIds.includes(game.id))
+              : completedGameIds.includes(game.id);
             const isCurrentGame = !isCompleted && game.id === activeGameId;
 
             // First uncompleted, non-in-progress game is the active target
             const firstUncompletedIndex = dailyGames.findIndex(
-              g => !completedGameIds.includes(g.id) && g.id !== activeGameId
+              g => {
+                const finished = g.isFamilyGame
+                  ? (completedGameIds.includes(g.id) || completedFamilyIds.includes(g.id))
+                  : completedGameIds.includes(g.id);
+                return !finished && g.id !== activeGameId;
+              }
             );
             const isActive = !isCompleted && !isCurrentGame && index === firstUncompletedIndex;
             const isLocked = !isCompleted && !isCurrentGame && !isActive;
@@ -350,7 +372,7 @@ export default function RoadmapView({
           <span className="text-2xl">🏁</span>
           <span className="font-bold text-slate-700">Daily Milestone Cap</span>
           <span className="text-[11px] text-slate-400">
-            {dailyCap} cognitive tasks tuned for {activePatient.stage}
+            {totalDailyTarget} cognitive & family tasks tuned for {activePatient.stage}
           </span>
         </div>
       </main>
@@ -379,13 +401,13 @@ export default function RoadmapView({
                 </h2>
               </div>
             </div>
-            <span className="text-xs font-semibold text-amber-800/80 bg-amber-100/60 px-2.5 py-1 rounded-xl">
-              Bonus Activities • No Pressure
+              <span className="text-xs font-semibold text-amber-800/80 bg-amber-100/60 px-2.5 py-1 rounded-xl">
+              Family Reminiscence • Counts Toward Daily Goal
             </span>
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed">
-            Revisit memories of your loved ones, photos, and milestones. These sessions are gentle, un-timed, and do not affect your daily score.
+            Revisit memories of your loved ones, photos, and milestones. These gentle sessions count toward your daily goal.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">

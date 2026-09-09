@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import HighlightRecall from '../shared/HighlightRecall.jsx';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
 import { getLevel } from '../engine/ddaEngine.js';
@@ -58,6 +58,7 @@ export default function ShellMemoryTrail({
 
   const highlightTime = params.previewTimeMs;
 
+  const startTime = useRef(Date.now());
   const [round, setRound] = useState(1); // 3 rounds total
   const [targetId, setTargetId] = useState(() => activeItems[0].id);
   const [roundResults, setRoundResults] = useState([]); // array of booleans
@@ -77,6 +78,9 @@ export default function ShellMemoryTrail({
       const correctRounds = updatedResults.filter(Boolean).length;
       const accuracy = Math.round((correctRounds / 3) * 100);
       const score = Math.max(35, correctRounds * 33 + (accuracy === 100 ? 1 : 0));
+      const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+      const errorCount = Math.max(0, 3 - correctRounds);
+      const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
 
       let message = 'Great visual tracking! Tracking items keeps attention sharp.';
       if (correctRounds === 3) {
@@ -86,10 +90,17 @@ export default function ShellMemoryTrail({
       }
 
       onComplete({
+        gameId: 'shell-memory-trail',
         score,
         maxScore: 100,
         accuracy,
+        errorCount,
+        responseTimeMs,
+        latencyMs: responseTimeMs,
         level: currentLevel,
+        tier: derivedTier,
+        difficultyTier: derivedTier,
+        sessionLevel: currentLevel,
         message,
         subtext: `Found the pearl in ${correctRounds} of 3 rounds.`
       });

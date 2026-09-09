@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { sounds } from '../utils/soundEffects.js';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
 import { getLevel } from '../engine/ddaEngine.js';
@@ -124,11 +124,19 @@ export default function FindTheDifference({
     return ALL_DIFFERENCES.slice(0, activeCount);
   }, [activeCount]);
 
+  const startTime = useRef(Date.now());
+  const errorCountRef = useRef(0);
   const [foundIds, setFoundIds] = useState([]);
 
   const handleSpotClick = (diffId) => {
-    if (foundIds.includes(diffId)) return;
-    if (!activeDifferences.some(d => d.id === diffId)) return;
+    if (foundIds.includes(diffId)) {
+      errorCountRef.current += 1;
+      return;
+    }
+    if (!activeDifferences.some(d => d.id === diffId)) {
+      errorCountRef.current += 1;
+      return;
+    }
 
     sounds.playMatchChime();
     const nextFound = [...foundIds, diffId];
@@ -137,13 +145,24 @@ export default function FindTheDifference({
     if (nextFound.length === activeDifferences.length) {
       setTimeout(() => {
         sounds.playSuccessChime();
+        const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+        const errorCount = errorCountRef.current;
+        const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+        const accuracy = Math.max(10, Math.round(100 - (errorCount * 10)));
         const res = {
-          score: 100,
+          gameId: 'find-the-difference',
+          score: accuracy,
           maxScore: 100,
-          accuracy: 100,
+          accuracy,
+          errorCount,
+          responseTimeMs,
+          latencyMs: responseTimeMs,
           message: `Sharp attention! You noticed all ${activeDifferences.length} differences in the village scene.`,
           subtext: `Visual attention exercise completed at Level ${currentLevel}.`,
           level: currentLevel,
+          tier: derivedTier,
+          difficultyTier: derivedTier,
+          sessionLevel: currentLevel,
           difficultyParams
         };
         if (onComplete) onComplete(res);

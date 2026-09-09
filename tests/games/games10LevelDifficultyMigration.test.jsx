@@ -45,16 +45,16 @@ describe('10-Level Difficulty System Migration (4 Core Games)', () => {
     it('CareForYourCompanion generates >= 7 distinct difficulty parameter states', () => {
       const distinctProfiles = new Set();
       for (let l = 1; l <= 10; l++) {
-        const p = getDifficultyParams('care-for-your-companion', l);
+        const p = getDifficultyParams('care-for-companion', l);
         distinctProfiles.add(`${p.itemCount}_${p.distractorCount}_${p.previewTimeMs}`);
       }
       // Steps: 2 to 5, Distractors: 1 to 4, Time: 12000ms down to 5000ms -> 10 distinct profiles
       expect(distinctProfiles.size).toBeGreaterThanOrEqual(7);
       expect(distinctProfiles.size).toBe(10);
-      expect(getDifficultyParams('care-for-your-companion', 1).itemCount).toBe(2);
-      expect(getDifficultyParams('care-for-your-companion', 1).distractorCount).toBe(1);
-      expect(getDifficultyParams('care-for-your-companion', 10).itemCount).toBe(5);
-      expect(getDifficultyParams('care-for-your-companion', 10).distractorCount).toBe(4);
+      expect(getDifficultyParams('care-for-companion', 1).itemCount).toBe(2);
+      expect(getDifficultyParams('care-for-companion', 1).distractorCount).toBe(1);
+      expect(getDifficultyParams('care-for-companion', 10).itemCount).toBe(5);
+      expect(getDifficultyParams('care-for-companion', 10).distractorCount).toBe(4);
     });
   });
 

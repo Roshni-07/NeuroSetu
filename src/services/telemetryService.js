@@ -3,8 +3,12 @@ import {
   getDB,
   STORES,
   enqueueSyncEvent,
-  markTelemetrySynced
+  markTelemetrySynced,
+  CANONICAL_GAME_IDS,
+  normalizeGameId
 } from '../db/indexedDb.js';
+
+export { CANONICAL_GAME_IDS, normalizeGameId };
 
 /**
  * Telemetry & Digital Biomarker Recording Service
@@ -14,36 +18,68 @@ import {
 const LATENCY_ALERT_THRESHOLD_MS = 15000; // 15 seconds threshold for cognitive delay flag
 
 /**
- * Record a single cognitive biomarker event
+ * Standard game session completion logger
+ * Guarantees standard metrics: gameId, patientId, accuracy, responseTimeMs, errorCount, difficultyTier, sessionLevel, timestamp
  */
-export async function recordBiomarkerEvent({
-  profileId = 'default_patient',
-  sessionId = null,
-  taskType = 'general_recall',
-  latencyMs = 0,
+export async function logGameCompletion({
+  gameId = 'general_recall',
+  patientId = 'default_patient',
+  accuracy = 100,
+  responseTimeMs = 0,
+  latencyMs = null,
   errorCount = 0,
-  prosodyScore = null,
+  difficultyTier = 1,
+  sessionLevel = 5,
+  score = null,
+  stars = null,
   ddaAdjustment = 'none',
-  alertFlag = null
+  alertFlag = null,
+  timestamp = null,
+  sessionId = null,
+  prosodyScore = null,
+  // Backward compatibility prop aliases
+  profileId = null,
+  taskType = null,
+  level = null,
+  tier = null
 }) {
-  const safeLatency = Math.max(0, Number(latencyMs) || 0);
-  const safeErrorCount = Math.max(0, Number(errorCount) || 0);
+  const canonicalGameId = normalizeGameId(gameId || taskType || 'unknown');
+  const patientIdentifier = patientId || profileId || 'default_patient';
+  const responseTime = Math.max(0, Number(responseTimeMs ?? latencyMs) || 0);
+  const safeErrors = Math.max(0, Number(errorCount) || 0);
+  
+  const rawAcc = Number(accuracy);
+  const safeAccuracy = Number.isFinite(rawAcc)
+    ? (rawAcc <= 1 && rawAcc > 0 ? Math.round(rawAcc * 100) : Math.max(0, Math.min(100, Math.round(rawAcc))))
+    : 100;
+
+  const currentLevel = Number(sessionLevel ?? level) || 5;
+  const currentTier = Number(difficultyTier ?? tier) || (currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3);
 
   const isEmergencyOrAlert = alertFlag === true ||
-    taskType === 'sos_emergency' ||
-    safeLatency >= LATENCY_ALERT_THRESHOLD_MS ||
-    safeErrorCount >= 2;
+    canonicalGameId === 'sos_emergency' ||
+    responseTime >= LATENCY_ALERT_THRESHOLD_MS ||
+    safeErrors >= 2;
 
   const logEntry = {
-    id: `bio_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-    profileId,
-    sessionId,
-    taskType,
-    latencyMs: safeLatency,
-    errorCount: safeErrorCount,
+    id: `telemetry_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    gameId: canonicalGameId,
+    patientId: patientIdentifier,
+    accuracy: safeAccuracy,
+    responseTimeMs: responseTime,
+    errorCount: safeErrors,
+    difficultyTier: currentTier,
+    sessionLevel: currentLevel,
+    score: score !== null ? Number(score) : safeAccuracy,
+    stars: stars !== null ? Number(stars) : (safeAccuracy >= 80 ? 3 : safeAccuracy >= 50 ? 2 : 1),
+    timestamp: timestamp || new Date().toISOString(),
+    // Backward-compatible mirror fields
+    profileId: patientIdentifier,
+    sessionId: sessionId || null,
+    taskType: canonicalGameId,
+    latencyMs: responseTime,
     prosodyScore: prosodyScore !== null ? Number(prosodyScore) : null,
-    ddaAdjustment, // 'decreased' | 'increased' | 'maintained'
-    timestamp: new Date().toISOString(),
+    ddaAdjustment,
     isSynced: false,
     alertFlag: isEmergencyOrAlert
   };
@@ -55,6 +91,45 @@ export async function recordBiomarkerEvent({
   await enqueueSyncEvent('telemetry', 'insert', logEntry);
 
   return logEntry;
+}
+
+/**
+ * Standard Telemetry alias matching requirements
+ */
+export const recordTelemetry = logGameCompletion;
+
+/**
+ * Record a single cognitive biomarker event (retained for backward compatibility)
+ */
+export async function recordBiomarkerEvent({
+  profileId = 'default_patient',
+  patientId = null,
+  sessionId = null,
+  taskType = 'general_recall',
+  gameId = null,
+  latencyMs = 0,
+  responseTimeMs = null,
+  errorCount = 0,
+  prosodyScore = null,
+  ddaAdjustment = 'none',
+  alertFlag = null,
+  accuracy = 100,
+  difficultyTier = 1,
+  sessionLevel = 5
+}) {
+  return logGameCompletion({
+    gameId: gameId || taskType,
+    patientId: patientId || profileId,
+    responseTimeMs: responseTimeMs ?? latencyMs,
+    errorCount,
+    prosodyScore,
+    ddaAdjustment,
+    alertFlag,
+    sessionId,
+    accuracy,
+    difficultyTier,
+    sessionLevel
+  });
 }
 
 /**

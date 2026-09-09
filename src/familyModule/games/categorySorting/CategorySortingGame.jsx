@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { familyDataService } from '../../data/familyDataService';
 import ProgressRewardHeader from '../../shared/ProgressRewardHeader';
 import DynamicHintDrawer from '../../shared/DynamicHintDrawer';
 import ContactCard from './ContactCard';
 import GroupBucketDropzone from './GroupBucketDropzone';
 
-const CategorySortingGame = ({ onBackToMenu }) => {
+const CategorySortingGame = ({ onBackToMenu, onComplete, patientProfile, profileId, level }) => {
   const [categories, setCategories] = useState([]);
   const [allMembers, setAllMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const startTime = useRef(Date.now());
+  const errorsRef = useRef(0);
 
   // Screen phase: 'category_picker' | 'playing' | 'completed'
   const [phase, setPhase] = useState('category_picker');
@@ -66,6 +69,8 @@ const CategorySortingGame = ({ onBackToMenu }) => {
     });
     setSelectedCardId(null);
     setStreak(0);
+    startTime.current = Date.now();
+    errorsRef.current = 0;
     setFeedbackMessage(`Sort the cards: ${chosenCat} vs ${altCat}`);
     setPhase('playing');
   };
@@ -118,6 +123,7 @@ const CategorySortingGame = ({ onBackToMenu }) => {
       }
     } else {
       // Gentle bounce-back: no harsh red error, gentle shake
+      errorsRef.current += 1;
       setShakingCardId(targetMemberId);
       setStreak(0);
       setFeedbackMessage(`Let's think again about ${targetMember.name}'s relationship.`);
@@ -126,6 +132,41 @@ const CategorySortingGame = ({ onBackToMenu }) => {
       }, 500);
     }
   };
+
+  useEffect(() => {
+    if (phase !== 'completed') return;
+    const totalPlaced = Object.values(bucketPlacements).reduce(
+      (acc, list) => acc + list.length,
+      0
+    );
+    const errors = errorsRef.current;
+    const accuracy = totalPlaced > 0 ? Math.max(10, Math.round(100 - (errors * 12))) : 100;
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const currentLevel = level ? Number(level) : 5;
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
+    const result = {
+      gameId: 'category_sorting',
+      accuracy,
+      errorCount: errors,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
+      score: accuracy,
+      maxScore: 100,
+      level: currentLevel,
+      sessionLevel: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      patientId: profileId || patientProfile?.id || 'demo_patient_001',
+      profileId: profileId || patientProfile?.id || 'demo_patient_001',
+      totalPlaced,
+      timestamp: new Date().toISOString()
+    };
+
+    if (onComplete) {
+      onComplete(result);
+    }
+  }, [phase, bucketPlacements, level, onComplete, profileId, patientProfile]);
 
   if (loading) {
     return (

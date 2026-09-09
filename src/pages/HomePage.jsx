@@ -258,7 +258,7 @@ export default function HomePage({
             {/* Description Subtitle (Exact text required for tests) */}
             <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed">
               {isEn
-                ? 'Voice-first reminiscence therapy powered by Bhashini AI, tailored with authentic Assamese, Mizo, and Manipuri folklore, instruments, and textile motifs — engineered to function 100% offline in rural North East India.'
+                ? 'Culturally rooted reminiscence therapy and cognitive games, tailored with authentic Assamese, Mizo, and Manipuri folklore, instruments, and textile motifs — engineered to function 100% offline in rural North East India.'
                 : 'ভাৰতৰ উত্তৰ-পূৰ্বাঞ্চলৰ গ্ৰাম্য অঞ্চলৰ বাবে প্ৰস্তুত কৰা ১০০% অফলাইন, মাতৃভাষা-আধাৰিত সাংস্কৃতিক স্মৃতি আৰু জ্ঞানীয় স্বাস্থ্য প্লেটফৰ্ম।'}
             </p>
 
@@ -359,12 +359,12 @@ export default function HomePage({
                 </div>
               </div>
 
-              {/* Bhashini Voice Therapy Callout */}
+              {/* Multilingual Voice Guidance Callout */}
               <div className="p-3.5 bg-amber-950/40 border border-amber-600/30 rounded-2xl flex items-center gap-3 text-xs">
                 <span className="text-xl">🎙️</span>
                 <div>
                   <span className="font-bold text-amber-200 block">
-                    Bhashini Voice Therapy
+                    Multilingual Voice Guidance
                   </span>
                   <span className="text-[11px] text-amber-300/80">
                     Spoken prompts in অসমীয়া, বাংলা, Mizo, Manipuri, Khasi & Bodo
@@ -394,7 +394,7 @@ export default function HomePage({
               <div className="w-10 h-10 rounded-xl bg-amber-950/60 text-amber-400 border border-amber-800/40 flex items-center justify-center text-xl">
                 🎙
               </div>
-              <h3 className="font-bold text-white text-sm">Voice-First Bhashini AI</h3>
+              <h3 className="font-bold text-white text-sm">Multilingual Audio Guidance</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
                 ASHA workers and elderly patients navigate games using natural voice input and authentic Indian English and regional TTS.
               </p>

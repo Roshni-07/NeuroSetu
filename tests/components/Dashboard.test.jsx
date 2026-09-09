@@ -21,27 +21,27 @@ describe('Task 29–31: ASHA / Caregiver Dashboard Components Tests', () => {
     render(<PatientTriageList onSelectPatient={handleSelect} />);
 
     // Renders sample patients
-    expect(screen.getByText('Bhaben Kalita')).toBeInTheDocument();
-    expect(screen.getByText('Malsawmi Ralte')).toBeInTheDocument();
-    expect(screen.getByText('Tombi Devi')).toBeInTheDocument();
+    expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
+    expect(screen.getByText('Savitri Devi')).toBeInTheDocument();
+    expect(screen.getByText('Anil Kumar')).toBeInTheDocument();
 
     // Click "Alerts / Decline" filter
     const alertFilterBtn = screen.getByRole('button', { name: /Alerts \/ Decline/i });
     fireEvent.click(alertFilterBtn);
 
-    // Stable patient Tombi Devi should now be filtered out
-    expect(screen.getByText('Bhaben Kalita')).toBeInTheDocument();
-    expect(screen.queryByText('Tombi Devi')).not.toBeInTheDocument();
+    // Stable patients (Anil Kumar, Bhaben Kalita) should now be filtered out
+    expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
+    expect(screen.queryByText('Anil Kumar')).not.toBeInTheDocument();
 
     // Search by village
     const searchInput = screen.getByPlaceholderText(/Search by patient name/i);
-    fireEvent.change(searchInput, { target: { value: 'Kamrup' } });
-    expect(screen.getByText('Bhaben Kalita')).toBeInTheDocument();
-    expect(screen.queryByText('Malsawmi Ralte')).not.toBeInTheDocument();
+    fireEvent.change(searchInput, { target: { value: 'Guwahati' } });
+    expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
+    expect(screen.queryByText('Savitri Devi')).not.toBeInTheDocument();
 
     // Select patient
-    fireEvent.click(screen.getByText('Bhaben Kalita'));
-    expect(handleSelect).toHaveBeenCalledWith('patient_001');
+    fireEvent.click(screen.getByText('Ramesh Patel'));
+    expect(handleSelect).toHaveBeenCalledWith('preset-1');
   });
 
   it('2. CognitiveTrendChart renders SVG chart with latency values and 15s alert line', () => {

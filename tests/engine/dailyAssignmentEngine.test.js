@@ -2,13 +2,17 @@ import { describe, it, expect } from 'vitest';
 import {
   assignDailyGames,
   COGNITIVE_DOMAINS,
+  FAMILY_GAMES,
+  resolveDailyFamilyGame,
   resolvePatientStartingTier,
   resolveDailyGameCount,
   buildSessionDifficultyCurve
 } from '../../src/engine/dailyAssignmentEngine.js';
 import {
   assignDailyGames as ddaAssignDailyGames,
-  COGNITIVE_DOMAINS as ddaCognitiveDomains
+  COGNITIVE_DOMAINS as ddaCognitiveDomains,
+  FAMILY_GAMES as ddaFamilyGames,
+  resolveDailyFamilyGame as ddaResolveDailyFamilyGame
 } from '../../src/engine/ddaEngine.js';
 import { GAMES_CONFIG } from '../../src/data/gamesConfig.js';
 import { SAMPLE_ASHA_PATIENTS } from '../../src/components/dashboard/PatientTriageList.jsx';
@@ -17,6 +21,8 @@ describe('dailyAssignmentEngine', () => {
   it('re-exports cleanly from ddaEngine.js', () => {
     expect(ddaAssignDailyGames).toBe(assignDailyGames);
     expect(ddaCognitiveDomains).toEqual(COGNITIVE_DOMAINS);
+    expect(ddaFamilyGames).toEqual(FAMILY_GAMES);
+    expect(ddaResolveDailyFamilyGame).toBe(resolveDailyFamilyGame);
   });
 
   describe('resolvePatientStartingTier', () => {
@@ -114,42 +120,74 @@ describe('dailyAssignmentEngine', () => {
   });
 
   describe('assignDailyGames — Variable Count & Structure', () => {
-    it('assigns 5 games for a mild patient (dailyCap=5)', () => {
+    it('assigns 5 core games + 1 family game for a mild patient (dailyCap=5)', () => {
       const assigned = assignDailyGames({
         patientProfile: { id: 'p_mild', name: 'Ramesh', dailyCap: 5, stage: 'Mild / Early Stage', masteryScore: 65 },
         gamesConfig: GAMES_CONFIG
       });
 
-      expect(assigned).toHaveLength(5);
+      expect(assigned).toHaveLength(6);
+      expect(assigned.filter(g => !g.isFamilyGame)).toHaveLength(5);
+      expect(assigned.filter(g => g.isFamilyGame)).toHaveLength(1);
 
       // Should cover the first 5 domains in priority order
-      const domains = assigned.map(g => g.category);
+      const domains = assigned.filter(g => !g.isFamilyGame).map(g => g.category);
       expect(domains).toContain('Memory');
       expect(domains).toContain('Attention');
+
+      // includeFamilyGame: false yields only core games
+      const coreOnly = assignDailyGames({
+        patientProfile: { id: 'p_mild', name: 'Ramesh', dailyCap: 5, stage: 'Mild / Early Stage', masteryScore: 65 },
+        gamesConfig: GAMES_CONFIG,
+        includeFamilyGame: false
+      });
+      expect(coreOnly).toHaveLength(5);
     });
 
-    it('assigns 3 games for a moderate patient (dailyCap=3)', () => {
+    it('assigns 3 core games + 1 family game for a moderate patient (dailyCap=3)', () => {
       const assigned = assignDailyGames({
         patientProfile: { id: 'p_mod', name: 'Savitri', dailyCap: 3, stage: 'Moderate / Middle Stage', masteryScore: 45 },
         gamesConfig: GAMES_CONFIG
       });
 
-      expect(assigned).toHaveLength(3);
+      expect(assigned).toHaveLength(4);
+      expect(assigned.filter(g => !g.isFamilyGame)).toHaveLength(3);
+      expect(assigned.filter(g => g.isFamilyGame)).toHaveLength(1);
+
       // Domain priority: Memory, Attention, Reasoning/EF
-      expect(assigned.map(g => g.category)).toContain('Memory');
-      expect(assigned.map(g => g.category)).toContain('Attention');
+      const coreCategories = assigned.filter(g => !g.isFamilyGame).map(g => g.category);
+      expect(coreCategories).toContain('Memory');
+      expect(coreCategories).toContain('Attention');
+
+      // includeFamilyGame: false yields only 3 core games
+      const coreOnly = assignDailyGames({
+        patientProfile: { id: 'p_mod', name: 'Savitri', dailyCap: 3, stage: 'Moderate / Middle Stage', masteryScore: 45 },
+        includeFamilyGame: false
+      });
+      expect(coreOnly).toHaveLength(3);
     });
 
-    it('assigns 2 games for a severe patient (dailyCap=2)', () => {
+    it('assigns 2 core games + 1 family game for a severe patient (dailyCap=2)', () => {
       const assigned = assignDailyGames({
         patientProfile: { id: 'p_sev', name: 'Anil', dailyCap: 2, stage: 'Severe / Late Stage', masteryScore: 20 },
         gamesConfig: GAMES_CONFIG
       });
 
-      expect(assigned).toHaveLength(2);
-      // Domain priority: Memory, Attention
-      expect(assigned[0].category).toBe('Memory');
-      expect(assigned[1].category).toBe('Attention');
+      expect(assigned).toHaveLength(3);
+      expect(assigned.filter(g => !g.isFamilyGame)).toHaveLength(2);
+      expect(assigned.filter(g => g.isFamilyGame)).toHaveLength(1);
+
+      // Core domain priority: Memory, Attention
+      const coreGames = assigned.filter(g => !g.isFamilyGame);
+      expect(coreGames[0].category).toBe('Memory');
+      expect(coreGames[1].category).toBe('Attention');
+
+      // includeFamilyGame: false yields only 2 core games
+      const coreOnly = assignDailyGames({
+        patientProfile: { id: 'p_sev', name: 'Anil', dailyCap: 2, stage: 'Severe / Late Stage', masteryScore: 20 },
+        includeFamilyGame: false
+      });
+      expect(coreOnly).toHaveLength(2);
     });
 
     it('each game has assignedTier, startingDifficultyTier, domain, assignedDate, sessionLevel', () => {
@@ -164,21 +202,24 @@ describe('dailyAssignmentEngine', () => {
         expect(g.startingDifficultyTier).toBe(g.assignedTier);
         expect(g.domain).toBe(g.category);
         expect(g.assignedDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-        expect(g.component).toBeDefined();
+        if (!g.isFamilyGame) {
+          expect(g.component).toBeDefined();
+        }
         expect(typeof g.sessionLevel).toBe('number');
         expect(g.sessionLevel).toBeGreaterThanOrEqual(1);
         expect(g.sessionLevel).toBeLessThanOrEqual(10);
       });
     });
 
-    it('session difficulty curve increases across assigned games', () => {
+    it('session difficulty curve increases across assigned core games', () => {
       const assigned = assignDailyGames({
         patientProfile: { id: 'p_curve', masteryScore: 50, dailyCap: 4 },
         gamesConfig: GAMES_CONFIG
       });
+      const coreGames = assigned.filter(g => !g.isFamilyGame);
       // Each subsequent sessionLevel must be >= the previous (warmup→stretch)
-      for (let i = 1; i < assigned.length; i++) {
-        expect(assigned[i].sessionLevel).toBeGreaterThanOrEqual(assigned[i - 1].sessionLevel);
+      for (let i = 1; i < coreGames.length; i++) {
+        expect(coreGames[i].sessionLevel).toBeGreaterThanOrEqual(coreGames[i - 1].sessionLevel);
       }
     });
 
@@ -253,6 +294,90 @@ describe('dailyAssignmentEngine', () => {
       const newMemoryId = historySet.find(g => g.category === 'Memory').id;
 
       expect(newMemoryId).not.toBe(pickedMemoryId);
+    });
+  });
+
+  describe('Daily Family Game Integration (+1 flat slot)', () => {
+    it('FAMILY_GAMES contains all 4 family game identifiers', () => {
+      expect(FAMILY_GAMES).toEqual([
+        'identity_recall',
+        'category_sorting',
+        'family_tree',
+        'life_timeline'
+      ]);
+    });
+
+    it('assignDailyGames includes exactly 1 family game as the final node by default', () => {
+      const assigned = assignDailyGames({
+        patientProfile: { id: 'p_mod', dailyCap: 3, stage: 'Moderate' }
+      });
+      expect(assigned).toHaveLength(4);
+      const lastNode = assigned[assigned.length - 1];
+      expect(lastNode.isFamilyGame).toBe(true);
+      expect(FAMILY_GAMES).toContain(lastNode.id);
+      expect(lastNode.category).toBe('Family & Identity');
+      expect(lastNode.domain).toBe('Family & Identity');
+      expect(lastNode.culturalTag).toBe('Family Memory');
+    });
+
+    it('is strictly additive across all dementia stages without reducing core games', () => {
+      // Severe: 2 core + 1 family = 3
+      const severe = assignDailyGames({ patientProfile: { id: 'p_sev', dailyCap: 2, stage: 'Severe' } });
+      expect(severe).toHaveLength(3);
+      expect(severe.filter(g => !g.isFamilyGame)).toHaveLength(2);
+      expect(severe.filter(g => g.isFamilyGame)).toHaveLength(1);
+
+      // Moderate: 3 core + 1 family = 4
+      const moderate = assignDailyGames({ patientProfile: { id: 'p_mod', dailyCap: 3, stage: 'Moderate' } });
+      expect(moderate).toHaveLength(4);
+      expect(moderate.filter(g => !g.isFamilyGame)).toHaveLength(3);
+      expect(moderate.filter(g => g.isFamilyGame)).toHaveLength(1);
+
+      // Mild: 5 core + 1 family = 6
+      const mild = assignDailyGames({ patientProfile: { id: 'p_mild', dailyCap: 5, stage: 'Mild' } });
+      expect(mild).toHaveLength(6);
+      expect(mild.filter(g => !g.isFamilyGame)).toHaveLength(5);
+      expect(mild.filter(g => g.isFamilyGame)).toHaveLength(1);
+    });
+
+    it('resolveDailyFamilyGame rotates through all 4 games across 4 consecutive days without immediate repeats', () => {
+      const patient = { id: 'patient_rot_test' };
+      const baseDate = new Date('2026-09-01T10:00:00Z');
+      const picked = [];
+
+      for (let day = 0; day < 4; day++) {
+        const d = new Date(baseDate);
+        d.setDate(baseDate.getDate() + day);
+        const gameId = resolveDailyFamilyGame({ patientProfile: patient, date: d });
+        picked.push(gameId);
+      }
+
+      // All 4 games should be represented across 4 consecutive days
+      expect(new Set(picked).size).toBe(4);
+      FAMILY_GAMES.forEach(id => expect(picked).toContain(id));
+    });
+
+    it('resolveDailyFamilyGame respects familyGameHistory to select least-recently-played', () => {
+      const patient = { id: 'patient_hist_test' };
+      const date = new Date('2026-09-01T10:00:00Z');
+
+      // If 3 of the 4 games were played recently, it must choose the 4th unplayed game
+      const history = ['identity_recall', 'category_sorting', 'family_tree'];
+      const nextGame = resolveDailyFamilyGame({
+        patientProfile: patient,
+        date,
+        familyGameHistory: history
+      });
+      expect(nextGame).toBe('life_timeline');
+    });
+
+    it('includeFamilyGame: false completely excludes family game', () => {
+      const assigned = assignDailyGames({
+        patientProfile: { id: 'p_sev', dailyCap: 2 },
+        includeFamilyGame: false
+      });
+      expect(assigned).toHaveLength(2);
+      expect(assigned.every(g => !g.isFamilyGame)).toBe(true);
     });
   });
 });

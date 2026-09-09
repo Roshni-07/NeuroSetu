@@ -52,13 +52,21 @@ export default function RoadmapNode({
     right:  'self-end sm:mr-20 mr-6'
   }[offset] || 'self-center mx-auto';
 
+  const isFamily = Boolean(game?.isFamilyGame);
+
   // State-specific styling for the circular node bubble
   const bubbleStateClasses = isCompleted
-    ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-4 border-emerald-200 shadow-md hover:scale-105 active:scale-95 cursor-pointer'
+    ? isFamily
+      ? 'bg-gradient-to-br from-emerald-500 via-teal-600 to-amber-600 text-white border-4 border-amber-300 shadow-md hover:scale-105 active:scale-95 cursor-pointer'
+      : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-4 border-emerald-200 shadow-md hover:scale-105 active:scale-95 cursor-pointer'
     : isActive
-    ? 'bg-gradient-to-br from-amber-500 via-teal-600 to-teal-700 text-white border-4 border-amber-300 shadow-xl ring-4 ring-amber-400/80 ring-offset-2 animate-pulse hover:scale-105 active:scale-95 cursor-pointer'
+    ? isFamily
+      ? 'bg-gradient-to-br from-amber-500 via-rose-500 to-amber-600 text-white border-4 border-amber-200 shadow-xl ring-4 ring-amber-400 ring-offset-2 animate-pulse hover:scale-105 active:scale-95 cursor-pointer'
+      : 'bg-gradient-to-br from-amber-500 via-teal-600 to-teal-700 text-white border-4 border-amber-300 shadow-xl ring-4 ring-amber-400/80 ring-offset-2 animate-pulse hover:scale-105 active:scale-95 cursor-pointer'
     : isInProgress
-    ? 'bg-gradient-to-br from-teal-400 to-teal-600 text-white border-4 border-teal-300 shadow-xl ring-4 ring-teal-400/80 ring-offset-2 animate-pulse hover:scale-105 active:scale-95 cursor-pointer'
+    ? isFamily
+      ? 'bg-gradient-to-br from-amber-400 to-rose-500 text-white border-4 border-amber-300 shadow-xl ring-4 ring-amber-400/90 ring-offset-2 animate-pulse hover:scale-105 active:scale-95 cursor-pointer'
+      : 'bg-gradient-to-br from-teal-400 to-teal-600 text-white border-4 border-teal-300 shadow-xl ring-4 ring-teal-400/80 ring-offset-2 animate-pulse hover:scale-105 active:scale-95 cursor-pointer'
     : 'bg-slate-200 text-slate-400 border-4 border-slate-300 shadow-none cursor-not-allowed opacity-80';
 
   const lockedTooltip = 'Complete previous game to unlock';
@@ -71,9 +79,11 @@ export default function RoadmapNode({
       {/* Active "Play Today" Callout Badge */}
       {isActive && (
         <div className="mb-2 animate-bounce" data-testid="active-callout-badge">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white text-xs font-black uppercase tracking-wider rounded-full shadow-lg border border-amber-200">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-white text-xs font-black uppercase tracking-wider rounded-full shadow-lg border ${
+            isFamily ? 'bg-gradient-to-r from-amber-500 to-rose-500 border-amber-200' : 'bg-amber-500 border-amber-200'
+          }`}>
             <Play className="w-3 h-3 fill-white" />
-            <span>Play Today</span>
+            <span>{isFamily ? 'Family Memory' : 'Play Today'}</span>
           </span>
         </div>
       )}
@@ -81,8 +91,10 @@ export default function RoadmapNode({
       {/* In-Progress Callout Badge */}
       {isInProgress && (
         <div className="mb-2 animate-bounce" data-testid="in-progress-callout-badge">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-500 text-white text-xs font-black uppercase tracking-wider rounded-full shadow-lg border border-teal-200">
-            <span>⏳ In Progress</span>
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-white text-xs font-black uppercase tracking-wider rounded-full shadow-lg border ${
+            isFamily ? 'bg-amber-600 border-amber-300' : 'bg-teal-500 border-teal-200'
+          }`}>
+            <span>⏳ {isFamily ? 'Memory In Progress' : 'In Progress'}</span>
           </span>
         </div>
       )}
@@ -180,6 +192,11 @@ export default function RoadmapNode({
         }`}>
           {isCompleted ? 'Completed' : isActive ? 'Next Up' : isInProgress ? 'Resume' : 'Locked'}
         </p>
+        {isFamily && (
+          <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold text-amber-800 bg-amber-100/90 rounded-full border border-amber-300/80">
+            Family & Identity
+          </span>
+        )}
       </div>
     </div>
   );

@@ -92,10 +92,15 @@ export default function GrandmasShoppingList({
     );
   };
 
+  const [startTime] = useState(() => Date.now());
+
   const handleConfirm = () => {
     const targetIds = targetList.map((item) => item.id);
     const correctCount = selectedIds.filter((id) => targetIds.includes(id)).length;
     const extraCount = selectedIds.filter((id) => !targetIds.includes(id)).length;
+    const missingCount = targetIds.filter((id) => !selectedIds.includes(id)).length;
+    const errorCount = extraCount + missingCount;
+    const responseTimeMs = Math.max(100, Date.now() - startTime);
 
     // Accuracy computation
     const totalExpected = targetIds.length;
@@ -110,10 +115,15 @@ export default function GrandmasShoppingList({
     }
 
     onComplete({
+      gameId: 'grandmas-shopping-list',
       score,
       maxScore: 100,
       accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
       level: currentLevel,
+      tier: currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3,
       message,
       subtext: `Target: ${targetIds.length} items. You matched ${correctCount} correctly.`
     });

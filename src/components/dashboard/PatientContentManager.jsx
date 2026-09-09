@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SAMPLE_ASHA_PATIENTS } from './PatientTriageList.jsx';
+import { PRESET_PATIENTS } from '../../data/presetPatients.js';
 import { COGNITIVE_DOMAINS } from '../../engine/dailyAssignmentEngine.js';
 import { saveProfile } from '../../db/indexedDb.js';
 
@@ -31,7 +31,7 @@ export default function PatientContentManager({
   patients = null,
   onUpdatePatient = null
 }) {
-  // Load patients from localStorage or fall back to SAMPLE_ASHA_PATIENTS
+  // Load patients from localStorage or fall back to the canonical preset patient roster.
   const [patientList, setPatientList] = useState(() => {
     try {
       const saved = localStorage.getItem('neurosetu_asha_triage_patients');
@@ -40,7 +40,7 @@ export default function PatientContentManager({
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return (patients || SAMPLE_ASHA_PATIENTS).map(p => ({
+    return (patients || PRESET_PATIENTS).map(p => ({
       ...p,
       activeCognitiveDomains: p.activeCognitiveDomains || [...COGNITIVE_DOMAINS]
     }));

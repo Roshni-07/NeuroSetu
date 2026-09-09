@@ -20,7 +20,7 @@ describe('Part 1: Landing Page Visual Redesign & CTA Preservation Audit', () => 
 
     // Primary Headline & Copy
     expect(screen.getByText(/Cognitive Games That Speak Your Language\./i)).toBeInTheDocument();
-    expect(screen.getByText(/Voice-first reminiscence therapy powered by Bhashini AI/i)).toBeInTheDocument();
+    expect(screen.getByText(/Culturally rooted reminiscence therapy/i)).toBeInTheDocument();
 
     // Right-Column Cultural Tapestry Showcase Card
     expect(screen.getByText(/North East Memory Tapestry/i)).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe('Part 1: Landing Page Visual Redesign & CTA Preservation Audit', () => 
     expect(screen.getAllByText(/Golden Muga/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Kopou Phool/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Majuli Riverway/i)).toBeInTheDocument();
-    expect(screen.getByText(/Bhashini Voice Therapy/i)).toBeInTheDocument();
+    expect(screen.getByText(/Multilingual Voice Guidance/i)).toBeInTheDocument();
   });
 
   it('2. Strictly preserves all 3 Batch 2 consolidated Hero CTAs and callbacks', () => {

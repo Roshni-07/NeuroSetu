@@ -43,6 +43,9 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     const langSelect = screen.getByLabelText(/Preferred Language/i);
     fireEvent.change(langSelect, { target: { value: 'as' } });
 
+    const sexSelect = screen.getByLabelText(/Sex/i);
+    fireEvent.change(sexSelect, { target: { value: 'male' } });
+
     // Next to Step 2
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
@@ -70,6 +73,10 @@ describe('NER Deep Localization & Personalized Reminiscence Tests', () => {
     // Step 4: Cultural Anchors & Phase 2 note
     expect(screen.getByText(/৪\. প্ৰিয় উৎসৱ আৰু খাদ্য/i)).toBeInTheDocument();
     expect(screen.getByText(/Phase 2 Feature Notice/i)).toBeInTheDocument();
+
+    // Fill required festival and food fields
+    fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Rongali Bihu' } });
+    fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Masor Tenga' } });
 
     // Next to Step 5: Elder's Daily Routine
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));

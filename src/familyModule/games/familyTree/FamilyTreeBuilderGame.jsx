@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { familyDataService } from '../../data/familyDataService';
 import ProgressRewardHeader from '../../shared/ProgressRewardHeader';
 import DynamicHintDrawer from '../../shared/DynamicHintDrawer';
@@ -12,10 +12,13 @@ const GENERATIONS_CONFIG = [
   { generation: 2, title: 'Grandchildren', icon: '👶' },
 ];
 
-const FamilyTreeBuilderGame = ({ onBackToMenu }) => {
+const FamilyTreeBuilderGame = ({ onBackToMenu, onComplete, patientProfile, profileId, level }) => {
   const [allMembers, setAllMembers] = useState([]);
   const [treeSlots, setTreeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const startTime = useRef(Date.now());
+  const errorsRef = useRef(0);
 
   // Interaction State
   const [activeSlot, setActiveSlot] = useState(null); // { generation, position }
@@ -94,6 +97,7 @@ const FamilyTreeBuilderGame = ({ onBackToMenu }) => {
     const targetGen = activeSlot.generation;
     if (member.generation !== targetGen) {
       // Gentle hint without blocking hard
+      errorsRef.current += 1;
       const targetConfig = GENERATIONS_CONFIG.find((g) => g.generation === targetGen);
       setFeedbackMessage(
         `Note: ${member.name} (${member.relationship}) belongs in a different row than "${targetConfig?.title}".`
@@ -123,12 +127,45 @@ const FamilyTreeBuilderGame = ({ onBackToMenu }) => {
     }
   };
 
+  useEffect(() => {
+    if (!isCompleted) return;
+    const errors = errorsRef.current;
+    const accuracy = Math.max(10, Math.round(100 - (errors * 15)));
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const currentLevel = level ? Number(level) : 5;
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
+    const result = {
+      gameId: 'family_tree',
+      accuracy,
+      errorCount: errors,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
+      score: accuracy,
+      maxScore: 100,
+      level: currentLevel,
+      sessionLevel: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      patientId: profileId || patientProfile?.id || 'demo_patient_001',
+      profileId: profileId || patientProfile?.id || 'demo_patient_001',
+      totalSlots: totalSlotsCount,
+      timestamp: new Date().toISOString()
+    };
+
+    if (onComplete) {
+      onComplete(result);
+    }
+  }, [isCompleted, totalSlotsCount, level, onComplete, profileId, patientProfile]);
+
   const handleResetTree = () => {
     setTreeSlots((prev) =>
       prev.map((slot, idx) => (idx === 2 ? slot : { ...slot, memberId: null }))
     );
     setIsCompleted(false);
     setStreak(0);
+    startTime.current = Date.now();
+    errorsRef.current = 0;
     setFeedbackMessage('Let’s build the family branches step-by-step.');
   };
 

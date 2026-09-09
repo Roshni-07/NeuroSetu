@@ -1,81 +1,69 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { NER_STATES, NER_OCCUPATIONS, formatOccupationDisplay } from '../../data/reminiscenceContent.js';
+import { NER_STATES, NER_OCCUPATIONS, NER_SEX_OPTIONS, DEMENTIA_STAGE_OPTIONS, formatOccupationDisplay, formatSexDisplay, resolveDementiaStage, formatDementiaStageDisplay } from '../../data/reminiscenceContent.js';
 import { SUPPORTED_LANGUAGES } from '../../data/multilingualAudioHelp.js';
-import { saveProfile } from '../../db/indexedDb.js';
+import { PRESET_PATIENTS } from '../../data/presetPatients.js';
+import { DEFAULT_PROFILE, saveProfile } from '../../db/indexedDb.js';
 
-// Sample patient profiles across NER rural districts for ASHA triage demonstration
+// Canonical triage roster is sourced from PRESET_PATIENTS plus the preserved real default Bhaben Kalita profile.
 export const SAMPLE_ASHA_PATIENTS = [
-  {
-    id: 'patient_001',
-    name: 'Bhaben Kalita',
-    age: 72,
-    homeState: 'Assam',
-    villageTown: 'Hajo',
-    village: 'Hajo, Kamrup (Assam)',
-    language: 'Assamese (অসমীয়া)',
-    languageCode: 'as',
+  ...PRESET_PATIENTS.map((patient, index) => ({
+    ...patient,
+    age: Number(patient.age),
+    sex: patient.sex || 'male',
+    dementia_stage: resolveDementiaStage(patient),
+    dementiaStage: resolveDementiaStage(patient),
+    homeState: patient.homeState || 'Assam',
+    villageTown: patient.villageTown || 'Unknown',
+    village: `${patient.villageTown || 'Unknown'}, ${patient.homeState || 'Assam'}`,
+    language: patient.language === 'en' ? 'English' : patient.language,
+    languageCode: patient.language || 'en',
     formerOccupation: 'farmer',
     former_occupation: 'farmer',
-    condition: 'Early MCI',
-    activeAlerts: 3,
-    avgLatencyMs: 16200,
-    sessionsCompleted: 14,
-    lastActive: 'Today, 10:15 AM',
-    status: 'critical', // 'critical' | 'attention' | 'stable'
-    starting_difficulty_tier: 1,
-    alertReason: '3 response latency alerts (>15s) and 2 consecutive errors in Bihu recall',
-    isActive: true,
-    familyMembers: [{ name: 'Rumi', relationship: 'daughter' }]
-  },
-  {
-    id: 'patient_002',
-    name: 'Malsawmi Ralte',
-    age: 69,
-    homeState: 'Mizoram',
-    villageTown: 'Reiek',
-    village: 'Reiek, Mamit (Mizoram)',
-    language: 'Mizo (Lushai)',
-    languageCode: 'lus',
-    formerOccupation: 'weaver',
-    former_occupation: 'weaver',
-    condition: 'Mild Dementia',
-    activeAlerts: 1,
-    avgLatencyMs: 11400,
-    sessionsCompleted: 19,
-    lastActive: 'Yesterday',
-    status: 'attention',
-    starting_difficulty_tier: 2,
-    alertReason: 'DDA tier reduced from Tier 2 to Tier 1 during textile pattern matching',
-    isActive: true,
-    familyMembers: [{ name: 'Lalrinsanga', relationship: 'son' }]
-  },
-  {
-    id: 'patient_003',
-    name: 'Tombi Devi',
-    age: 66,
-    homeState: 'Manipur',
-    villageTown: 'Nambol',
-    village: 'Nambol, Bishnupur (Manipur)',
-    language: 'Manipuri (মৈতৈলোন্)',
-    languageCode: 'mni',
-    formerOccupation: 'homemaker',
-    former_occupation: 'homemaker',
-    condition: 'Early Stage MCI',
+    condition: patient.stage || 'Stable',
     activeAlerts: 0,
-    avgLatencyMs: 4800,
-    sessionsCompleted: 26,
-    lastActive: 'Today, 8:45 AM',
+    avgLatencyMs: 4200 + index * 1000,
+    sessionsCompleted: 0,
+    lastActive: 'Today',
+    status: index === 0 ? 'critical' : index === 1 ? 'attention' : 'stable',
+    starting_difficulty_tier: index === 0 ? 1 : index === 1 ? 2 : 3,
+    alertReason: '',
+    isActive: patient.isActive !== false,
+    familyMembers: []
+  })),
+  {
+    ...DEFAULT_PROFILE,
+    id: 'default_patient',
+    name: 'Bhaben Kalita',
+    age: DEFAULT_PROFILE.age,
+    sex: DEFAULT_PROFILE.sex || 'male',
+    dementia_stage: resolveDementiaStage(DEFAULT_PROFILE),
+    dementiaStage: resolveDementiaStage(DEFAULT_PROFILE),
+    homeState: DEFAULT_PROFILE.homeState,
+    villageTown: DEFAULT_PROFILE.villageTown,
+    village: `${DEFAULT_PROFILE.villageTown}, ${DEFAULT_PROFILE.homeState}`,
+    language: DEFAULT_PROFILE.language === 'en' ? 'English' : DEFAULT_PROFILE.language,
+    languageCode: DEFAULT_PROFILE.language || 'en',
+    formerOccupation: DEFAULT_PROFILE.formerOccupation,
+    former_occupation: DEFAULT_PROFILE.formerOccupation,
+    condition: DEFAULT_PROFILE.stage || 'Mild / Early Stage',
+    activeAlerts: 0,
+    avgLatencyMs: 4200,
+    sessionsCompleted: 0,
+    lastActive: 'Today',
     status: 'stable',
-    starting_difficulty_tier: 3,
-    alertReason: 'Stable task performance; response times consistent under 5s',
+    starting_difficulty_tier: DEFAULT_PROFILE.starting_difficulty_tier || 1,
+    alertReason: '',
     isActive: true,
-    familyMembers: [{ name: 'Sanatombi', relationship: 'daughter' }]
+    familyMembers: DEFAULT_PROFILE.familyMembers || []
   }
 ];
 
 const DEFAULT_FORM_DATA = {
   name: '',
   age: '',
+  sex: '',
+  dementia_stage: 'mild',
+  dementiaStage: 'mild',
   home_state: '',
   village_town: '',
   language: '',
@@ -106,6 +94,9 @@ export default function PatientTriageList({
     } catch (e) {}
     return (patients || SAMPLE_ASHA_PATIENTS).map(p => ({
       ...p,
+      sex: p.sex || 'male',
+      dementia_stage: p.dementia_stage || p.dementiaStage || resolveDementiaStage(p),
+      dementiaStage: p.dementiaStage || p.dementia_stage || resolveDementiaStage(p),
       isActive: p.isActive !== false
     }));
   });
@@ -113,9 +104,24 @@ export default function PatientTriageList({
   // Sync when custom patients prop is provided from tests or external props
   useEffect(() => {
     if (patients && patients !== SAMPLE_ASHA_PATIENTS) {
-      setPatientList(patients.map(p => ({
+      setPatientList(patients.map((p, index) => ({
         ...p,
-        isActive: p.isActive !== false
+        age: Number(p.age),
+        sex: p.sex || 'male',
+        dementia_stage: p.dementia_stage || p.dementiaStage || resolveDementiaStage(p),
+        dementiaStage: p.dementiaStage || p.dementia_stage || resolveDementiaStage(p),
+        homeState: p.homeState || 'Assam',
+        villageTown: p.villageTown || 'Unknown',
+        village: p.village || `${p.villageTown || 'Unknown'}, ${p.homeState || 'Assam'}`,
+        language: p.language === 'en' ? 'English' : p.language,
+        languageCode: p.languageCode || p.language || 'en',
+        formerOccupation: p.formerOccupation || p.former_occupation || '',
+        former_occupation: p.formerOccupation || p.former_occupation || '',
+        condition: p.condition || p.stage || 'Stable',
+        status: p.status || (index === 0 ? 'critical' : index === 1 ? 'attention' : 'stable'),
+        starting_difficulty_tier: p.starting_difficulty_tier || 1,
+        isActive: p.isActive !== false,
+        familyMembers: p.familyMembers || []
       })));
     }
   }, [patients]);
@@ -205,6 +211,17 @@ export default function PatientTriageList({
         const langB = (b.language || b.languageCode || '').trim().toLowerCase();
         return langA.localeCompare(langB);
       }
+      if (sortBy === 'sex') {
+        const sexA = (a.sex || '').trim().toLowerCase();
+        const sexB = (b.sex || '').trim().toLowerCase();
+        return sexA.localeCompare(sexB);
+      }
+      if (sortBy === 'dementia_stage') {
+        const weightMap = { mild: 1, moderate: 2, severe: 3 };
+        const wA = weightMap[a.dementia_stage] || 0;
+        const wB = weightMap[b.dementia_stage] || 0;
+        return wA - wB;
+      }
       return 0;
     });
   }, [activePatients, filter, searchQuery, sortBy]);
@@ -222,10 +239,14 @@ export default function PatientTriageList({
     const isStandardOcc = NER_OCCUPATIONS.some(o => o.id === occ && o.id !== 'other');
     const resolvedOcc = isStandardOcc ? occ : (occ ? 'other' : '');
     const resolvedOther = patient.otherOccupation || patient.other_occupation || (!isStandardOcc ? occ : '');
+    const resolvedStage = patient.dementiaStage || patient.dementia_stage || resolveDementiaStage(patient);
 
     setFormData({
       name: patient.name || '',
       age: patient.age ? String(patient.age) : '',
+      sex: patient.sex || '',
+      dementia_stage: resolvedStage,
+      dementiaStage: resolvedStage,
       home_state: patient.homeState || patient.home_state || '',
       village_town: patient.villageTown || (patient.village ? patient.village.split(',')[0].trim() : ''),
       language: patient.languageCode || (SUPPORTED_LANGUAGES.find(l => l.nativeName === patient.language || l.label === patient.language)?.code) || '',
@@ -253,6 +274,9 @@ export default function PatientTriageList({
     }
     if (!formData.age || isNaN(Number(formData.age)) || Number(formData.age) <= 0) {
       errors.age = 'Please enter a valid age';
+    }
+    if (!formData.sex) {
+      errors.sex = 'Please select a sex';
     }
     if (!formData.home_state) {
       errors.home_state = 'Please select a state';
@@ -283,11 +307,14 @@ export default function PatientTriageList({
     const resolvedOcc = formData.former_occupation === 'other'
       ? (formData.other_occupation.trim() || 'other')
       : formData.former_occupation;
+    const resolvedDementiaStage = formData.dementiaStage || formData.dementia_stage || 'mild';
+    const formattedStage = formatDementiaStageDisplay(resolvedDementiaStage);
 
     const newPatient = {
       id: `patient_${Date.now()}`,
       name: formData.name.trim(),
       age: Number(formData.age),
+      sex: formData.sex,
       homeState: formData.home_state,
       villageTown: formData.village_town.trim(),
       village: `${formData.village_town.trim()}, ${formData.home_state}`,
@@ -298,13 +325,16 @@ export default function PatientTriageList({
       otherOccupation: formData.former_occupation === 'other' ? formData.other_occupation.trim() : '',
       other_occupation: formData.former_occupation === 'other' ? formData.other_occupation.trim() : '',
       familyMembers: formData.familyMembers.filter(m => m.name.trim()),
-      condition: 'Newly Registered',
+      condition: formattedStage,
+      stage: formattedStage,
+      dementiaStage: resolvedDementiaStage,
+      dementia_stage: resolvedDementiaStage,
       activeAlerts: 0,
       avgLatencyMs: 0,
       sessionsCompleted: 0,
       lastActive: 'Just registered',
       status: 'stable',
-      starting_difficulty_tier: 1,
+      starting_difficulty_tier: resolvedDementiaStage === 'severe' ? 1 : resolvedDementiaStage === 'moderate' ? 2 : 3,
       isActive: true,
       alertReason: ''
     };
@@ -319,11 +349,15 @@ export default function PatientTriageList({
         homeState: newPatient.homeState,
         villageTown: newPatient.villageTown,
         age: newPatient.age,
+        sex: newPatient.sex,
+        dementiaStage: newPatient.dementiaStage,
+        dementia_stage: newPatient.dementia_stage,
+        stage: newPatient.stage,
         language: newPatient.languageCode,
         formerOccupation: newPatient.formerOccupation,
         otherOccupation: newPatient.otherOccupation,
         familyMembers: newPatient.familyMembers,
-        starting_difficulty_tier: 1
+        starting_difficulty_tier: newPatient.starting_difficulty_tier
       });
     } catch (err) {}
 
@@ -346,10 +380,17 @@ export default function PatientTriageList({
     const resolvedOcc = formData.former_occupation === 'other'
       ? (formData.other_occupation.trim() || 'other')
       : formData.former_occupation;
+    const resolvedDementiaStage = formData.dementiaStage || formData.dementia_stage || 'mild';
+    const formattedStage = formatDementiaStageDisplay(resolvedDementiaStage);
 
     const updatedFields = {
       name: formData.name.trim(),
       age: Number(formData.age),
+      sex: formData.sex,
+      dementiaStage: resolvedDementiaStage,
+      dementia_stage: resolvedDementiaStage,
+      stage: formattedStage,
+      condition: formattedStage,
       homeState: formData.home_state,
       villageTown: formData.village_town.trim(),
       village: `${formData.village_town.trim()}, ${formData.home_state}`,
@@ -558,6 +599,57 @@ export default function PatientTriageList({
                 {formErrors.home_state && (
                   <p className="text-xs text-rose-600 font-semibold mt-1">⚠️ {formErrors.home_state}</p>
                 )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="patient-sex" className="text-xs font-bold text-slate-800 block mb-1">
+                  Sex *
+                </label>
+                <select
+                  id="patient-sex"
+                  value={formData.sex}
+                  onChange={e => {
+                    setFormData({ ...formData, sex: e.target.value });
+                    if (formErrors.sex) setFormErrors(prev => ({ ...prev, sex: '' }));
+                  }}
+                  className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-900 focus-visible:outline-none cursor-pointer ${
+                    formErrors.sex ? 'border-rose-400 bg-rose-50/40 border' : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white'
+                  }`}
+                >
+                  <option value="">Select Sex...</option>
+                  {NER_SEX_OPTIONS.map(sexOpt => (
+                    <option key={sexOpt.id} value={sexOpt.id}>
+                      {sexOpt.icon} {sexOpt.label}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.sex && (
+                  <p className="text-xs text-rose-600 font-semibold mt-1">⚠️ {formErrors.sex}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="patient-dementia-stage" className="text-xs font-bold text-slate-800 block mb-1">
+                  Dementia Stage (Override) *
+                </label>
+                <select
+                  id="patient-dementia-stage"
+                  data-testid="patient-dementia-stage-select"
+                  value={formData.dementiaStage || formData.dementia_stage || 'mild'}
+                  onChange={e => {
+                    setFormData({ ...formData, dementiaStage: e.target.value, dementia_stage: e.target.value });
+                    if (formErrors.dementiaStage) setFormErrors(prev => ({ ...prev, dementiaStage: '' }));
+                  }}
+                  className="w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-900 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:outline-none cursor-pointer"
+                >
+                  {DEMENTIA_STAGE_OPTIONS.map(stageOpt => (
+                    <option key={stageOpt.id} value={stageOpt.id}>
+                      {stageOpt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -860,6 +952,57 @@ export default function PatientTriageList({
                 {formErrors.home_state && (
                   <p className="text-xs text-rose-600 font-semibold mt-1">⚠️ {formErrors.home_state}</p>
                 )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="edit-patient-sex" className="text-xs font-bold text-slate-800 block mb-1">
+                  Sex *
+                </label>
+                <select
+                  id="edit-patient-sex"
+                  value={formData.sex}
+                  onChange={e => {
+                    setFormData({ ...formData, sex: e.target.value });
+                    if (formErrors.sex) setFormErrors(prev => ({ ...prev, sex: '' }));
+                  }}
+                  className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-900 focus-visible:outline-none cursor-pointer ${
+                    formErrors.sex ? 'border-rose-400 bg-rose-50/40 border' : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white'
+                  }`}
+                >
+                  <option value="">Select Sex...</option>
+                  {NER_SEX_OPTIONS.map(sexOpt => (
+                    <option key={sexOpt.id} value={sexOpt.id}>
+                      {sexOpt.icon} {sexOpt.label}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.sex && (
+                  <p className="text-xs text-rose-600 font-semibold mt-1">⚠️ {formErrors.sex}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="edit-patient-dementia-stage" className="text-xs font-bold text-slate-800 block mb-1">
+                  Dementia Stage (Override) *
+                </label>
+                <select
+                  id="edit-patient-dementia-stage"
+                  data-testid="edit-patient-dementia-stage-select"
+                  value={formData.dementiaStage || formData.dementia_stage || 'mild'}
+                  onChange={e => {
+                    setFormData({ ...formData, dementiaStage: e.target.value, dementia_stage: e.target.value });
+                    if (formErrors.dementiaStage) setFormErrors(prev => ({ ...prev, dementiaStage: '' }));
+                  }}
+                  className="w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-900 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:outline-none cursor-pointer"
+                >
+                  {DEMENTIA_STAGE_OPTIONS.map(stageOpt => (
+                    <option key={stageOpt.id} value={stageOpt.id}>
+                      {stageOpt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -1224,7 +1367,6 @@ export default function PatientTriageList({
                   value={sortBy}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === 'sex' || val === 'dementia_stage') return;
                     setSortBy(val);
                   }}
                   className="min-h-[38px] pl-3 pr-8 py-1.5 bg-slate-50 hover:bg-white border border-slate-200 focus:border-teal-600 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 shadow-xs cursor-pointer appearance-none transition"
@@ -1234,23 +1376,11 @@ export default function PatientTriageList({
                   <option value="age_desc">Age (oldest first)</option>
                   <option value="region_asc">Region / home_state (alphabetical)</option>
                   <option value="language_asc">Language (alphabetical)</option>
-                  <option
-                    value="sex"
-                    disabled
-                    title="Coming soon — field not yet collected"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    className="text-slate-400 bg-slate-100 cursor-not-allowed opacity-50"
-                  >
-                    Sex (Coming soon — field not yet collected)
+                  <option value="sex">
+                    Sex (alphabetical)
                   </option>
-                  <option
-                    value="dementia_stage"
-                    disabled
-                    title="Coming soon — field not yet collected"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    className="text-slate-400 bg-slate-100 cursor-not-allowed opacity-50"
-                  >
-                    Dementia stage (Coming soon — field not yet collected)
+                  <option value="dementia_stage">
+                    Dementia stage (severity)
                   </option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 text-xs">
@@ -1303,9 +1433,25 @@ export default function PatientTriageList({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-bold text-slate-900 text-sm">{patient.name}</h3>
                           <span className="text-xs text-slate-400">({patient.age} yrs)</span>
+                          {patient.sex && (
+                            <span
+                              data-testid="patient-sex-badge"
+                              className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-200/60"
+                            >
+                              {formatSexDisplay(patient)}
+                            </span>
+                          )}
+                          {(patient.dementia_stage || patient.dementiaStage || patient.stage) && (
+                            <span
+                              data-testid="patient-dementia-stage-badge"
+                              className="text-[11px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-medium border border-purple-200/60"
+                            >
+                              🧠 {formatDementiaStageDisplay(patient)}
+                            </span>
+                          )}
                           <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-200/60">
                             {patient.language}
                           </span>
@@ -1314,6 +1460,9 @@ export default function PatientTriageList({
                           <span>📍</span> {patient.village} • <span className="font-medium text-slate-700">{patient.condition}</span>
                           {(patient.formerOccupation || patient.former_occupation) && (
                             <span> • 💼 <span className="font-medium text-slate-700">{formatOccupationDisplay(patient)}</span></span>
+                          )}
+                          {(patient.dementia_stage || patient.dementiaStage || patient.stage) && (
+                            <span> • 🧠 <span className="font-medium text-slate-700">{formatDementiaStageDisplay(patient)}</span></span>
                           )}
                         </p>
                       </div>
@@ -1438,9 +1587,25 @@ export default function PatientTriageList({
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-bold text-slate-700 text-sm">{patient.name}</h4>
                             <span className="text-xs text-slate-400">({patient.age} yrs)</span>
+                            {patient.sex && (
+                              <span
+                                data-testid="archived-patient-sex-badge"
+                                className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-medium border border-slate-300/60"
+                              >
+                                {formatSexDisplay(patient)}
+                              </span>
+                            )}
+                            {(patient.dementia_stage || patient.dementiaStage || patient.stage) && (
+                              <span
+                                data-testid="archived-patient-dementia-stage-badge"
+                                className="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-medium border border-purple-200/60"
+                              >
+                                🧠 {formatDementiaStageDisplay(patient)}
+                              </span>
+                            )}
                             <span className="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-semibold uppercase">
                               Archived
                             </span>

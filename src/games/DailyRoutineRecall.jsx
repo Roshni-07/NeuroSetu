@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DragDropZone from '../shared/DragDropZone.jsx';
 import { getActiveProfile } from '../db/indexedDb.js';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
@@ -143,6 +143,8 @@ export default function DailyRoutineRecall({
     ];
   }, [hasCustomRoutine, activeRoutineItems]);
 
+  const startTime = useRef(Date.now());
+
   const handleAssign = (itemId, zoneId) => {
     setAssignments((prev) => {
       const next = { ...prev };
@@ -169,6 +171,9 @@ export default function DailyRoutineRecall({
 
     const accuracy = Math.round((correctCount / activeRoutineItems.length) * 100);
     const score = Math.max(30, accuracy);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const errorCount = Math.max(0, activeRoutineItems.length - correctCount);
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
 
     let message = 'Great daily rhythm! Keeping a peaceful routine supports memory.';
     if (accuracy === 100) {
@@ -180,10 +185,17 @@ export default function DailyRoutineRecall({
     }
 
     onComplete({
+      gameId: 'daily-routine-recall',
       score,
       maxScore: 100,
       accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
       level: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      sessionLevel: currentLevel,
       message,
       subtext: `${correctCount} of ${activeRoutineItems.length} routine steps placed in order.`
     });

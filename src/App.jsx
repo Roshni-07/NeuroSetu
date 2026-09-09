@@ -6,7 +6,7 @@ import ProfileCheckModal from './components/auth/ProfileCheckModal.jsx';
 import PatientLayout from './layouts/PatientLayout.jsx';
 import SosEmergencyButton from './components/sos/SosEmergencyButton.jsx';
 import PatientOnboardingModal from './components/onboarding/PatientOnboardingModal.jsx';
-import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from './components/dashboard/PatientTriageList.jsx';
+import PatientTriageList from './components/dashboard/PatientTriageList.jsx';
 import CognitiveTrendChart from './components/dashboard/CognitiveTrendChart.jsx';
 import SyncStatusPanel from './components/dashboard/SyncStatusPanel.jsx';
 import PatientContentManager from './components/dashboard/PatientContentManager.jsx';
@@ -29,7 +29,8 @@ import useIdleTimer from './hooks/useIdleTimer.js';
 import PatientIdleLockModal from './components/auth/PatientIdleLockModal.jsx';
 import {
   getRecentBiomarkers,
-  getBiomarkerSummary
+  getBiomarkerSummary,
+  logGameCompletion
 } from './services/telemetryService.js';
 import { getPendingSyncEvents, getActiveProfile, seedPresetProfiles, DEFAULT_PROFILE, DEFAULT_DAILY_ROUTINE } from './db/indexedDb.js';
 import { PRESET_PATIENTS } from './data/presetPatients.js';
@@ -276,9 +277,24 @@ export default function App() {
     refreshTelemetry();
   };
 
-  const handleBackToGameHub = () => {
-    if (activeFamilyGame && session?.patientId) {
-      saveFamilyGameCompletion(session.patientId, activeFamilyGame);
+  const handleBackToGameHub = (result = null) => {
+    const targetFamilyGame = result?.gameId || activeFamilyGame;
+    const patientId = session?.patientId || activePatientProfile?.id || 'demo_patient_001';
+    if (targetFamilyGame && patientId) {
+      saveFamilyGameCompletion(patientId, targetFamilyGame);
+      setCompletedGameIds(prev => prev.includes(targetFamilyGame) ? prev : [...prev, targetFamilyGame]);
+    }
+    if (result && typeof result === 'object') {
+      logGameCompletion({
+        gameId: targetFamilyGame,
+        patientId,
+        profileId: patientId,
+        accuracy: result.accuracy,
+        responseTimeMs: result.responseTimeMs ?? result.latencyMs,
+        errorCount: result.errorCount ?? 0,
+        difficultyTier: result.tier ?? result.difficultyTier ?? 2,
+        sessionLevel: result.sessionLevel ?? result.level ?? 5
+      }).catch(err => console.warn('Failed to log family game telemetry:', err));
     }
     setActiveFamilyGame(null);
     refreshTelemetry();
@@ -314,7 +330,7 @@ export default function App() {
     }
   };
 
-  const selectedPatient = SAMPLE_ASHA_PATIENTS.find(p => p.id === selectedPatientId) || SAMPLE_ASHA_PATIENTS[0];
+  const selectedPatient = PRESET_PATIENTS.find(p => p.id === selectedPatientId) || PRESET_PATIENTS[0];
 
   const activePatientProfile = patientProfile || (session?.patientId ? resolvePatientProfile(session.patientId) : null);
 
@@ -360,9 +376,11 @@ export default function App() {
     : 2;
 
   const handleLaunchRoadmapGame = (gameId, nodeLevel, params) => {
-    const gameConfig = GAMES_CONFIG.find(
-      (g) => g.id === gameId || g.id === gameId.replace('care-for-companion', 'care-for-your-companion')
-    );
+    if (familyGameLaunchMap[gameId]) {
+      handlePlayFamilyGame(gameId);
+      return;
+    }
+    const gameConfig = GAMES_CONFIG.find((g) => g.id === gameId);
     if (gameConfig) {
       setActiveRoadmapGame({
         gameConfig,
@@ -375,8 +393,8 @@ export default function App() {
 
   const handleCompleteRoadmapGame = (result) => {
     if (activeRoadmapGame) {
-      const { gameId } = activeRoadmapGame;
-      const patientId = session?.patientId;
+      const { gameId, level } = activeRoadmapGame;
+      const patientId = session?.patientId || activePatientProfile?.id || 'demo_patient_001';
       setCompletedGameIds(prev => prev.includes(gameId) ? prev : [...prev, gameId]);
       if (result) {
         setGameScores(prev => ({
@@ -394,6 +412,18 @@ export default function App() {
             level: activeRoadmapGame.level
           }, patientId);
         }
+
+        // Record normalized telemetry log
+        logGameCompletion({
+          gameId: result.gameId || gameId,
+          patientId,
+          profileId: patientId,
+          accuracy: result.accuracy,
+          responseTimeMs: result.responseTimeMs ?? result.latencyMs,
+          errorCount: result.errorCount ?? 0,
+          difficultyTier: result.tier ?? result.difficultyTier ?? (level <= 3 ? 1 : level <= 7 ? 2 : 3),
+          sessionLevel: result.sessionLevel ?? result.level ?? level ?? 5
+        }).catch(err => console.warn('Failed to log roadmap game telemetry:', err));
       }
     }
     setActiveRoadmapGame(null);
@@ -642,19 +672,43 @@ export default function App() {
 
             {/* Active Family Reminiscence Games */}
             {patientSection === 'games' && activeFamilyGame === 'identity_recall' && (
-              <IdentityRecallGame onBackToMenu={handleBackToGameHub} />
+              <IdentityRecallGame
+                onBackToMenu={handleBackToGameHub}
+                onComplete={handleBackToGameHub}
+                patientProfile={activePatientProfile}
+                profileId={session?.patientId}
+                level={patientLevel}
+              />
             )}
 
             {patientSection === 'games' && activeFamilyGame === 'category_sorting' && (
-              <CategorySortingGame onBackToMenu={handleBackToGameHub} />
+              <CategorySortingGame
+                onBackToMenu={handleBackToGameHub}
+                onComplete={handleBackToGameHub}
+                patientProfile={activePatientProfile}
+                profileId={session?.patientId}
+                level={patientLevel}
+              />
             )}
 
             {patientSection === 'games' && activeFamilyGame === 'family_tree' && (
-              <FamilyTreeBuilderGame onBackToMenu={handleBackToGameHub} />
+              <FamilyTreeBuilderGame
+                onBackToMenu={handleBackToGameHub}
+                onComplete={handleBackToGameHub}
+                patientProfile={activePatientProfile}
+                profileId={session?.patientId}
+                level={patientLevel}
+              />
             )}
 
             {patientSection === 'games' && activeFamilyGame === 'life_timeline' && (
-              <LifeStoryTimelineGame onBackToMenu={handleBackToGameHub} />
+              <LifeStoryTimelineGame
+                onBackToMenu={handleBackToGameHub}
+                onComplete={handleBackToGameHub}
+                patientProfile={activePatientProfile}
+                profileId={session?.patientId}
+                level={patientLevel}
+              />
             )}
 
             {/* Direct Game Fallbacks */}
@@ -871,10 +925,11 @@ export default function App() {
                         <table className="w-full text-left text-xs">
                           <thead>
                             <tr className="border-b border-slate-200/80 text-slate-400 uppercase text-[10px] tracking-wider">
-                              <th className="py-2">Task</th>
+                              <th className="py-2">Game / Task</th>
+                              <th className="py-2">Accuracy</th>
                               <th className="py-2">Latency</th>
                               <th className="py-2">Errors</th>
-                              <th className="py-2">DDA Action</th>
+                              <th className="py-2">Level / Tier</th>
                               <th className="py-2">Alert</th>
                               <th className="py-2">Sync Status</th>
                             </tr>
@@ -882,10 +937,13 @@ export default function App() {
                           <tbody className="divide-y divide-slate-100 text-slate-700">
                             {telemetryLogs.map((log) => (
                               <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                                <td className="py-2.5 font-medium text-slate-900">{log.taskType}</td>
-                                <td className="py-2.5 text-slate-600">{log.latencyMs} ms</td>
-                                <td className="py-2.5 text-slate-600">{log.errorCount}</td>
-                                <td className="py-2.5 font-semibold text-teal-700">{log.ddaAdjustment}</td>
+                                <td className="py-2.5 font-medium text-slate-900">{log.gameId || log.taskType || '—'}</td>
+                                <td className="py-2.5 text-slate-600 font-semibold">{log.accuracy !== undefined ? `${Math.round(log.accuracy)}%` : '—'}</td>
+                                <td className="py-2.5 text-slate-600">{log.responseTimeMs ?? log.latencyMs ?? 0} ms</td>
+                                <td className="py-2.5 text-slate-600">{log.errorCount ?? 0}</td>
+                                <td className="py-2.5 font-semibold text-teal-700">
+                                  {log.sessionLevel ? `L${log.sessionLevel} (T${log.difficultyTier || 1})` : (log.ddaAdjustment || '—')}
+                                </td>
                                 <td className="py-2.5">
                                   {log.alertFlag ? (
                                     <span className="bg-teal-50 text-teal-900 border border-teal-200/70 px-2 py-0.5 rounded-full text-[11px] font-semibold">ALERT</span>
@@ -961,6 +1019,9 @@ export default function App() {
       {/* Surface 3: Family Reminiscence & Memory Portal */}
       {currentRoute === 'family' && (
         <FamilyModuleRouter
+          role={session?.role || null}
+          patientId={session?.patientId || activePatientProfile?.id || null}
+          patientProfile={activePatientProfile}
           onReturnToMainApp={() => navigateTo('home')}
         />
       )}

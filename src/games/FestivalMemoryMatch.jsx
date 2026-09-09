@@ -55,6 +55,7 @@ export default function FestivalMemoryMatch({
   const [matchedIds, setMatchedIds] = useState([]);
   const [turns, setTurns] = useState(0);
   const [isBusy, setIsBusy] = useState(false);
+  const [startTime] = useState(() => Date.now());
 
   // Initialize pairs based on tier (Tier 1: 2 pairs / 4 cards, Tier 2: 4 pairs / 8 cards, Tier 3: 6 pairs / 12 cards)
   useEffect(() => {
@@ -100,11 +101,18 @@ export default function FestivalMemoryMatch({
           setTimeout(() => {
             const accuracy = Math.min(100, Math.round((targetPairsCount / Math.max(targetPairsCount, currentTurnCount)) * 100));
             const score = Math.max(50, 100 - (currentTurnCount - targetPairsCount) * 10);
+            const errorCount = Math.max(0, currentTurnCount - targetPairsCount);
+            const responseTimeMs = Math.max(100, Date.now() - startTime);
             onComplete({
+              gameId: 'festival-memory-match',
               score,
               maxScore: 100,
               accuracy,
+              errorCount,
+              responseTimeMs,
+              latencyMs: responseTimeMs,
               level: currentLevel,
+              tier: currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3,
               message: 'Well done! You remembered and matched all festival treasures.',
               subtext: `Completed in ${currentTurnCount} turns.`
             });

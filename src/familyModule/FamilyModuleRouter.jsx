@@ -7,11 +7,32 @@ import FamilyPortalHome from './familyPortal/FamilyPortalHome';
  * Top-level switcher connecting the Patient Gaming Portal and the Caregiver Family Data Portal.
  */
 const FamilyModuleRouter = ({
-  initialView = 'gaming', // 'gaming' | 'portal'
+  initialView = null, // 'gaming' | 'portal' | null
   onReturnToMainApp = null,
   initialGame = 'menu',
+  role = null,
+  patientId = null,
+  patientProfile = null
 }) => {
-  const [currentView, setCurrentView] = useState(initialView);
+  const isStaffRole = role === 'caregiver' || role === 'asha_worker';
+
+  const computeInitialView = () => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash;
+      if (hash.includes('family-portal') || hash.includes('family-admin')) {
+        return 'portal';
+      }
+      if (hash.includes('family-games')) {
+        return 'gaming';
+      }
+    }
+    if (initialView) {
+      return initialView;
+    }
+    return isStaffRole ? 'portal' : 'gaming';
+  };
+
+  const [currentView, setCurrentView] = useState(computeInitialView);
 
   // Sync with window hash if available
   useEffect(() => {
@@ -19,14 +40,17 @@ const FamilyModuleRouter = ({
       const hash = window.location.hash;
       if (hash.includes('family-portal') || hash.includes('family-admin')) {
         setCurrentView('portal');
-      } else if (hash.includes('family-games') || hash.includes('family')) {
+      } else if (hash.includes('family-games')) {
         setCurrentView('gaming');
+      } else if (hash.includes('family')) {
+        // Bare #/family hash: use role-derived default
+        setCurrentView(isStaffRole ? 'portal' : 'gaming');
       }
     };
     handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+  }, [isStaffRole]);
 
   if (currentView === 'portal') {
     return (
@@ -36,6 +60,8 @@ const FamilyModuleRouter = ({
           setCurrentView('gaming');
         }}
         onReturnToHome={onReturnToMainApp}
+        patientId={patientId}
+        patientProfile={patientProfile}
       />
     );
   }

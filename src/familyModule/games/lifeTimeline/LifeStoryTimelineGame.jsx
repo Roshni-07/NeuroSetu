@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { familyDataService } from '../../data/familyDataService';
 import ProgressRewardHeader from '../../shared/ProgressRewardHeader';
 import DynamicHintDrawer from '../../shared/DynamicHintDrawer';
 import TimelineTrack from './TimelineTrack';
 import EventCard from './EventCard';
 
-const LifeStoryTimelineGame = ({ onBackToMenu }) => {
+const LifeStoryTimelineGame = ({ onBackToMenu, onComplete, patientProfile, profileId, level }) => {
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const startTime = useRef(Date.now());
 
   // Active game session
   const [unplacedEvents, setUnplacedEvents] = useState([]);
@@ -116,10 +117,40 @@ const LifeStoryTimelineGame = ({ onBackToMenu }) => {
     setIsSubmitted(true);
     setStreak(correctCount);
 
+    const total = timelineSlots.length;
+    const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 100;
+    const errorCount = Math.max(0, total - correctCount);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const currentLevel = level ? Number(level) : 5;
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
     if (correctCount === timelineSlots.length) {
       setFeedbackMessage('Marvelous! You remembered the exact sequence of your life journey! 🌟');
     } else {
       setFeedbackMessage('Wonderful reflections! Let’s view the years together.');
+    }
+
+    const telemetryResult = {
+      gameId: 'life_timeline',
+      accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
+      score: accuracy,
+      maxScore: 100,
+      level: currentLevel,
+      sessionLevel: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      patientId: profileId || patientProfile?.id || 'demo_patient_001',
+      profileId: profileId || patientProfile?.id || 'demo_patient_001',
+      correctCount,
+      totalEvents: total,
+      timestamp: new Date().toISOString()
+    };
+
+    if (onComplete) {
+      onComplete(telemetryResult);
     }
   };
 
@@ -130,6 +161,7 @@ const LifeStoryTimelineGame = ({ onBackToMenu }) => {
     setIsSubmitted(false);
     setResults({});
     setStreak(0);
+    startTime.current = Date.now();
     setFeedbackMessage('Arrange your life moments in chronological order');
   };
 

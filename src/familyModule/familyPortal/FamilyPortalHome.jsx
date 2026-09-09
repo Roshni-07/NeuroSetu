@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import WardProgressTracker from './WardProgressTracker';
 import MemberManager from './MemberManager';
 import CategoryManager from './CategoryManager';
 import TimelineManager from './TimelineManager';
@@ -6,14 +7,20 @@ import FamilyTreeSetup from './FamilyTreeSetup';
 
 /**
  * FamilyPortalHome
- * Dedicated administrative interface for family caregivers to input and manage
- * real photos, relationships, categories, and life milestones.
+ * Dedicated administrative interface for family caregivers to view their ward's
+ * cognitive progress and manage real photos, relationships, categories, and life milestones.
  */
-const FamilyPortalHome = ({ onLaunchGamingPortal, onReturnToHome }) => {
-  // Active Tab: 'members' | 'categories' | 'timeline' | 'tree'
-  const [activeTab, setActiveTab] = useState('members');
+const FamilyPortalHome = ({
+  onLaunchGamingPortal,
+  onReturnToHome,
+  patientId = null,
+  patientProfile = null
+}) => {
+  // Active Tab: 'progress' | 'members' | 'categories' | 'timeline' | 'tree'
+  const [activeTab, setActiveTab] = useState('progress');
 
   const tabs = [
+    { id: 'progress', label: 'Ward Progress', icon: '📈', desc: 'Cognitive Trends & Daily Activity' },
     { id: 'members', label: 'Family Members', icon: '👤', desc: 'Photos & Relations' },
     { id: 'categories', label: 'Social Circles', icon: '📁', desc: 'Sorting Groups' },
     { id: 'timeline', label: 'Life Story Milestones', icon: '📅', desc: 'Chronological Events' },
@@ -97,6 +104,12 @@ const FamilyPortalHome = ({ onLaunchGamingPortal, onReturnToHome }) => {
       {/* Main Form Content Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-soft">
+          {activeTab === 'progress' && (
+            <WardProgressTracker
+              patientId={patientId}
+              patientProfile={patientProfile}
+            />
+          )}
           {activeTab === 'members' && <MemberManager />}
           {activeTab === 'categories' && <CategoryManager />}
           {activeTab === 'timeline' && <TimelineManager />}

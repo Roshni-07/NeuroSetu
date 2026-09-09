@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import MapRoute from '../shared/MapRoute.jsx';
 import { sounds } from '../utils/soundEffects.js';
@@ -221,6 +221,7 @@ export default function DayInMyVillage({
     return Math.max(550, Math.round(1200 - ((currentLevel - 1) / 9) * 650));
   }, [hasConfig, currentLevel]);
 
+  const startTime = useRef(Date.now());
   const [puzzleIndex, setPuzzleIndex] = useState(0);
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
@@ -270,18 +271,29 @@ export default function DayInMyVillage({
 
     if (stopIndex === activeStops.length - 1) {
       const score = Math.round((nextCorrect / activeStops.length) * 100);
+      const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+      const errorCount = Math.max(0, activeStops.length - nextCorrect);
+      const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
       const message = score >= 100
         ? 'Perfect planning! You organized your village day beautifully.'
         : score >= 60
         ? 'Good planning! You got most of the order right.'
         : 'Good effort! Matching activities to places and times takes practice.';
       const res = {
+        gameId: 'day-in-my-village',
         score,
         maxScore: 100,
         accuracy: score,
+        errorCount,
+        responseTimeMs,
+        latencyMs: responseTimeMs,
         message,
         subtext: `Matched ${nextCorrect} of ${activeStops.length} village activities correctly.`,
         level: currentLevel,
+        tier: derivedTier,
+        difficultyTier: derivedTier,
+        sessionLevel: currentLevel,
         difficultyParams
       };
       setResult(res);
@@ -296,6 +308,7 @@ export default function DayInMyVillage({
     setRouteShown(false);
     setStopIndex(0);
     setCorrectCount(0);
+    startTime.current = Date.now();
     setGameKey(k => k + 1);
   };
 

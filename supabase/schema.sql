@@ -12,10 +12,11 @@ CREATE TABLE IF NOT EXISTS patient_profiles (
     village_town TEXT,
     language TEXT NOT NULL DEFAULT 'as', -- 'as', 'mni', 'lus', 'kha', 'gar', 'brx', 'en'
     age INTEGER,
+    sex TEXT DEFAULT '', -- 'male', 'female', 'other'
     family_members JSONB NOT NULL DEFAULT '[]'::jsonb, -- Array of { name: string, relationship: string }
     former_occupation TEXT, -- 'tea_plantation', 'weaver', 'teacher_clerk', 'farmer', 'carpenter_craft', 'homemaker', etc.
-    favorite_festival TEXT, -- 'Bihu', 'Chapchar Kut', 'Yaoshang', 'Wangala', 'Hornbill', etc.
-    favorite_food TEXT,
+    favorite_festival TEXT NOT NULL, -- 'Bihu', 'Chapchar Kut', 'Yaoshang', 'Wangala', 'Hornbill', etc.
+    favorite_food TEXT NOT NULL,
     clinical_notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

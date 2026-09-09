@@ -116,10 +116,16 @@ export default function MovingTargetLoop({
       message = 'Well done! You spotted most of the fresh tea leaves along the path.';
     }
 
+    const errorCount = Math.max(0, (targets - hits) + falseAlarms);
+
     onComplete({
       score,
       maxScore: 100,
       accuracy,
+      errorCount,
+      hits,
+      targets,
+      falseAlarms,
       message,
       subtext: `Caught ${hits} of ${targets} targets, ${falseAlarms} false taps.`
     });

@@ -61,9 +61,15 @@ export default function PatternGrid({
     if (score === 100) message = 'Perfect pattern! You completed the weave without a single mistake.';
     else if (score >= 60) message = 'Well done! You spotted most of the pattern correctly.';
 
+    const errorCount = Math.max(0, missingCells.length - correct);
+
     onComplete({
       score,
       maxScore: 100,
+      accuracy: score,
+      errorCount,
+      correct,
+      total: missingCells.length,
       message,
       subtext: `Filled ${correct} of ${missingCells.length} cells correctly.`
     });

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import DragDropZone from '../shared/DragDropZone.jsx';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
 import { getLevel } from '../engine/ddaEngine.js';
@@ -112,10 +112,12 @@ export default function WhatBelongsHere({
     return selected.sort((a, b) => (a.id.length + currentLevel) % 2 === 0 ? 1 : -1);
   }, [hasConfig, activeCount, currentLevel]);
 
+  const startTime = useRef(Date.now());
   const [assignments, setAssignments] = useState({});
 
   useEffect(() => {
     setAssignments({});
+    startTime.current = Date.now();
   }, [activeObjects]);
 
   const handleAssign = (itemId, zoneId) => {
@@ -140,6 +142,9 @@ export default function WhatBelongsHere({
 
     const accuracy = Math.round((correct / activeObjects.length) * 100);
     const score = Math.max(30, accuracy);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const errorCount = Math.max(0, activeObjects.length - correct);
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
 
     let message = 'Wise reasoning! You organized the homestead with great clarity.';
     if (accuracy === 100) {
@@ -150,12 +155,19 @@ export default function WhatBelongsHere({
 
     if (onComplete) {
       onComplete({
+        gameId: 'what-belongs-here',
         score,
         maxScore: 100,
         accuracy,
+        errorCount,
+        responseTimeMs,
+        latencyMs: responseTimeMs,
         message,
         subtext: `${correct} of ${activeObjects.length} items placed correctly.`,
         level: currentLevel,
+        tier: derivedTier,
+        difficultyTier: derivedTier,
+        sessionLevel: currentLevel,
         difficultyParams
       });
     }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import { sounds } from '../utils/soundEffects.js';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
@@ -238,6 +238,7 @@ export default function CareForYourCompanion({
     ? Math.max(2, Math.min(5, 1 + (difficultyParams.distractorCount || 2)))
     : 5;
 
+  const startTime = useRef(Date.now());
   const [companionIndex, setCompanionIndex] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -292,6 +293,9 @@ There is no rush — take your time before choosing.`;
     if (nextStep >= totalSteps) {
       const correctCount = answers.filter(a => a.correct).length;
       const score = Math.round((correctCount / totalSteps) * 100);
+      const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+      const errorCount = Math.max(0, totalSteps - correctCount);
+      const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
 
       let healthSummary = '';
       if (companionHealth >= 75) {
@@ -309,21 +313,30 @@ There is no rush — take your time before choosing.`;
           : `Kind effort! ${healthSummary}`;
 
       const res = {
+        gameId: 'care-for-companion',
         score: Math.max(30, score),
         maxScore: 100,
+        accuracy: score,
+        errorCount,
+        responseTimeMs,
+        latencyMs: responseTimeMs,
         companionHealth,
         message,
         subtext: `Made ${correctCount} of ${totalSteps} decisions through the day at Level ${currentLevel} • Final health: ${companionHealth}%.`,
         level: currentLevel,
+        tier: derivedTier,
+        difficultyTier: derivedTier,
+        sessionLevel: currentLevel,
         difficultyParams
       };
       setResult(res);
       if (onComplete) onComplete(res);
-    } else {
-      setStepIndex(nextStep);
-      setSelected(null);
-      setShowFeedback(false);
+      return;
     }
+
+    setSelected(null);
+    setShowFeedback(false);
+    setStepIndex(nextStep);
   };
 
   const handleRetry = () => {
@@ -333,6 +346,7 @@ There is no rush — take your time before choosing.`;
     setShowFeedback(false);
     setAnswers([]);
     setCompanionHealth(70);
+    startTime.current = Date.now();
     setGameKey(k => k + 1);
   };
 

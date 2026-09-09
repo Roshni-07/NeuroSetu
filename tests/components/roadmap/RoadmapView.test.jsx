@@ -12,47 +12,47 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
   });
 
   describe('1. Daily Cap & Progression Node Rendering', () => {
-    it('renders 5 sequential nodes for Mild stage patient (preset-1, dailyCap = 5)', () => {
+    it('renders 6 sequential nodes for Mild stage patient (preset-1, dailyCap = 5 core + 1 family = 6)', () => {
       const patient = PRESET_PATIENTS[0]; // Ramesh Patel, Mild, dailyCap = 5
       render(<RoadmapView patientProfile={patient} />);
 
       expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
       expect(screen.getByTestId('dementia-stage-badge')).toHaveTextContent('Mild / Early Stage');
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 5 Games Completed');
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 6 Games Completed');
 
-      // Check that exactly 5 game nodes are rendered
-      const nodes = screen.getAllByRole('button', { name: /Step \d of 5/i });
-      expect(nodes).toHaveLength(5);
+      // Check that exactly 6 game nodes are rendered (5 core + 1 family)
+      const nodes = screen.getAllByRole('button', { name: /Step \d of 6/i });
+      expect(nodes).toHaveLength(6);
     });
 
-    it('renders 3 sequential nodes for Moderate stage patient (preset-2, dailyCap = 3)', () => {
+    it('renders 4 sequential nodes for Moderate stage patient (preset-2, dailyCap = 3 core + 1 family = 4)', () => {
       const patient = PRESET_PATIENTS[1]; // Savitri Devi, Moderate, dailyCap = 3
       render(<RoadmapView patientProfile={patient} />);
 
       expect(screen.getByText('Savitri Devi')).toBeInTheDocument();
       expect(screen.getByTestId('dementia-stage-badge')).toHaveTextContent('Moderate / Middle Stage');
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 3 Games Completed');
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 4 Games Completed');
 
-      const nodes = screen.getAllByRole('button', { name: /Step \d of 3/i });
-      expect(nodes).toHaveLength(3);
+      const nodes = screen.getAllByRole('button', { name: /Step \d of 4/i });
+      expect(nodes).toHaveLength(4);
     });
 
-    it('renders 2 sequential nodes for Severe stage patient (preset-3, dailyCap = 2)', () => {
+    it('renders 3 sequential nodes for Severe stage patient (preset-3, dailyCap = 2 core + 1 family = 3)', () => {
       const patient = PRESET_PATIENTS[2]; // Anil Kumar, Severe, dailyCap = 2
       render(<RoadmapView patientProfile={patient} />);
 
       expect(screen.getByText('Anil Kumar')).toBeInTheDocument();
       expect(screen.getByTestId('dementia-stage-badge')).toHaveTextContent('Severe / Late Stage');
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 2 Games Completed');
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 3 Games Completed');
 
-      const nodes = screen.getAllByRole('button', { name: /Step \d of 2/i });
-      expect(nodes).toHaveLength(2);
+      const nodes = screen.getAllByRole('button', { name: /Step \d of 3/i });
+      expect(nodes).toHaveLength(3);
     });
   });
 
   describe('2. Active Target Node Behavior & Game Selection', () => {
     it('marks the first uncompleted game as ACTIVE with callout badge and triggers onSelectGame when tapped', () => {
-      const patient = PRESET_PATIENTS[1]; // Savitri Devi: 3 games
+      const patient = PRESET_PATIENTS[1]; // Savitri Devi: 3 core + 1 family = 4 games
       const handleSelectGame = vi.fn();
 
       render(
@@ -69,7 +69,7 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
       expect(screen.getByText('Play Today')).toBeInTheDocument();
 
       // First node should be active (aria-label contains ACTIVE) and clickable
-      const allNodeBtns = screen.getAllByRole('button', { name: /Step \d of 3/i });
+      const allNodeBtns = screen.getAllByRole('button', { name: /Step \d of 4/i });
       const firstNodeBtn = allNodeBtns[0];
       expect(firstNodeBtn).not.toBeDisabled();
       expect(firstNodeBtn).toHaveAttribute('aria-label', expect.stringContaining('ACTIVE'));
@@ -88,7 +88,7 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
     });
 
     it('does not trigger onSelectGame when a locked node is clicked', () => {
-      const patient = PRESET_PATIENTS[1]; // Savitri Devi: 3 games
+      const patient = PRESET_PATIENTS[1]; // Savitri Devi: 3 core + 1 family = 4 games
       const handleSelectGame = vi.fn();
 
       render(
@@ -101,7 +101,7 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
       );
 
       // Node at index 1 should be locked (not the first uncompleted)
-      const allNodeBtns = screen.getAllByRole('button', { name: /Step \d of 3/i });
+      const allNodeBtns = screen.getAllByRole('button', { name: /Step \d of 4/i });
       const secondNodeBtn = allNodeBtns[1];
       expect(secondNodeBtn).toBeDisabled();
       expect(secondNodeBtn).toHaveAttribute('aria-disabled', 'true');
@@ -157,9 +157,9 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
 
   describe('4. Progression Flow, Star Ratings & Daily Goal Celebration', () => {
     it('progresses to next node, displays checkmarks and stars, and updates progress bar', () => {
-      const patient = PRESET_PATIENTS[1]; // Savitri Devi (3 games)
+      const patient = PRESET_PATIENTS[1]; // Savitri Devi (3 core + 1 family = 4 games)
 
-      // Render once to discover the three game IDs assigned today
+      // Render once to discover the four game IDs assigned today
       const { container: discoveryContainer, unmount: unmountDiscovery } = render(
         <RoadmapView patientProfile={patient} level={3} completedGameIds={[]} />
       );
@@ -167,6 +167,7 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
       const game0Id = nodeEls[0]?.getAttribute('data-testid')?.replace('roadmap-node-', '');
       const game1Id = nodeEls[1]?.getAttribute('data-testid')?.replace('roadmap-node-', '');
       const game2Id = nodeEls[2]?.getAttribute('data-testid')?.replace('roadmap-node-', '');
+      const game3Id = nodeEls[3]?.getAttribute('data-testid')?.replace('roadmap-node-', '');
       unmountDiscovery(); // Clean up before next render to avoid multiple-elements errors
 
       // Render with game0 completed
@@ -181,9 +182,9 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
 
       const within_c = (testId) => container.querySelector(`[data-testid="${testId}"]`);
 
-      // 1 / 3 completed
-      expect(within_c('daily-progress-tracker')).toHaveTextContent('Daily Progress: 1 / 3 Games Completed');
-      expect(container.querySelector('.font-black.text-teal-700')).toHaveTextContent('33%');
+      // 1 / 4 completed (25%)
+      expect(within_c('daily-progress-tracker')).toHaveTextContent('Daily Progress: 1 / 4 Games Completed');
+      expect(container.querySelector('.font-black.text-teal-700')).toHaveTextContent('25%');
 
       // Node 0 should show completed checkmark and stars
       expect(container.querySelector('[data-testid="completed-check-icon"]')).toBeInTheDocument();
@@ -194,22 +195,23 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
       expect(secondNodeBtn).not.toBeDisabled();
       expect(secondNodeBtn).toHaveAttribute('aria-label', expect.stringContaining('ACTIVE'));
 
-      // Complete all 3 games
+      // Complete all 4 games
       rerender(
         <RoadmapView
           patientProfile={patient}
           level={3}
-          completedGameIds={[game0Id, game1Id, game2Id]}
+          completedGameIds={[game0Id, game1Id, game2Id, game3Id]}
           gameScores={{
             [game0Id]: { stars: 3 },
             [game1Id]: { stars: 2 },
-            [game2Id]: { stars: 3 }
+            [game2Id]: { stars: 3 },
+            [game3Id]: { stars: 3 }
           }}
         />
       );
 
-      // 3 / 3 completed (100%)
-      expect(within_c('daily-progress-tracker')).toHaveTextContent('Daily Progress: 3 / 3 Games Completed');
+      // 4 / 4 completed (100%)
+      expect(within_c('daily-progress-tracker')).toHaveTextContent('Daily Progress: 4 / 4 Games Completed');
       expect(container.querySelector('.font-black.text-teal-700')).toHaveTextContent('100%');
       expect(within_c('goal-achieved-banner')).toBeInTheDocument();
       expect(container.querySelector('[data-testid="goal-achieved-banner"]')).toHaveTextContent(
@@ -224,7 +226,7 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
 
       expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
       expect(screen.getByTestId('dementia-stage-badge')).toHaveTextContent('Mild / Early Stage');
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 5 Games Completed');
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 6 Games Completed');
     });
 
     it('reads active patient profile from localStorage if present', () => {
@@ -240,7 +242,7 @@ describe('RoadmapView & RoadmapNode Component Suite', () => {
       render(<RoadmapView />);
 
       expect(screen.getByText('Jyoti Sharma')).toBeInTheDocument();
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 4 Games Completed');
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 5 Games Completed');
       expect(screen.getByTestId('active-level-indicator')).toHaveTextContent('Level 6 / 10');
     });
 

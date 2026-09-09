@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import StoryQuiz from '../shared/StoryQuiz.jsx';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
@@ -246,10 +246,25 @@ Take your time — read every paragraph carefully. You can move through the page
 
 After reading, you will answer comprehension questions about what happened in the story. There is no hurry!`;
 
+  const startTime = useRef(Date.now());
+
   const handleComplete = (res) => {
+    const accuracy = res?.accuracy !== undefined ? res.accuracy : (res?.score !== undefined ? res.score : 100);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const errorCount = Math.max(0, Math.round(activeQuestionCount * (1 - accuracy / 100)));
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
     const fullRes = {
+      gameId: 'remember-the-story',
       ...res,
+      accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
       level: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      sessionLevel: currentLevel,
       difficultyParams
     };
     setResult(fullRes);

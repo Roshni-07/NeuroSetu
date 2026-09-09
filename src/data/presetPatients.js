@@ -35,6 +35,8 @@ export const PRESET_PATIENTS = [
     name: 'Ramesh Patel',
     pin: '100100',
     age: 68,
+    sex: 'male',
+    formerOccupation: 'farmer',
     stage: 'Mild / Early Stage',
     dailyCap: 5,
     recommendedGames: [
@@ -56,6 +58,8 @@ export const PRESET_PATIENTS = [
     name: 'Savitri Devi',
     pin: '200200',
     age: 74,
+    sex: 'female',
+    formerOccupation: 'weaver',
     stage: 'Moderate / Middle Stage',
     dailyCap: 3,
     recommendedGames: [
@@ -75,6 +79,8 @@ export const PRESET_PATIENTS = [
     name: 'Anil Kumar',
     pin: '300300',
     age: 81,
+    sex: 'male',
+    formerOccupation: 'farmer',
     stage: 'Severe / Late Stage',
     dailyCap: 2,
     recommendedGames: [

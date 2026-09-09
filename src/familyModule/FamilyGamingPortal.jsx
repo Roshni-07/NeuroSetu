@@ -18,19 +18,19 @@ const FamilyGamingPortal = ({ onBackToMainApp, onOpenFamilyAdmin, initialGame = 
     }
   }, [initialGame]);
 
-  if (activeGame === 'identity') {
+  if (activeGame === 'identity' || activeGame === 'identity_recall') {
     return <IdentityRecallGame onBackToMenu={() => setActiveGame('menu')} />;
   }
 
-  if (activeGame === 'category') {
+  if (activeGame === 'category' || activeGame === 'category_sorting') {
     return <CategorySortingGame onBackToMenu={() => setActiveGame('menu')} />;
   }
 
-  if (activeGame === 'tree') {
+  if (activeGame === 'tree' || activeGame === 'family_tree') {
     return <FamilyTreeBuilderGame onBackToMenu={() => setActiveGame('menu')} />;
   }
 
-  if (activeGame === 'timeline') {
+  if (activeGame === 'timeline' || activeGame === 'life_timeline') {
     return <LifeStoryTimelineGame onBackToMenu={() => setActiveGame('menu')} />;
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import TapSelectGrid from '../shared/TapSelectGrid.jsx';
 import { sounds } from '../utils/soundEffects.js';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
@@ -279,6 +279,7 @@ export default function WhoseEmotion({
     });
   }, [activeRoundCount, activeDistractorCount]);
 
+  const startTime = useRef(Date.now());
   const [roundIdx, setRoundIdx] = useState(0);
   const [selectedId, setSelectedId] = useState(null);
   const [roundScores, setRoundScores] = useState([]);
@@ -288,6 +289,7 @@ export default function WhoseEmotion({
     setRoundIdx(0);
     setSelectedId(null);
     setRoundScores([]);
+    startTime.current = Date.now();
   }, [currentLevel]);
 
   const currentRound = activeRounds[roundIdx] || activeRounds[0];
@@ -315,6 +317,9 @@ export default function WhoseEmotion({
       const totalRounds = activeRounds.length;
       const accuracy = Math.round((correctCount / totalRounds) * 100);
       const score = Math.max(35, Math.round((correctCount / totalRounds) * 100));
+      const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+      const errorCount = Math.max(0, totalRounds - correctCount);
+      const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
 
       let message = 'Heartwarming empathy! Emotional awareness keeps community bonds strong.';
       if (correctCount === totalRounds) {
@@ -324,12 +329,19 @@ export default function WhoseEmotion({
       }
 
       onComplete({
+        gameId: 'whose-emotion',
         score,
         maxScore: 100,
         accuracy,
+        errorCount,
+        responseTimeMs,
+        latencyMs: responseTimeMs,
+        level: currentLevel,
+        tier: derivedTier,
+        difficultyTier: derivedTier,
+        sessionLevel: currentLevel,
         message,
         subtext: `Matched ${correctCount} of ${totalRounds} emotional situations.`,
-        level: currentLevel,
         difficultyParams
       });
     } else {

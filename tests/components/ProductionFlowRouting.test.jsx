@@ -24,7 +24,7 @@ describe('Production Flow Routing & Initial View (Home as Default)', () => {
 
     // Must show Home elements with English default
     expect(screen.getByText(/Cognitive Games That Speak Your Language/i)).toBeInTheDocument();
-    expect(screen.getByText(/Voice-first reminiscence therapy powered by Bhashini AI/i)).toBeInTheDocument();
+    expect(screen.getByText(/Culturally rooted reminiscence therapy/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Launch Patient Experience/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /View ASHA Triage Dashboard/i })).toBeInTheDocument();
   });

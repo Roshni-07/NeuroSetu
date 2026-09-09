@@ -111,7 +111,7 @@ export default function Navbar({
                   : 'hover:bg-slate-800/80 text-slate-300'
               }`}
             >
-              <span>Patient UI (Games)</span>
+              <span>Patient UI</span>
               {!isPatientSession && <span className="text-[10px] text-amber-400">🔒</span>}
             </button>
 
@@ -131,6 +131,18 @@ export default function Navbar({
                 </span>
               )}
               {!isStaffSession && <span className="text-[10px] text-amber-400">🔒</span>}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate(isStaffSession ? 'familyPortal' : 'family')}
+              className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                currentRoute === 'family'
+                  ? 'bg-amber-700 text-white shadow-xs'
+                  : 'hover:bg-slate-800/80 text-slate-300'
+              }`}
+            >
+              <span>Family Portal</span>
             </button>
           </nav>
         </div>
@@ -169,7 +181,7 @@ export default function Navbar({
               </button>
             </div>
           ) : (
-            /* Unauthenticated Locked State */
+            /* Unauthenticated Session State */
             <div className="flex items-center gap-2">
               <span
                 data-testid="locked-status-badge"
@@ -262,7 +274,7 @@ export default function Navbar({
                 currentRoute === 'patient' ? 'bg-teal-700 text-white' : 'hover:bg-slate-900 text-slate-300'
               }`}
             >
-              <span>🎮 Patient UI (Games)</span>
+              <span>🎮 Patient UI</span>
               {!isPatientSession && <span className="text-xs text-amber-400">🔒 Locked</span>}
             </button>
 
@@ -282,6 +294,19 @@ export default function Navbar({
                 )}
                 {!isStaffSession && <span className="text-xs text-amber-400">🔒 Locked</span>}
               </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                onNavigate(isStaffSession ? 'familyPortal' : 'family');
+              }}
+              className={`min-h-touch w-full text-left px-3 py-2 rounded-xl font-semibold transition flex items-center justify-between ${
+                currentRoute === 'family' ? 'bg-amber-700 text-white' : 'hover:bg-slate-900 text-slate-300'
+              }`}
+            >
+              <span>👨‍👩‍👧 Family Portal</span>
             </button>
 
             {onOpenSetup && (

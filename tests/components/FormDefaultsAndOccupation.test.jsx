@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import PatientOnboardingModal from '../../src/components/onboarding/PatientOnboardingModal.jsx';
-import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from '../../src/components/dashboard/PatientTriageList.jsx';
+import PatientTriageList from '../../src/components/dashboard/PatientTriageList.jsx';
+import { PRESET_PATIENTS } from '../../src/data/presetPatients.js';
 import FamilyMemoryVault from '../../src/components/caregiver/FamilyMemoryVault.jsx';
 import {
   NER_OCCUPATIONS,
@@ -117,6 +118,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
 
       // Select language -> successfully advance to Step 2
       fireEvent.change(screen.getByLabelText(/পছন্দৰ ভাষা/i), { target: { value: 'as' } });
+      fireEvent.change(screen.getByLabelText(/Sex/i), { target: { value: 'male' } });
       fireEvent.click(nextBtn);
       expect(screen.getByText(/২\. পৰিয়ালৰ সদস্য/i)).toBeInTheDocument();
     });
@@ -130,6 +132,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
       fireEvent.change(screen.getByLabelText(/উত্তৰ-পূৰ্বাঞ্চলৰ ৰাজ্য/i), { target: { value: 'Assam' } });
       fireEvent.change(screen.getByLabelText(/গৃহগাঁও বা চহৰ/i), { target: { value: 'Jorhat' } });
       fireEvent.change(screen.getByLabelText(/পছন্দৰ ভাষা/i), { target: { value: 'as' } });
+      fireEvent.change(screen.getByLabelText(/Sex/i), { target: { value: 'female' } });
       fireEvent.click(nextBtn);
 
       // Step 2
@@ -162,6 +165,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
             homeState: 'Assam',
             villageTown: 'Sarthebari',
             language: 'as',
+            sex: 'male',
             familyMembers: [{ name: 'Deep', relationship: 'son' }]
           }}
         />
@@ -209,6 +213,10 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
       // Successfully advances to Step 4
       expect(screen.getByText(/৪\. প্ৰিয় উৎসৱ আৰু খাদ্য/i)).toBeInTheDocument();
 
+      // Fill required festival and food fields before advancing
+      fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Rongali Bihu' } });
+      fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Pitha' } });
+
       // Advance to Step 5
       fireEvent.click(nextBtn);
       expect(screen.getByText(/৫\. দৈনন্দিন কাৰ্যসূচী/i)).toBeInTheDocument();
@@ -224,12 +232,64 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
       const savedData = handleSave.mock.calls[0][0];
       expect(savedData.formerOccupation).toBe('Bell Metal Artisan (কাঁহ-পিতলৰ কাৰিকৰ)');
       expect(savedData.otherOccupation).toBe('Bell Metal Artisan (কাঁহ-পিতলৰ কাৰিকৰ)');
+      expect(savedData.sex).toBe('male');
+      expect(savedData.dementiaStage).toBe('mild');
+      expect(savedData.dementia_stage).toBe('mild');
+      expect(savedData.stage).toBe('Mild / Early Stage');
+    });
+
+    it('allows changing Dementia Stage and Sex and saves them on the profile', async () => {
+      const handleSave = vi.fn();
+      render(
+        <PatientOnboardingModal
+          isOpen={true}
+          isInitialSignup={false}
+          onSave={handleSave}
+          initialProfile={{
+            name: 'Pabitra Deka',
+            homeState: 'Assam',
+            villageTown: 'Sarthebari',
+            language: 'as',
+            sex: 'female',
+            dementiaStage: 'severe',
+            familyMembers: [{ name: 'Deep', relationship: 'son' }]
+          }}
+        />
+      );
+
+      const sexSelect = screen.getByLabelText(/লিঙ্গ \(Sex\)/i);
+      expect(sexSelect.value).toBe('female');
+
+      const stageSelect = screen.getByLabelText(/ডিমেনচিয়াৰ পৰ্যায় \(Dementia Stage\)/i);
+      expect(stageSelect.value).toBe('severe');
+
+      const nextBtn = screen.getByRole('button', { name: /(পৰৱৰ্তী|Next)/i });
+      fireEvent.click(nextBtn); // Step 2
+      fireEvent.click(nextBtn); // Step 3
+      fireEvent.click(screen.getByText(/কাৰিকৰ \/ হস্তশিল্পী/i));
+      fireEvent.click(nextBtn); // Step 4
+      fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Bihu' } });
+      fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Fish curry' } });
+      fireEvent.click(nextBtn); // Step 5
+
+      const saveBtn = screen.getByRole('button', { name: /সংৰক্ষণ কৰক/i });
+      fireEvent.click(saveBtn);
+
+      await waitFor(() => {
+        expect(handleSave).toHaveBeenCalledTimes(1);
+      });
+
+      const savedData = handleSave.mock.calls[0][0];
+      expect(savedData.sex).toBe('female');
+      expect(savedData.dementiaStage).toBe('severe');
+      expect(savedData.dementia_stage).toBe('severe');
+      expect(savedData.stage).toBe('Severe / Late Stage');
     });
   });
 
   describe('3. PatientTriageList: Add & Edit Form Defaults & Occupation', () => {
     it('Add Patient form starts with empty defaults and prompt options', () => {
-      render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+      render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
       fireEvent.click(screen.getByRole('button', { name: /Add Patient/i }));
 
@@ -255,7 +315,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
     });
 
     it('Add Patient form validates required fields including occupation, reveals Other input, and saves', async () => {
-      render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+      render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
       fireEvent.click(screen.getByRole('button', { name: /Add Patient/i }));
       const submitBtn = screen.getByRole('button', { name: /✓ Add Patient/i });
@@ -275,6 +335,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
       fireEvent.change(screen.getByLabelText(/NER State \*/i), { target: { value: 'Assam' } });
       fireEvent.change(screen.getByLabelText(/Village \/ Town \*/i), { target: { value: 'Sualkuchi' } });
       fireEvent.change(screen.getByLabelText(/Language \*/i), { target: { value: 'as' } });
+      fireEvent.change(screen.getByLabelText(/Sex \*/i), { target: { value: 'male' } });
 
       // Select 'other' occupation
       fireEvent.change(screen.getByLabelText(/Former Occupation \*/i), { target: { value: 'other' } });
@@ -302,10 +363,10 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
     });
 
     it('Edit Patient form pre-populates existing occupation and allows updating to Other', () => {
-      render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+      render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
-      // Edit first patient (Bhaben Kalita - farmer)
-      const editBtn = screen.getByRole('button', { name: /Edit Bhaben Kalita/i });
+      // Edit first patient (Ramesh Patel - farmer)
+      const editBtn = screen.getByRole('button', { name: /Edit Ramesh Patel/i });
       fireEvent.click(editBtn);
 
       expect(screen.getByTestId('edit-patient-surface')).toBeInTheDocument();

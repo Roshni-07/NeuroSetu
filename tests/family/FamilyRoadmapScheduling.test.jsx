@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import React from 'react';
 import RoadmapView from '../../src/components/roadmap/RoadmapView.jsx';
 import { PRESET_PATIENTS } from '../../src/data/presetPatients.js';
@@ -92,9 +92,9 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
       render(<RoadmapView patientProfile={patient} currentDate={tuesday} />);
 
       expect(screen.queryByTestId('family-memory-section')).not.toBeInTheDocument();
-      // Core cognitive roadmap is still intact with all 5 nodes
-      const nodes = screen.getAllByRole('button', { name: /Step \d of 5/i });
-      expect(nodes).toHaveLength(5);
+      // Core cognitive roadmap has 5 core + 1 family game = 6 nodes total
+      const nodes = screen.getAllByRole('button', { name: /Step \d of 6/i });
+      expect(nodes).toHaveLength(6);
     });
 
     it('renders distinct standalone Family Memory Bonus section below the roadmap trail on Monday', () => {
@@ -137,18 +137,19 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
         />
       );
 
-      expect(screen.getByTestId('family-memory-section')).toBeInTheDocument();
-      expect(screen.getByText('Family Sorting & Circles')).toBeInTheDocument();
-      expect(screen.getByText('Life Story Timeline')).toBeInTheDocument();
+      const section = screen.getByTestId('family-memory-section');
+      expect(section).toBeInTheDocument();
+      expect(within(section).getByText('Family Sorting & Circles')).toBeInTheDocument();
+      expect(within(section).getByText('Life Story Timeline')).toBeInTheDocument();
 
       // Cherished badge and Replay button
-      expect(screen.getByText('Cherished ✓')).toBeInTheDocument();
-      expect(screen.getByText('Replay Memory')).toBeInTheDocument();
+      expect(within(section).getByText('Cherished ✓')).toBeInTheDocument();
+      expect(within(section).getByText('Replay Memory')).toBeInTheDocument();
     });
   });
 
   describe('4. Explicit Severe-Stage Patient Regression & Non-Interference', () => {
-    it('severe patient (2 games/day) on Monday gets exactly 2 core cognitive games AND Pair A family games with zero interference', () => {
+    it('severe patient (2 games/day) on Monday gets exactly 2 core cognitive games AND 1 family game (3 total) with zero interference', () => {
       const severePatient = PRESET_PATIENTS[2]; // Anil Kumar, Severe / Late Stage, dailyCap = 2
       const monday = new Date('2026-09-07T10:00:00');
       const handleSelectCognitive = vi.fn();
@@ -164,55 +165,101 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
         />
       );
 
-      // Verify Severe Stage Core Cognitive Game Quota is EXACTLY 2
+      // Verify Severe Stage Roadmap Quota is EXACTLY 3 (2 core cognitive + 1 flat family game)
       expect(screen.getByText('Anil Kumar')).toBeInTheDocument();
       expect(screen.getByTestId('dementia-stage-badge')).toHaveTextContent('Severe / Late Stage');
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 2 Games Completed');
-      const cognitiveNodes = screen.getAllByRole('button', { name: /Step \d of 2/i });
-      expect(cognitiveNodes).toHaveLength(2);
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 0 / 3 Games Completed');
+      const roadmapNodes = screen.getAllByRole('button', { name: /Step \d of 3/i });
+      expect(roadmapNodes).toHaveLength(3);
 
-      // Verify Family Memory Section sits alongside as bonus with Pair A
+      // Verify Family Memory Section sits alongside below with Pair A
       const familySection = screen.getByTestId('family-memory-section');
       expect(familySection).toBeInTheDocument();
       expect(screen.getByTestId('family-card-identity_recall')).toBeInTheDocument();
       expect(screen.getByTestId('family-card-family_tree')).toBeInTheDocument();
 
-      // Get the exact first assigned game for severePatient
-      const assigned = assignDailyGames({ patientProfile: severePatient });
-      const firstAssignedGameId = assigned[0].id;
+      // Get the exact assigned games for severePatient
+      const assigned = assignDailyGames({ patientProfile: severePatient, date: monday });
+      const coreGames = assigned.filter(g => !g.isFamilyGame);
+      const familyGame = assigned.find(g => g.isFamilyGame);
+      expect(coreGames).toHaveLength(2);
+      expect(familyGame).toBeDefined();
 
       // Complete 1 cognitive game
       rerender(
         <RoadmapView
           patientProfile={severePatient}
           currentDate={monday}
-          completedGameIds={[firstAssignedGameId]}
+          completedGameIds={[coreGames[0].id]}
           onSelectGame={handleSelectCognitive}
           onPlayFamilyGame={handlePlayFamily}
         />
       );
 
-      // Cognitive progress moves to 1 / 2
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 1 / 2 Games Completed');
-      // Family games are unaffected
+      // Cognitive progress moves to 1 / 3
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 1 / 3 Games Completed');
+      // Family games are still present
       expect(screen.getByTestId('family-card-identity_recall')).toBeInTheDocument();
 
-      // Complete 1 family game
-      saveFamilyGameCompletion(severePatient.id, 'identity_recall', '2026-09-07');
+      // Complete the assigned daily family game
+      saveFamilyGameCompletion(severePatient.id, familyGame.id, '2026-09-07');
       rerender(
         <RoadmapView
           patientProfile={severePatient}
           currentDate={monday}
-          completedGameIds={[firstAssignedGameId]}
+          completedGameIds={[coreGames[0].id]}
           onSelectGame={handleSelectCognitive}
           onPlayFamilyGame={handlePlayFamily}
         />
       );
 
-      // Cognitive progress is STILL 1 / 2 (family completion does NOT bleed into cognitive cap)
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 1 / 2 Games Completed');
-      // Family game reflects Cherished state
-      expect(screen.getByText('Cherished ✓')).toBeInTheDocument();
+      // Family completion now advances progress: 1 cognitive + 1 family = 2 / 3
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 3 Games Completed');
+    });
+
+    it('severe patient meets daily goal (3 / 3) when all 2 core games and 1 family game are completed', () => {
+      const severePatient = PRESET_PATIENTS[2]; // Anil Kumar, Severe / Late Stage, dailyCap = 2
+      const monday = new Date('2026-09-07T10:00:00');
+
+      const assigned = assignDailyGames({ patientProfile: severePatient, date: monday });
+      const coreGames = assigned.filter(g => !g.isFamilyGame);
+      const familyGame = assigned.find(g => g.isFamilyGame);
+
+      saveFamilyGameCompletion(severePatient.id, familyGame.id, '2026-09-07');
+
+      render(
+        <RoadmapView
+          patientProfile={severePatient}
+          currentDate={monday}
+          completedGameIds={coreGames.map(g => g.id)}
+        />
+      );
+
+      // 2 cognitive + 1 family = 3 / 3 — daily goal achieved
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 3 / 3 Games Completed');
+      expect(screen.getByTestId('goal-achieved-banner')).toBeInTheDocument();
+    });
+
+    it('moderate patient with 1 cognitive + 1 family game shows 2 / 4 progress (goal not yet achieved)', () => {
+      const moderatePatient = PRESET_PATIENTS[1]; // Savitri Devi, Moderate, dailyCap = 3
+      const thursday = new Date('2026-09-10T10:00:00');
+      const assigned = assignDailyGames({ patientProfile: moderatePatient, date: thursday });
+      const firstGameId = assigned[0].id;
+      const familyGame = assigned.find(g => g.isFamilyGame);
+
+      saveFamilyGameCompletion(moderatePatient.id, familyGame.id, '2026-09-10');
+
+      render(
+        <RoadmapView
+          patientProfile={moderatePatient}
+          currentDate={thursday}
+          completedGameIds={[firstGameId]}
+        />
+      );
+
+      // 1 cognitive + 1 family = 2 / 4
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 4 Games Completed');
+      expect(screen.queryByTestId('goal-achieved-banner')).not.toBeInTheDocument();
     });
   });
 
@@ -246,6 +293,58 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
 
       // If today is not Mon/Thu, we can test that roadmap view is rendered
       expect(screen.getByTestId('roadmap-view-container')).toBeInTheDocument();
+    });
+
+    it('caregiver session navigating to bare "#/family" defaults to Family Data Portal (FamilyPortalHome)', () => {
+      createSession('Caregiver Maya', ROLES.CAREGIVER, null);
+      window.location.hash = '#/family';
+
+      render(<App />);
+
+      expect(screen.queryByTestId('not-found-view')).not.toBeInTheDocument();
+      // Caregiver lands on FamilyPortalHome
+      expect(screen.getByText(/NeuroSetu Family Data Portal/i)).toBeInTheDocument();
+      expect(screen.getByText(/Admin Setup/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Family & Identity Games/i)).not.toBeInTheDocument();
+    });
+
+    it('asha_worker session navigating to bare "#/family" defaults to Family Data Portal (FamilyPortalHome)', () => {
+      createSession('ASHA Rina Borah', ROLES.ASHA_WORKER, null);
+      window.location.hash = '#/family';
+
+      render(<App />);
+
+      expect(screen.getByText(/NeuroSetu Family Data Portal/i)).toBeInTheDocument();
+      expect(screen.getByText(/Admin Setup/i)).toBeInTheDocument();
+    });
+
+    it('patient session navigating to bare "#/family" defaults to Family Gaming Portal', () => {
+      createSession('Ramesh Patel', ROLES.PATIENT, 'preset-1');
+      window.location.hash = '#/family';
+
+      render(<App />);
+
+      expect(screen.getByText(/Family & Identity Games/i)).toBeInTheDocument();
+      expect(screen.queryByText(/NeuroSetu Family Data Portal/i)).not.toBeInTheDocument();
+    });
+
+    it('explicit "#/family-games" overrides caregiver role and forces Family Gaming Portal', () => {
+      createSession('Caregiver Maya', ROLES.CAREGIVER, null);
+      window.location.hash = '#/family-games';
+
+      render(<App />);
+
+      expect(screen.getByText(/Family & Identity Games/i)).toBeInTheDocument();
+      expect(screen.queryByText(/NeuroSetu Family Data Portal/i)).not.toBeInTheDocument();
+    });
+
+    it('explicit "#/family-portal" overrides patient/unauthenticated session and forces Family Data Portal', () => {
+      window.location.hash = '#/family-portal';
+
+      render(<App />);
+
+      expect(screen.getByText(/NeuroSetu Family Data Portal/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Family & Identity Games/i)).not.toBeInTheDocument();
     });
   });
 });

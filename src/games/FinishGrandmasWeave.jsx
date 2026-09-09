@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import PatternGrid from '../shared/PatternGrid.jsx';
 import { getDifficultyParams } from '../engine/difficultyScaling.js';
@@ -193,10 +193,25 @@ Look at the pattern carefully — can you see how it repeats? Tap a colour piece
 
 When all cells are filled, tap "Check Pattern" to see how you did!`;
 
+  const startTime = useRef(Date.now());
+
   const handleComplete = (res) => {
+    const accuracy = res?.accuracy !== undefined ? res.accuracy : (res?.score || 100);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const errorCount = res?.errorCount !== undefined ? res.errorCount : Math.max(0, Math.round(activeMissingCount * (1 - accuracy / 100)));
+    const derivedTier = currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3;
+
     const fullRes = {
+      gameId: 'finish-grandmas-weave',
       ...res,
+      accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
       level: currentLevel,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
+      sessionLevel: currentLevel,
       difficultyParams
     };
     setResult(fullRes);
@@ -205,6 +220,7 @@ When all cells are filled, tap "Check Pattern" to see how you did!`;
 
   const handleRetry = () => {
     setResult(null);
+    startTime.current = Date.now();
     setGameKey(k => k + 1);
   };
 

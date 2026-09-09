@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import MapRoute from '../shared/MapRoute.jsx';
 import { sounds } from '../utils/soundEffects.js';
@@ -126,6 +126,8 @@ export default function MemoryMapHome({
   const [result, setResult] = useState(null);
   const [attempts, setAttempts] = useState(0);
   const [consecutiveErrors, setConsecutiveErrors] = useState(0);
+  const startTime = useRef(Date.now());
+  const errorCountRef = useRef(0);
 
   // Monitor latency in select phase; gently reduce if > 15s (legacy behavior)
   useEffect(() => {
@@ -169,6 +171,7 @@ Start from the first place and follow the journey step by step.`;
   };
 
   const handleError = () => {
+    errorCountRef.current += 1;
     const nextErrors = consecutiveErrors + 1;
     setConsecutiveErrors(nextErrors);
     setConsecutiveSuccesses(0);
@@ -221,20 +224,29 @@ Start from the first place and follow the journey step by step.`;
 
     const accuracy = Math.round((correct / total) * 100);
     const score = Math.max(30, accuracy - (attempts - 1) * 15);
+    const responseTimeMs = Math.max(100, Date.now() - startTime.current);
+    const errorCount = Math.max(errorCountRef.current, total - correct);
+    const derivedTier = currentTier || (currentLevel <= 3 ? 1 : currentLevel <= 7 ? 2 : 3);
     const message = accuracy === 100
       ? 'You remembered the whole path perfectly! Wonderful spatial memory.'
       : 'Good effort tracing the path through the village!';
 
     const res = {
+      gameId: 'memory-map-home',
       score: Math.min(100, score),
       maxScore: 100,
       accuracy,
+      errorCount,
+      responseTimeMs,
+      latencyMs: responseTimeMs,
       message,
       subtext: !isExplicitLevel
         ? `Completed Tier ${currentTier} path with ${correct}/${total} steps correct.`
         : `Completed Level ${currentLevel} journey with ${correct}/${total} steps remembered.`,
-      tier: currentTier,
+      tier: derivedTier,
+      difficultyTier: derivedTier,
       level: currentLevel,
+      sessionLevel: currentLevel,
       difficultyParams,
       ddaDecision: decision || { action: 'stable', newTier: currentTier }
     };
@@ -249,6 +261,8 @@ Start from the first place and follow the journey step by step.`;
     setGameKey(k => k + 1);
     setAttempts(0);
     setConsecutiveErrors(0);
+    errorCountRef.current = 0;
+    startTime.current = Date.now();
   };
 
   return (
