@@ -19,7 +19,7 @@ describe('Shared Difficulty Scaling Engine (10 Levels)', () => {
       'whose-morning-is-it',
       'find-the-difference',
       'tea-garden-detective',
-      'care-for-your-companion',
+      'care-for-companion',
       'day-in-my-village',
       'finish-grandmas-weave',
       'memory-map-home',

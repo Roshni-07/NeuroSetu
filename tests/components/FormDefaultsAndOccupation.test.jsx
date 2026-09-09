@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import PatientOnboardingModal from '../../src/components/onboarding/PatientOnboardingModal.jsx';
-import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from '../../src/components/dashboard/PatientTriageList.jsx';
+import PatientTriageList from '../../src/components/dashboard/PatientTriageList.jsx';
+import { PRESET_PATIENTS } from '../../src/data/presetPatients.js';
 import FamilyMemoryVault from '../../src/components/caregiver/FamilyMemoryVault.jsx';
 import {
   NER_OCCUPATIONS,
@@ -229,7 +230,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
 
   describe('3. PatientTriageList: Add & Edit Form Defaults & Occupation', () => {
     it('Add Patient form starts with empty defaults and prompt options', () => {
-      render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+      render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
       fireEvent.click(screen.getByRole('button', { name: /Add Patient/i }));
 
@@ -255,7 +256,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
     });
 
     it('Add Patient form validates required fields including occupation, reveals Other input, and saves', async () => {
-      render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+      render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
       fireEvent.click(screen.getByRole('button', { name: /Add Patient/i }));
       const submitBtn = screen.getByRole('button', { name: /✓ Add Patient/i });
@@ -302,7 +303,7 @@ describe('Form Defaults & Expanded NER Occupation / Life Background Suite', () =
     });
 
     it('Edit Patient form pre-populates existing occupation and allows updating to Other', () => {
-      render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+      render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
       // Edit first patient (Bhaben Kalita - farmer)
       const editBtn = screen.getByRole('button', { name: /Edit Bhaben Kalita/i });

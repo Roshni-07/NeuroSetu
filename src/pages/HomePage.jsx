@@ -101,16 +101,6 @@ export default function HomePage({
               <option value="brx">🌾 बर’ (Bodo)</option>
             </select>
 
-            {onLaunchHub && (
-              <button
-                type="button"
-                onClick={onLaunchHub}
-                className="text-xs font-bold text-amber-300 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/50 px-3 py-1.5 rounded-xl transition cursor-pointer"
-              >
-                🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
-              </button>
-            )}
-
             {onOpenSetup && (
               <button
                 type="button"
@@ -182,19 +172,6 @@ export default function HomePage({
             </div>
 
             <div className="grid grid-cols-1 gap-1.5">
-              {onLaunchHub && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onLaunchHub();
-                  }}
-                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-bold text-amber-300 bg-amber-950/50 border border-amber-600/50 hover:bg-amber-900/60 rounded-xl transition"
-                >
-                  🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
-                </button>
-              )}
-
               {onOpenSetup && (
                 <button
                   type="button"
@@ -258,8 +235,8 @@ export default function HomePage({
             {/* Description Subtitle (Exact text required for tests) */}
             <p className="text-base sm:text-lg text-slate-300 font-normal leading-relaxed">
               {isEn
-                ? 'Voice-first reminiscence therapy powered by Bhashini AI, tailored with authentic Assamese, Mizo, and Manipuri folklore, instruments, and textile motifs — engineered to function 100% offline in rural North East India.'
-                : 'ভাৰতৰ উত্তৰ-পূৰ্বাঞ্চলৰ গ্ৰাম্য অঞ্চলৰ বাবে প্ৰস্তুত কৰা ১০০% অফলাইন, মাতৃভাষা-আধাৰিত সাংস্কৃতিক স্মৃতি আৰু জ্ঞানীয় স্বাস্থ্য প্লেটফৰ্ম।'}
+                ? 'Offline cultural reminiscence games for North East India, designed with multilingual recall cues and locally grounded cognitive care.'
+                : 'উত্তৰ-পূৰ্বাঞ্চলৰ সাংস্কৃতিক স্মৃতি আৰু জ্ঞানীয় স্বাস্থ্য প্লেটফৰ্মৰ বাবে ১০০% অফলাইন, স্থানীয় ভাষা-আধাৰিত গেম।'}
             </p>
 
             {/* Batch 2 Consolidated Call-to-Actions (Strictly Preserved) */}
@@ -359,15 +336,15 @@ export default function HomePage({
                 </div>
               </div>
 
-              {/* Bhashini Voice Therapy Callout */}
+              {/* Voice / spoken prompts callout removed because the current product surface does not implement a live voice layer. */}
               <div className="p-3.5 bg-amber-950/40 border border-amber-600/30 rounded-2xl flex items-center gap-3 text-xs">
-                <span className="text-xl">🎙️</span>
+                <span className="text-xl">🌾</span>
                 <div>
                   <span className="font-bold text-amber-200 block">
-                    Bhashini Voice Therapy
+                    Multilingual Cultural Recall
                   </span>
                   <span className="text-[11px] text-amber-300/80">
-                    Spoken prompts in অসমীয়া, বাংলা, Mizo, Manipuri, Khasi & Bodo
+                    North East memory games and culturally grounded prompts
                   </span>
                 </div>
               </div>
@@ -389,14 +366,14 @@ export default function HomePage({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Pillar 1: Voice & Multilingual */}
+            {/* Pillar 1: Multilingual Game Experience */}
             <div className="p-5 bg-[#0a1615] border border-teal-900/50 rounded-2xl space-y-2.5 shadow-soft border-t-2 border-t-amber-500/60">
               <div className="w-10 h-10 rounded-xl bg-amber-950/60 text-amber-400 border border-amber-800/40 flex items-center justify-center text-xl">
-                🎙
+                🌐
               </div>
-              <h3 className="font-bold text-white text-sm">Voice-First Bhashini AI</h3>
+              <h3 className="font-bold text-white text-sm">Multilingual Cultural UX</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-normal">
-                ASHA workers and elderly patients navigate games using natural voice input and authentic Indian English and regional TTS.
+                ASHA workers and elderly patients navigate recall activities with regional language support and culturally familiar cues.
               </p>
             </div>
 

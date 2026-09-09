@@ -104,19 +104,6 @@ export default function Navbar({
 
             <button
               type="button"
-              onClick={() => handleProtectedNavigate('patient', ROLES.PATIENT)}
-              className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                currentRoute === 'patient'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'hover:bg-slate-800/80 text-slate-300'
-              }`}
-            >
-              <span>Patient UI (Games)</span>
-              {!isPatientSession && <span className="text-[10px] text-amber-400">🔒</span>}
-            </button>
-
-            <button
-              type="button"
               onClick={() => handleProtectedNavigate('dashboard', ROLES.ASHA_WORKER)}
               className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                 currentRoute === 'dashboard'
@@ -169,15 +156,8 @@ export default function Navbar({
               </button>
             </div>
           ) : (
-            /* Unauthenticated Locked State */
+            /* Unauthenticated Session State */
             <div className="flex items-center gap-2">
-              <span
-                data-testid="locked-status-badge"
-                className="px-2.5 py-1 rounded-xl bg-amber-950/60 border border-amber-600/50 text-amber-300 text-[11px] font-bold flex items-center gap-1 shadow-xs"
-              >
-                <span>🔒</span>
-                <span>Locked / Logged Out</span>
-              </span>
 
               {onOpenSetup && (
                 <button
@@ -253,17 +233,6 @@ export default function Navbar({
               }`}
             >
               🏠 Home
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleProtectedNavigate('patient', ROLES.PATIENT)}
-              className={`min-h-touch w-full text-left px-3 py-2 rounded-xl font-semibold transition flex items-center justify-between ${
-                currentRoute === 'patient' ? 'bg-teal-700 text-white' : 'hover:bg-slate-900 text-slate-300'
-              }`}
-            >
-              <span>🎮 Patient UI (Games)</span>
-              {!isPatientSession && <span className="text-xs text-amber-400">🔒 Locked</span>}
             </button>
 
             <button

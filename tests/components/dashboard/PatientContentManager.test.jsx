@@ -20,17 +20,17 @@ describe('V1 ASHA Content & Cognitive Domain Management Suite', () => {
     expect(screen.getByText(/Patient Content & Cognitive Domain Management/i)).toBeInTheDocument();
     expect(screen.getByText(/⚡ Immediate Local Persistence/i)).toBeInTheDocument();
 
-    // Default sample patients rendered
-    expect(screen.getByText('Bhaben Kalita')).toBeInTheDocument();
-    expect(screen.getByText('Malsawmi Ralte')).toBeInTheDocument();
-    expect(screen.getByText('Tombi Devi')).toBeInTheDocument();
+    // Default preset patients rendered
+    expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
+    expect(screen.getByText('Savitri Devi')).toBeInTheDocument();
+    expect(screen.getByText('Anil Kumar')).toBeInTheDocument();
 
-    // 5 Domain toggles present for Bhaben Kalita
-    expect(screen.getByRole('button', { name: /Toggle Memory for Bhaben Kalita/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Toggle Attention for Bhaben Kalita/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Toggle Reasoning for Bhaben Kalita/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Toggle Visual for Bhaben Kalita/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Toggle Emotional for Bhaben Kalita/i })).toBeInTheDocument();
+    // 5 Domain toggles present for the default patient content behavior
+    expect(screen.getByRole('button', { name: /Toggle Memory for Ramesh Patel/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Toggle Attention for Ramesh Patel/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Toggle Reasoning for Ramesh Patel/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Toggle Visual for Ramesh Patel/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Toggle Emotional for Ramesh Patel/i })).toBeInTheDocument();
   });
 
   it('2. Changing region pack immediately updates patient language code and persists to localStorage', () => {

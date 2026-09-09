@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from '../../src/components/dashboard/PatientTriageList.jsx';
+import PatientTriageList from '../../src/components/dashboard/PatientTriageList.jsx';
+import { PRESET_PATIENTS } from '../../src/data/presetPatients.js';
 import { clearAllLocalData, closeDB } from '../../src/db/indexedDb.js';
 
 describe('ASHA Dashboard Patient Triage Sort & Multi-Filter Composition Tests', () => {
@@ -22,60 +23,60 @@ describe('ASHA Dashboard Patient Triage Sort & Multi-Filter Composition Tests', 
     return nameHeadings.map(h => h.textContent.trim());
   };
 
-  it('1. Sorts active caseload correctly by age (youngest first and oldest first) and region using SAMPLE_ASHA_PATIENTS', () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+  it('1. Sorts active caseload correctly by age (youngest first and oldest first) and region using PRESET_PATIENTS', () => {
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     const sortSelect = screen.getByLabelText(/Sort by/i);
 
-    // Initial default order in SAMPLE_ASHA_PATIENTS:
-    // 1. Bhaben Kalita (72, Assam)
-    // 2. Malsawmi Ralte (69, Mizoram)
-    // 3. Tombi Devi (66, Manipur)
+    // Initial default order in PRESET_PATIENTS:
+    // 1. Ramesh Patel (68, Assam)
+    // 2. Savitri Devi (74, Meghalaya)
+    // 3. Anil Kumar (81, Tripura)
     expect(getRenderedPatientNames()).toEqual([
-      'Bhaben Kalita',
-      'Malsawmi Ralte',
-      'Tombi Devi'
+      'Ramesh Patel',
+      'Savitri Devi',
+      'Anil Kumar'
     ]);
 
     // --- SORT 1: Age (youngest first) ---
-    // 66 (Tombi Devi) < 69 (Malsawmi Ralte) < 72 (Bhaben Kalita)
+    // 68 (Ramesh Patel) < 74 (Savitri Devi) < 81 (Anil Kumar)
     fireEvent.change(sortSelect, { target: { value: 'age_asc' } });
     expect(getRenderedPatientNames()).toEqual([
-      'Tombi Devi',
-      'Malsawmi Ralte',
-      'Bhaben Kalita'
+      'Ramesh Patel',
+      'Savitri Devi',
+      'Anil Kumar'
     ]);
 
     // --- SORT 2: Age (oldest first) ---
-    // 72 (Bhaben Kalita) > 69 (Malsawmi Ralte) > 66 (Tombi Devi)
+    // 81 (Anil Kumar) > 74 (Savitri Devi) > 68 (Ramesh Patel)
     fireEvent.change(sortSelect, { target: { value: 'age_desc' } });
     expect(getRenderedPatientNames()).toEqual([
-      'Bhaben Kalita',
-      'Malsawmi Ralte',
-      'Tombi Devi'
+      'Anil Kumar',
+      'Savitri Devi',
+      'Ramesh Patel'
     ]);
 
     // --- SORT 3: Region / home_state (alphabetical) ---
-    // Assam (Bhaben Kalita) < Manipur (Tombi Devi) < Mizoram (Malsawmi Ralte)
+    // Assam (Ramesh Patel) < Meghalaya (Savitri Devi) < Tripura (Anil Kumar)
     fireEvent.change(sortSelect, { target: { value: 'region_asc' } });
     expect(getRenderedPatientNames()).toEqual([
-      'Bhaben Kalita',
-      'Tombi Devi',
-      'Malsawmi Ralte'
+      'Ramesh Patel',
+      'Savitri Devi',
+      'Anil Kumar'
     ]);
 
     // --- SORT 4: Language (alphabetical) ---
-    // Assamese (Bhaben Kalita) < Manipuri (Tombi Devi) < Mizo (Malsawmi Ralte)
+    // English is the only language code, so the order remains the preset list.
     fireEvent.change(sortSelect, { target: { value: 'language_asc' } });
     expect(getRenderedPatientNames()).toEqual([
-      'Bhaben Kalita',
-      'Tombi Devi',
-      'Malsawmi Ralte'
+      'Ramesh Patel',
+      'Savitri Devi',
+      'Anil Kumar'
     ]);
   });
 
   it('2. Disabled sort options (Sex and Dementia stage) are visibly disabled with tooltip and do not crash when clicked', () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     const sortSelect = screen.getByLabelText(/Sort by/i);
     const expectedTooltip = 'Coming soon — field not yet collected';
@@ -115,7 +116,7 @@ describe('ASHA Dashboard Patient Triage Sort & Multi-Filter Composition Tests', 
   });
 
   it('3. Filter + Sort + Search all compose correctly together without overriding each other', () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     const sortSelect = screen.getByLabelText(/Sort by/i);
     const searchInput = screen.getByPlaceholderText(/Search by patient name/i);

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from '../../src/components/dashboard/PatientTriageList.jsx';
+import PatientTriageList from '../../src/components/dashboard/PatientTriageList.jsx';
+import { PRESET_PATIENTS } from '../../src/data/presetPatients.js';
 import { clearAllLocalData, closeDB } from '../../src/db/indexedDb.js';
 
 describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
@@ -16,7 +17,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
   });
 
   it('1. Persistent prototype banner renders on Add, Edit, and Archive confirmation surfaces', () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     const prototypeNotice = 'Prototype — not yet connected to shared patient records. Pending backend review.';
 
@@ -58,7 +59,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
   });
 
   it('2. Cancel button on all surfaces discards inputs and returns to list view', () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     // In Add view: type something and cancel
     fireEvent.click(screen.getByRole('button', { name: /Add Patient/i }));
@@ -87,7 +88,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
 
   it('3. Add Patient form validates required fields, adds patient, prepends to list, and shows toast', async () => {
     const handleSelect = vi.fn();
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} onSelectPatient={handleSelect} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} onSelectPatient={handleSelect} />);
 
     // Initial count
     expect(screen.getByText(/All Patients \(3\)/i)).toBeInTheDocument();
@@ -153,7 +154,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
   });
 
   it('4. Edit Patient updates details in place and preserves patient list count', async () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     expect(screen.getByText(/All Patients \(3\)/i)).toBeInTheDocument();
 
@@ -194,7 +195,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
   });
 
   it('5. Archive Patient enforces >= 10 chars reason, removes from active view, and decrements counters', () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     // Initial state: 3 active patients (2 alert/decline, 1 stable)
     expect(screen.getByText(/All Patients \(3\)/i)).toBeInTheDocument();
@@ -245,7 +246,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
   });
 
   it('6. Archived section expands, displays archive reason, and unarchive action restores patient to active caseload', () => {
-    render(<PatientTriageList patients={[...SAMPLE_ASHA_PATIENTS]} />);
+    render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
     // Archive Tombi Devi (stable patient)
     const archiveBtn = screen.getByRole('button', { name: /Archive Tombi Devi/i });

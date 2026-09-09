@@ -21,7 +21,6 @@ const GAME_METADATA_FALLBACK = {
   'daily-routine-recall':    { name: 'Daily Routine Recall',       icon: '🌅', category: 'Memory' },
   'remember-the-story':      { name: 'Remember the Story',         icon: '📖', category: 'Memory' },
   'care-for-companion':      { name: 'Care for Your Companion',    icon: '🌱', category: 'Reasoning' },
-  'care-for-your-companion': { name: 'Care for Your Companion',    icon: '🌱', category: 'Reasoning' },
   'whose-morning-is-it':     { name: 'Whose Morning Is It?',       icon: '🐓', category: 'Attention' },
   'festival-memory-match':   { name: 'Festival Memory Match',      icon: '🪘', category: 'Memory' },
   'shell-memory-trail':      { name: 'Shell Memory Trail',         icon: '🐚', category: 'Attention' },

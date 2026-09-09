@@ -94,7 +94,7 @@ describe('Task 3 & 4: PWA, Service Worker & Offline Shell Verification', () => {
     // Verify initial Home surface with English default
     expect(screen.getByText(/Patient UI/i)).toBeInTheDocument();
     expect(screen.getByText(/Cognitive Games That Speak Your Language/i)).toBeInTheDocument();
-    expect(screen.getByText(/Voice-First Bhashini AI/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Bhashini/i)).not.toBeInTheDocument();
 
     // Switch to ASHA Dashboard
     const ashaBtn = screen.getByRole('button', { name: /ASHA \/ Caregiver Dashboard/i });

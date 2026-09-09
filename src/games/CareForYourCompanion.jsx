@@ -223,7 +223,7 @@ export default function CareForYourCompanion({
   }, [currentLevel, onLevelChange]);
 
   const difficultyParams = useMemo(() => {
-    return getDifficultyParams('care-for-your-companion', currentLevel);
+    return getDifficultyParams('care-for-companion', currentLevel);
   }, [currentLevel]);
 
   const hasConfig = level !== null || masteryScore !== null || tier !== null || startingTier !== null || initialTier !== null || patientProfile !== null;

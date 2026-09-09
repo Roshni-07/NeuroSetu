@@ -1,75 +1,54 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { NER_STATES, NER_OCCUPATIONS, formatOccupationDisplay } from '../../data/reminiscenceContent.js';
 import { SUPPORTED_LANGUAGES } from '../../data/multilingualAudioHelp.js';
-import { saveProfile } from '../../db/indexedDb.js';
+import { PRESET_PATIENTS } from '../../data/presetPatients.js';
+import { DEFAULT_PROFILE, saveProfile } from '../../db/indexedDb.js';
 
-// Sample patient profiles across NER rural districts for ASHA triage demonstration
-export const SAMPLE_ASHA_PATIENTS = [
-  {
-    id: 'patient_001',
-    name: 'Bhaben Kalita',
-    age: 72,
-    homeState: 'Assam',
-    villageTown: 'Hajo',
-    village: 'Hajo, Kamrup (Assam)',
-    language: 'Assamese (অসমীয়া)',
-    languageCode: 'as',
+// Canonical triage roster is sourced from PRESET_PATIENTS plus the preserved real default Bhaben Kalita profile.
+const SAMPLE_ASHA_PATIENTS = [
+  ...PRESET_PATIENTS.map((patient, index) => ({
+    ...patient,
+    age: Number(patient.age),
+    homeState: patient.homeState || 'Assam',
+    villageTown: patient.villageTown || 'Unknown',
+    village: `${patient.villageTown || 'Unknown'}, ${patient.homeState || 'Assam'}`,
+    language: patient.language === 'en' ? 'English' : patient.language,
+    languageCode: patient.language || 'en',
     formerOccupation: 'farmer',
     former_occupation: 'farmer',
-    condition: 'Early MCI',
-    activeAlerts: 3,
-    avgLatencyMs: 16200,
-    sessionsCompleted: 14,
-    lastActive: 'Today, 10:15 AM',
-    status: 'critical', // 'critical' | 'attention' | 'stable'
-    starting_difficulty_tier: 1,
-    alertReason: '3 response latency alerts (>15s) and 2 consecutive errors in Bihu recall',
-    isActive: true,
-    familyMembers: [{ name: 'Rumi', relationship: 'daughter' }]
-  },
-  {
-    id: 'patient_002',
-    name: 'Malsawmi Ralte',
-    age: 69,
-    homeState: 'Mizoram',
-    villageTown: 'Reiek',
-    village: 'Reiek, Mamit (Mizoram)',
-    language: 'Mizo (Lushai)',
-    languageCode: 'lus',
-    formerOccupation: 'weaver',
-    former_occupation: 'weaver',
-    condition: 'Mild Dementia',
-    activeAlerts: 1,
-    avgLatencyMs: 11400,
-    sessionsCompleted: 19,
-    lastActive: 'Yesterday',
-    status: 'attention',
-    starting_difficulty_tier: 2,
-    alertReason: 'DDA tier reduced from Tier 2 to Tier 1 during textile pattern matching',
-    isActive: true,
-    familyMembers: [{ name: 'Lalrinsanga', relationship: 'son' }]
-  },
-  {
-    id: 'patient_003',
-    name: 'Tombi Devi',
-    age: 66,
-    homeState: 'Manipur',
-    villageTown: 'Nambol',
-    village: 'Nambol, Bishnupur (Manipur)',
-    language: 'Manipuri (মৈতৈলোন্)',
-    languageCode: 'mni',
-    formerOccupation: 'homemaker',
-    former_occupation: 'homemaker',
-    condition: 'Early Stage MCI',
+    condition: patient.stage || 'Stable',
     activeAlerts: 0,
-    avgLatencyMs: 4800,
-    sessionsCompleted: 26,
-    lastActive: 'Today, 8:45 AM',
+    avgLatencyMs: 4200 + index * 1000,
+    sessionsCompleted: 0,
+    lastActive: 'Today',
+    status: index === 0 ? 'critical' : index === 1 ? 'attention' : 'stable',
+    starting_difficulty_tier: patient.starting_difficulty_tier || 1,
+    alertReason: '',
+    isActive: patient.isActive !== false,
+    familyMembers: []
+  })),
+  {
+    ...DEFAULT_PROFILE,
+    id: 'default_patient',
+    name: 'Bhaben Kalita',
+    age: DEFAULT_PROFILE.age,
+    homeState: DEFAULT_PROFILE.homeState,
+    villageTown: DEFAULT_PROFILE.villageTown,
+    village: `${DEFAULT_PROFILE.villageTown}, ${DEFAULT_PROFILE.homeState}`,
+    language: DEFAULT_PROFILE.language === 'en' ? 'English' : DEFAULT_PROFILE.language,
+    languageCode: DEFAULT_PROFILE.language || 'en',
+    formerOccupation: DEFAULT_PROFILE.formerOccupation,
+    former_occupation: DEFAULT_PROFILE.formerOccupation,
+    condition: DEFAULT_PROFILE.stage || 'Mild / Early Stage',
+    activeAlerts: 0,
+    avgLatencyMs: 4200,
+    sessionsCompleted: 0,
+    lastActive: 'Today',
     status: 'stable',
-    starting_difficulty_tier: 3,
-    alertReason: 'Stable task performance; response times consistent under 5s',
+    starting_difficulty_tier: DEFAULT_PROFILE.starting_difficulty_tier || 1,
+    alertReason: '',
     isActive: true,
-    familyMembers: [{ name: 'Sanatombi', relationship: 'daughter' }]
+    familyMembers: DEFAULT_PROFILE.familyMembers || []
   }
 ];
 

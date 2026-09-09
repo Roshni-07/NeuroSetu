@@ -6,7 +6,7 @@ import ProfileCheckModal from './components/auth/ProfileCheckModal.jsx';
 import PatientLayout from './layouts/PatientLayout.jsx';
 import SosEmergencyButton from './components/sos/SosEmergencyButton.jsx';
 import PatientOnboardingModal from './components/onboarding/PatientOnboardingModal.jsx';
-import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from './components/dashboard/PatientTriageList.jsx';
+import PatientTriageList from './components/dashboard/PatientTriageList.jsx';
 import CognitiveTrendChart from './components/dashboard/CognitiveTrendChart.jsx';
 import SyncStatusPanel from './components/dashboard/SyncStatusPanel.jsx';
 import PatientContentManager from './components/dashboard/PatientContentManager.jsx';
@@ -314,7 +314,7 @@ export default function App() {
     }
   };
 
-  const selectedPatient = SAMPLE_ASHA_PATIENTS.find(p => p.id === selectedPatientId) || SAMPLE_ASHA_PATIENTS[0];
+  const selectedPatient = PRESET_PATIENTS.find(p => p.id === selectedPatientId) || PRESET_PATIENTS[0];
 
   const activePatientProfile = patientProfile || (session?.patientId ? resolvePatientProfile(session.patientId) : null);
 
@@ -360,9 +360,7 @@ export default function App() {
     : 2;
 
   const handleLaunchRoadmapGame = (gameId, nodeLevel, params) => {
-    const gameConfig = GAMES_CONFIG.find(
-      (g) => g.id === gameId || g.id === gameId.replace('care-for-companion', 'care-for-your-companion')
-    );
+    const gameConfig = GAMES_CONFIG.find((g) => g.id === gameId);
     if (gameConfig) {
       setActiveRoadmapGame({
         gameConfig,
