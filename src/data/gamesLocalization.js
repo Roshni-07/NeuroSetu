@@ -1088,89 +1088,6 @@ export const GAMES_LOCALIZATION = {
     }
   },
 
-  // 13. Care For Your Companion
-  'care-for-your-companion': {
-    en: {
-      name: 'Care for Your Companion',
-      subtitle: 'Feed, pet, and soothe your friendly village dog or cat',
-      culturalTag: 'Animal Care & Kindness',
-      instructions: [
-        'Look at what your furry companion needs (water, food, gentle brushing).',
-        'Select the warm caring action from the options.',
-        'Watch your companion smile and wag happily!'
-      ],
-      voiceExplanation: 'In Care for Your Companion, show kindness to your village pet by giving them fresh water, wholesome food, and gentle strokes.'
-    },
-    as: {
-      name: 'সংগীৰ মৰম আৰু যত্ন',
-      subtitle: 'ঘৰচীয়া কুকুৰ বা মেকুৰীক মৰম কৰক আৰু আহাৰ দিয়ক',
-      culturalTag: 'প্ৰাণীদয়া আৰু মৰম',
-      instructions: [
-        'আপোনাৰ মৰমৰ সংগীক কি প্ৰয়োজন চাওক (পানী, আহাৰ, মৰমৰ পৰশ)।',
-        'সঠিক যত্নৰ কামটো বাচি লওক।',
-        'সংগীৰ আনন্দ আৰু সন্তুষ্টি উপভোগ কৰক!'
-      ],
-      voiceExplanation: 'সংগীৰ মৰম আৰু যত্ন খেলত ঘৰৰ পোহনীয়া কুকুৰ বা মেকুৰীক সময়মতে পানী, আহাৰ আৰু মৰমৰ পৰশ দি মন আনন্দিত কৰি তোলক।'
-    },
-    bn: {
-      name: 'সঙ্গীর যত্ন ও ভালোবাসা',
-      subtitle: 'পোষা বিড়াল বা কুকুরকে আদর ও খাবার দিন',
-      culturalTag: 'প্রাণীপ্রেম ও দয়া',
-      instructions: [
-        'আপনার পোষা সঙ্গীর কী প্রয়োজন তা দেখুন (জল, খাবার, স্নেহ)।',
-        'উপযুক্ত যত্ন নেওয়ার কাজটি বেছে নিন।',
-        'সঙ্গীর আনন্দঘন ভাব দেখে খুশি হোন।'
-      ],
-      voiceExplanation: 'পোষা প্রাণীকে খাবার ও যত্ন দিয়ে খুশি রাখার সুন্দর অনুশীলন করুন।'
-    },
-    hi: {
-      name: 'प्यारे साथी की देखभाल',
-      subtitle: 'अपने पालतू कुत्ते या बिल्ली को प्यार, पानी और खाना दें',
-      culturalTag: 'जीव दया व स्नेह',
-      instructions: [
-        'देखें कि आपके प्यारे साथी को किस चीज़ की ज़रूरत है (पानी, खाना, दुलार)।',
-        'सही देखभाल का विकल्प चुनें।',
-        'अपने साथी की खुशी और संतोष देखें!'
-      ],
-      voiceExplanation: 'प्यारे साथी की देखभाल खेल में पालतू जानवर को समय पर पानी, खाना और प्यार देकर उसकी देखभाल करें।'
-    },
-    mni: {
-      name: 'Yumgi San-Sa Nungshiba',
-      subtitle: 'Hui, houdongda chinjak pijaba amashung nungshiba',
-      culturalTag: 'Nungshiba Thabak',
-      instructions: ['Pet ki mathou taba yengbiyu.', 'Chinjak amashung eshing pibiyu.', 'Nungshina thambiyu.'],
-      voiceExplanation: 'Yumgi pet singda chinjak pijaba amashung nungshibagi thabak toubiyu.'
-    },
-    lus: {
-      name: 'I Rannung Enkawl Rawh',
-      subtitle: 'I ui emaw zawhte chaw pe la duat rawh',
-      culturalTag: 'Rannung Duatna',
-      instructions: ['I rannung mamawh kha en la.', 'Chaw pe la tui intir rawh.', 'Duat takin enkawl rawh.'],
-      voiceExplanation: 'I in chhung ui leh zawhte duat taka enkawl dan hi thlang rawh le.'
-    },
-    kha: {
-      name: 'Sumar Ia U Mrad Iing',
-      subtitle: 'Ai bam bad ai um ia u ksew ne miaw',
-      culturalTag: 'Ka Jingieid Ia Ki Mrad',
-      instructions: ['Peit ia ka jingdonkam u mrad.', 'Ai bam bad ai um dih.', 'Sumar bha ia u.'],
-      voiceExplanation: 'Sumar bha ia u mrad iing da kaba ai bam bad ai um dih.'
-    },
-    grt: {
-      name: 'Songni Matburingko Simsakani',
-      subtitle: 'Achak ba menggotna cha·ani aro chiko on·ani',
-      culturalTag: 'Matburingrangko Ka·saani',
-      instructions: ['Matburingni nangnikako nibo.', 'Cha·ani aro chiko on·bo.', 'Ka·sae simsakbo.'],
-      voiceExplanation: 'Nokni achak aro menggotrangna cha·ani on·e ka·sae simsakbo.'
-    },
-    brx: {
-      name: 'लोगोखौ जोथोन लानाय',
-      subtitle: 'गावनि सैमा एबा मावजिफोरखौ जानाय-लोंनाय होनाय',
-      culturalTag: 'जिव-जन्तुखौ अननाय',
-      instructions: ['लोगोनि मा गोनांथि बेखौ नाय।', 'दै आरो जानाय बेसाद सायख’।', 'अननायजों जोथोन ला।'],
-      voiceExplanation: 'गावनि सैमा एबा मावजिखौ मोजाङै जानाय-लोंनाय होनानै जोथोन ला।'
-    }
-  },
-
   // 14. Finish Grandma's Weave
   'finish-grandmas-weave': {
     en: {
@@ -1586,9 +1503,6 @@ export const GAMES_LOCALIZATION = {
     }
   }
 };
-
-GAMES_LOCALIZATION['care-for-companion'] = GAMES_LOCALIZATION['care-for-your-companion'];
-GAMES_LOCALIZATION['care-for-your-companion'] = GAMES_LOCALIZATION['care-for-companion'];
 
 export const UI_LOCALIZATIONS = {
   hubTitle: {

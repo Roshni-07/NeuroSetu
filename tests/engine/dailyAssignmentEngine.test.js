@@ -15,7 +15,7 @@ import {
   resolveDailyFamilyGame as ddaResolveDailyFamilyGame
 } from '../../src/engine/ddaEngine.js';
 import { GAMES_CONFIG } from '../../src/data/gamesConfig.js';
-import { SAMPLE_ASHA_PATIENTS } from '../../src/components/dashboard/PatientTriageList.jsx';
+import { PRESET_PATIENTS } from '../../src/data/presetPatients.js';
 
 describe('dailyAssignmentEngine', () => {
   it('re-exports cleanly from ddaEngine.js', () => {
@@ -238,8 +238,8 @@ describe('dailyAssignmentEngine', () => {
       expect(gamesStab.every(g => g.assignedTier === 3)).toBe(true);
     });
 
-    it('correctly processes SAMPLE_ASHA_PATIENTS with their designated tiers', () => {
-      const [patient1, patient2, patient3] = SAMPLE_ASHA_PATIENTS;
+    it('correctly processes PRESET_PATIENTS with their designated tiers', () => {
+      const [patient1, patient2, patient3] = PRESET_PATIENTS;
 
       const p1Games = assignDailyGames({ patientProfile: patient1 });
       expect(p1Games.every(g => g.assignedTier === 1)).toBe(true);

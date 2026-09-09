@@ -183,13 +183,6 @@ export default function Navbar({
           ) : (
             /* Unauthenticated Session State */
             <div className="flex items-center gap-2">
-              <span
-                data-testid="locked-status-badge"
-                className="px-2.5 py-1 rounded-xl bg-amber-950/60 border border-amber-600/50 text-amber-300 text-[11px] font-bold flex items-center gap-1 shadow-xs"
-              >
-                <span>🔒</span>
-                <span>Locked / Logged Out</span>
-              </span>
 
               {onOpenSetup && (
                 <button

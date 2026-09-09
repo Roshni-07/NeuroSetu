@@ -57,7 +57,7 @@ export const GAME_DIFFICULTY_ENDPOINTS = {
   },
 
   // Batch 3 Games
-  'care-for-your-companion': {
+  'care-for-companion': {
     level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
     level10: { itemCount: 5, distractorCount: 4, previewTimeMs: 5000, distractorSimilarity: 'high' }
   },
