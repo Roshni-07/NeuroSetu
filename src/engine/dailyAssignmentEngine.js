@@ -202,10 +202,16 @@ export function assignDailyGames({
     ? Math.min(10, Math.max(1, Math.ceil(patientProfile.masteryScore / 10)))
     : resolvedTier === 3 ? 8 : resolvedTier === 2 ? 5 : 2;
 
-  const sessionLevels = buildSessionDifficultyCurve(dailyCount, baseLevel);
+  // Filter eligible cognitive domains based on patient's activeCognitiveDomains (if configured by ASHA)
+  const allowedDomains = Array.isArray(patientProfile?.activeCognitiveDomains) && patientProfile.activeCognitiveDomains.length > 0
+    ? COGNITIVE_DOMAINS.filter(d => patientProfile.activeCognitiveDomains.includes(d))
+    : COGNITIVE_DOMAINS;
 
-  // Slice domain list to dailyCount using priority order
-  const activeDomains = COGNITIVE_DOMAINS.slice(0, dailyCount);
+  // Slice allowed domain list to dailyCount using priority order
+  const activeDomains = allowedDomains.slice(0, dailyCount);
+
+  // Sizing difficulty curve to the number of active games (warmup -> stretch)
+  const sessionLevels = buildSessionDifficultyCurve(activeDomains.length, baseLevel);
 
   const assignedGames = [];
 

@@ -9,6 +9,7 @@ import PatientOnboardingModal from './components/onboarding/PatientOnboardingMod
 import PatientTriageList, { SAMPLE_ASHA_PATIENTS } from './components/dashboard/PatientTriageList.jsx';
 import CognitiveTrendChart from './components/dashboard/CognitiveTrendChart.jsx';
 import SyncStatusPanel from './components/dashboard/SyncStatusPanel.jsx';
+import PatientContentManager from './components/dashboard/PatientContentManager.jsx';
 import RemindersHub from './components/reminders/RemindersHub.jsx';
 import HomePage from './pages/HomePage.jsx';
 import Hub from './components2/Hub.jsx';
@@ -23,7 +24,9 @@ import { GAMES_CONFIG } from './data/gamesConfig.js';
 import { getLocalizedGame, getGameVoiceExplanation, getUIString } from './data/gamesLocalization.js';
 import { formatOccupationDisplay } from './data/reminiscenceContent.js';
 import { useAppRoute } from './router/AppRouter.jsx';
-import { getActiveSession, logout, hasConfiguredPin, ROLES } from './services/authService.js';
+import { getActiveSession, logout, hasConfiguredPin, ROLES, PATIENT_IDLE_TIMEOUT_MS } from './services/authService.js';
+import useIdleTimer from './hooks/useIdleTimer.js';
+import PatientIdleLockModal from './components/auth/PatientIdleLockModal.jsx';
 import {
   getRecentBiomarkers,
   getBiomarkerSummary
@@ -73,6 +76,23 @@ export default function App() {
   const [activeGame, setActiveGame] = useState(null); // 'memory' | 'pattern' | 'sequencing' | null
   const [activeSuiteGame, setActiveSuiteGame] = useState(null); // Game config object for 15-game suite
   const [patientSection, setPatientSection] = useState('games'); // 'games' | 'reminders'
+  const [dashboardTab, setDashboardTab] = useState('triage'); // 'triage' | 'content'
+  const [isPatientIdleLocked, setIsPatientIdleLocked] = useState(false);
+
+  // Inactivity detection for authenticated patient sessions (Dementia Gentle Lock)
+  useIdleTimer({
+    timeoutMs: PATIENT_IDLE_TIMEOUT_MS,
+    isEnabled: Boolean(
+      currentRoute === 'patient' &&
+      session &&
+      session.role === ROLES.PATIENT &&
+      session.patientId &&
+      !isPatientIdleLocked
+    ),
+    onIdle: () => {
+      setIsPatientIdleLocked(true);
+    }
+  });
 
   // Daily Completed Games Key scoped to active patient ID
   const getTodayCompletedKey = (patientId) => {
@@ -235,6 +255,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    setIsPatientIdleLocked(false);
     logout();
     setSession(null);
     navigateTo('home');
@@ -543,6 +564,7 @@ export default function App() {
                 onBack={handleExitRoadmapGame}
                 onExit={handleExitRoadmapGame}
                 language={activePatientProfile?.language || 'en'}
+                isPaused={isPatientIdleLocked}
               >
                 {activeRoadmapGame.gameConfig.component ? (
                   React.createElement(activeRoadmapGame.gameConfig.component, {
@@ -688,86 +710,126 @@ export default function App() {
             onSyncComplete={refreshTelemetry}
           />
 
-          {/* 2-Column Grid: Patient Triage List + Selected Patient Trend Chart */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-5">
-              <PatientTriageList
-                selectedPatientId={selectedPatientId}
-                onSelectPatient={(id) => setSelectedPatientId(id)}
-              />
-            </div>
+          {/* ASHA Dashboard Sub-Navigation Tabs */}
+          <div className="flex items-center gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 max-w-md shadow-xs">
+            <button
+              type="button"
+              onClick={() => setDashboardTab('triage')}
+              aria-selected={dashboardTab === 'triage'}
+              role="tab"
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                dashboardTab === 'triage'
+                  ? 'bg-white text-teal-850 shadow-soft border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📋 Clinical Triage & Telemetry
+            </button>
+            <button
+              type="button"
+              onClick={() => setDashboardTab('content')}
+              aria-selected={dashboardTab === 'content'}
+              role="tab"
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                dashboardTab === 'content'
+                  ? 'bg-white text-teal-850 shadow-soft border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📦 Content & Domain Packs
+            </button>
+          </div>
 
-            <div className="lg:col-span-7 space-y-6">
-              <CognitiveTrendChart
-                patientName={selectedPatient.name}
-              />
-
-              {/* Local Physical DB Records Table */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-soft">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <h3 className="font-bold text-slate-900 text-xs break-words">
-                    Local Device Telemetry Buffer (IndexedDB: <code className="text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-700">telemetry_logs</code>)
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={refreshTelemetry}
-                    className="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-xl font-semibold text-slate-700 transition"
-                  >
-                    🔄 Refresh Table
-                  </button>
+          {/* Tab 1: Clinical Triage & Telemetry */}
+          {dashboardTab === 'triage' && (
+            <>
+              {/* 2-Column Grid: Patient Triage List + Selected Patient Trend Chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="lg:col-span-5">
+                  <PatientTriageList
+                    selectedPatientId={selectedPatientId}
+                    onSelectPatient={(id) => setSelectedPatientId(id)}
+                  />
                 </div>
 
-                {telemetryLogs.length === 0 ? (
-                  <div className="py-8 text-center bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
-                    <span className="text-2xl block">📋</span>
-                    <p className="text-xs font-semibold text-slate-700">No sessions recorded yet</p>
-                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Local telemetry records (response latency, errors, DDA interventions) will populate here after sessions are completed.
-                    </p>
+                <div className="lg:col-span-7 space-y-6">
+                  <CognitiveTrendChart
+                    patientName={selectedPatient.name}
+                  />
+
+                  {/* Local Physical DB Records Table */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-soft">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <h3 className="font-bold text-slate-900 text-xs break-words">
+                        Local Device Telemetry Buffer (IndexedDB: <code className="text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-700">telemetry_logs</code>)
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={refreshTelemetry}
+                        className="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-xl font-semibold text-slate-700 transition"
+                      >
+                        🔄 Refresh Table
+                      </button>
+                    </div>
+
+                    {telemetryLogs.length === 0 ? (
+                      <div className="py-8 text-center bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
+                        <span className="text-2xl block">📋</span>
+                        <p className="text-xs font-semibold text-slate-700">No sessions recorded yet</p>
+                        <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                          Local telemetry records (response latency, errors, DDA interventions) will populate here after sessions are completed.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="border-b border-slate-200/80 text-slate-400 uppercase text-[10px] tracking-wider">
+                              <th className="py-2">Task</th>
+                              <th className="py-2">Latency</th>
+                              <th className="py-2">Errors</th>
+                              <th className="py-2">DDA Action</th>
+                              <th className="py-2">Alert</th>
+                              <th className="py-2">Sync Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                            {telemetryLogs.map((log) => (
+                              <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="py-2.5 font-medium text-slate-900">{log.taskType}</td>
+                                <td className="py-2.5 text-slate-600">{log.latencyMs} ms</td>
+                                <td className="py-2.5 text-slate-600">{log.errorCount}</td>
+                                <td className="py-2.5 font-semibold text-teal-700">{log.ddaAdjustment}</td>
+                                <td className="py-2.5">
+                                  {log.alertFlag ? (
+                                    <span className="bg-teal-50 text-teal-900 border border-teal-200/70 px-2 py-0.5 rounded-full text-[11px] font-semibold">ALERT</span>
+                                  ) : (
+                                    <span className="text-slate-400">Normal</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5">
+                                  {log.isSynced ? (
+                                    <span className="text-emerald-700 font-semibold">Synced ✓</span>
+                                  ) : (
+                                    <span className="text-teal-800 bg-teal-50/70 border border-teal-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">Pending Sync</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-200/80 text-slate-400 uppercase text-[10px] tracking-wider">
-                          <th className="py-2">Task</th>
-                          <th className="py-2">Latency</th>
-                          <th className="py-2">Errors</th>
-                          <th className="py-2">DDA Action</th>
-                          <th className="py-2">Alert</th>
-                          <th className="py-2">Sync Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700">
-                        {telemetryLogs.map((log) => (
-                          <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                            <td className="py-2.5 font-medium text-slate-900">{log.taskType}</td>
-                            <td className="py-2.5 text-slate-600">{log.latencyMs} ms</td>
-                            <td className="py-2.5 text-slate-600">{log.errorCount}</td>
-                            <td className="py-2.5 font-semibold text-teal-700">{log.ddaAdjustment}</td>
-                            <td className="py-2.5">
-                              {log.alertFlag ? (
-                                <span className="bg-teal-50 text-teal-900 border border-teal-200/70 px-2 py-0.5 rounded-full text-[11px] font-semibold">ALERT</span>
-                              ) : (
-                                <span className="text-slate-400">Normal</span>
-                              )}
-                            </td>
-                            <td className="py-2.5">
-                              {log.isSynced ? (
-                                <span className="text-emerald-700 font-semibold">Synced ✓</span>
-                              ) : (
-                                <span className="text-teal-800 bg-teal-50/70 border border-teal-200/60 px-2 py-0.5 rounded-full text-[11px] font-medium">Pending Sync</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
+
+          {/* Tab 2: V1 Content & Domain Packs Shell */}
+          {dashboardTab === 'content' && (
+            <PatientContentManager />
+          )}
         </div>
       ) : (
         <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200/80 shadow-soft-xl text-center space-y-5 animate-slide-up">
@@ -918,6 +980,19 @@ export default function App() {
             setSession(getActiveSession());
             navigateTo('patient');
           }
+        }}
+      />
+
+      {/* Dementia Gentle Idle Lock Modal (Automatic Inactivity Protection) */}
+      <PatientIdleLockModal
+        isOpen={isPatientIdleLocked}
+        profileName={activePatientProfile?.name || patientProfile?.name || patientDisplayTitle}
+        patientId={session?.patientId}
+        language={activePatientProfile?.language || 'en'}
+        onUnlock={() => setIsPatientIdleLocked(false)}
+        onExitToHome={() => {
+          setIsPatientIdleLocked(false);
+          handleLogout();
         }}
       />
     </div>
