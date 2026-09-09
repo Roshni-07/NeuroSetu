@@ -274,7 +274,29 @@ export function assignDailyGames({
   familyGameHistory = [],
   includeFamilyGame = true
 } = {}) {
-  const resolvedTier = resolvePatientStartingTier(patientProfile, tier);
+  const stageTierMap = {
+    'Mild / Early Stage': 1,
+    'Moderate / Middle Stage': 2,
+    'Severe / Late Stage': 3,
+    'mild': 1,
+    'moderate': 2,
+    'severe': 3,
+    'early': 1,
+    'middle': 2,
+    'late': 3
+  };
+
+  const rawStage = (patientProfile?.stage || patientProfile?.dementiaStage || patientProfile?.dementia_stage || '').trim();
+  const mappedStageTier = stageTierMap[rawStage]
+    || (rawStage.toLowerCase().includes('mild') || rawStage.toLowerCase().includes('early') ? 1
+      : rawStage.toLowerCase().includes('moderate') || rawStage.toLowerCase().includes('middle') ? 2
+      : rawStage.toLowerCase().includes('severe') || rawStage.toLowerCase().includes('late') ? 3
+      : null);
+
+  const resolvedTier = tier
+    || patientProfile?.tier
+    || mappedStageTier
+    || resolvePatientStartingTier(patientProfile, tier);
   const dailyCount = resolveDailyGameCount(patientProfile);
   const dayIdx = getDayIndex(date);
   const patientSeed = patientProfile?.id ? hashString(String(patientProfile.id)) : 0;

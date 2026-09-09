@@ -159,12 +159,14 @@ export default function RoadmapView({
 
   // 4. Track Progression State
   const completedCount = useMemo(() => {
-    return dailyGames.filter(g => {
-      if (g.isFamilyGame) {
-        return completedGameIds.includes(g.id) || completedFamilyIds.includes(g.id);
-      }
-      return completedGameIds.includes(g.id);
-    }).length;
+    const cognitiveCompleted = dailyGames.filter(g => !g.isFamilyGame && completedGameIds.includes(g.id)).length;
+    const familyInDaily = dailyGames.find(g => g.isFamilyGame);
+    const isDailyFamilyDone = familyInDaily && (completedGameIds.includes(familyInDaily.id) || completedFamilyIds.includes(familyInDaily.id));
+    const familyCompleted = Math.max(
+      completedFamilyIds.length,
+      isDailyFamilyDone ? 1 : 0
+    );
+    return cognitiveCompleted + familyCompleted;
   }, [dailyGames, completedGameIds, completedFamilyIds]);
 
   const progressPercentage = Math.min(

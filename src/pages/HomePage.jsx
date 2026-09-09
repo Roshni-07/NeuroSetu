@@ -101,6 +101,16 @@ export default function HomePage({
               <option value="brx">🌾 बर’ (Bodo)</option>
             </select>
 
+            {onLaunchHub && (
+              <button
+                type="button"
+                onClick={onLaunchHub}
+                className="text-xs font-bold text-amber-300 bg-amber-950/40 border border-amber-600/50 hover:bg-amber-900/50 px-3 py-1.5 rounded-xl transition cursor-pointer"
+              >
+                🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
+              </button>
+            )}
+
             {onOpenSetup && (
               <button
                 type="button"
@@ -172,6 +182,19 @@ export default function HomePage({
             </div>
 
             <div className="grid grid-cols-1 gap-1.5">
+              {onLaunchHub && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onLaunchHub();
+                  }}
+                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-bold text-amber-300 bg-amber-950/50 border border-amber-600/50 hover:bg-amber-900/60 rounded-xl transition"
+                >
+                  🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
+                </button>
+              )}
+
               {onOpenSetup && (
                 <button
                   type="button"

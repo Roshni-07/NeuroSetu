@@ -262,8 +262,8 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
       expect(screen.queryByTestId('goal-achieved-banner')).not.toBeInTheDocument();
     });
 
-    it('severe patient meets daily goal entirely through 2 completed family games on Monday', () => {
-      const severePatient = PRESET_PATIENTS[2]; // Anil Kumar, Severe / Late Stage, dailyCap = 2
+    it('severe patient shows 2 / 3 progress with 2 completed family games on Monday', () => {
+      const severePatient = PRESET_PATIENTS[2]; // Anil Kumar, Severe / Late Stage, dailyCap = 2 (2 core + 1 family = 3)
       const monday = new Date('2026-09-07T10:00:00');
 
       saveFamilyGameCompletion(severePatient.id, 'identity_recall', '2026-09-07');
@@ -277,13 +277,13 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
         />
       );
 
-      // 0 cognitive + 2 family = 2 / 2 — daily goal achieved
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 2 Games Completed');
-      expect(screen.getByTestId('goal-achieved-banner')).toBeInTheDocument();
+      // 0 cognitive + 2 family = 2 / 3 — daily goal in progress
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 3 Games Completed');
+      expect(screen.queryByTestId('goal-achieved-banner')).not.toBeInTheDocument();
     });
 
-    it('moderate patient with 1 cognitive + 1 family game shows 2 / 3 progress (goal not yet achieved)', () => {
-      const moderatePatient = PRESET_PATIENTS[1]; // Savitri Devi, Moderate, dailyCap = 3
+    it('moderate patient with 1 cognitive + 1 family game shows 2 / 4 progress (goal not yet achieved)', () => {
+      const moderatePatient = PRESET_PATIENTS[1]; // Savitri Devi, Moderate, dailyCap = 3 (3 core + 1 family = 4)
       const thursday = new Date('2026-09-10T10:00:00');
       const assigned = assignDailyGames({ patientProfile: moderatePatient });
       const firstGameId = assigned[0].id;
@@ -298,8 +298,8 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
         />
       );
 
-      // 1 cognitive + 1 family = 2 / 3
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 3 Games Completed');
+      // 1 cognitive + 1 family = 2 / 4
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 4 Games Completed');
       expect(screen.queryByTestId('goal-achieved-banner')).not.toBeInTheDocument();
     });
   });
