@@ -114,3 +114,58 @@ export function clearAllProgress(patientId = null) {
     console.warn('LocalStorage error clearing progress:', err);
   }
 }
+
+/**
+ * Get storage key for completed family games (scoped by patientId and date)
+ * @param {string|null} [patientId='default_patient']
+ * @param {string|null} [dateStr=null] - YYYY-MM-DD string (defaults to today)
+ * @returns {string}
+ */
+export function getFamilyCompletionStorageKey(patientId = 'default_patient', dateStr = null) {
+  const date = dateStr || new Date().toISOString().slice(0, 10);
+  return `neurosetu_completed_family_${patientId || 'default_patient'}_${date}`;
+}
+
+/**
+ * Get array of completed family game IDs for a patient on a specific date
+ * @param {string|null} [patientId='default_patient']
+ * @param {string|null} [dateStr=null]
+ * @returns {string[]}
+ */
+export function getFamilyGameCompletion(patientId = 'default_patient', dateStr = null) {
+  try {
+    const key = getFamilyCompletionStorageKey(patientId, dateStr);
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.warn('LocalStorage error reading family completion:', err);
+    return [];
+  }
+}
+
+/**
+ * Save family game completion for a patient on a specific date
+ * @param {string|null} [patientId='default_patient']
+ * @param {string} gameId
+ * @param {string|null} [dateStr=null]
+ * @returns {string[]} Updated array of completed family game IDs
+ */
+export function saveFamilyGameCompletion(patientId = 'default_patient', gameId, dateStr = null) {
+  try {
+    const key = getFamilyCompletionStorageKey(patientId, dateStr);
+    const existing = getFamilyGameCompletion(patientId, dateStr);
+    if (!existing.includes(gameId)) {
+      const updated = [...existing, gameId];
+      localStorage.setItem(key, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('neurosetu:family-progress-updated', {
+        detail: { patientId: patientId || 'default_patient', gameId, completed: updated }
+      }));
+      return updated;
+    }
+    return existing;
+  } catch (err) {
+    console.warn('LocalStorage error saving family completion:', err);
+    return [gameId];
+  }
+}
+

@@ -33,11 +33,18 @@ import {
 } from './services/telemetryService.js';
 import { getPendingSyncEvents, getActiveProfile, seedPresetProfiles, DEFAULT_PROFILE, DEFAULT_DAILY_ROUTINE } from './db/indexedDb.js';
 import { PRESET_PATIENTS } from './data/presetPatients.js';
-import { saveGameScore } from './utils/storage.js';
+import { saveGameScore, saveFamilyGameCompletion } from './utils/storage.js';
+
 import {
   onSyncStatusChange,
   initBackgroundSync
 } from './services/syncManager.js';
+import FamilyModuleRouter from './familyModule/FamilyModuleRouter.jsx';
+import IdentityRecallGame from './familyModule/games/identityRecall/IdentityRecallGame.jsx';
+import CategorySortingGame from './familyModule/games/categorySorting/CategorySortingGame.jsx';
+import FamilyTreeBuilderGame from './familyModule/games/familyTree/FamilyTreeBuilderGame.jsx';
+import LifeStoryTimelineGame from './familyModule/games/lifeTimeline/LifeStoryTimelineGame.jsx';
+
 
 const resolvePatientProfile = (patientId) => {
   if (!patientId) return null;
@@ -77,7 +84,9 @@ export default function App() {
   const [activeSuiteGame, setActiveSuiteGame] = useState(null); // Game config object for 15-game suite
   const [patientSection, setPatientSection] = useState('games'); // 'games' | 'reminders'
   const [dashboardTab, setDashboardTab] = useState('triage'); // 'triage' | 'content'
+  const [activeFamilyGame, setActiveFamilyGame] = useState(null); // 'identity_recall' | 'category_sorting' | 'family_tree' | 'life_timeline' | null
   const [isPatientIdleLocked, setIsPatientIdleLocked] = useState(false);
+
 
   // Inactivity detection for authenticated patient sessions (Dementia Gentle Lock)
   useIdleTimer({
@@ -256,6 +265,7 @@ export default function App() {
 
   const handleLogout = () => {
     setIsPatientIdleLocked(false);
+    setActiveFamilyGame(null);
     logout();
     setSession(null);
     navigateTo('home');
@@ -264,6 +274,44 @@ export default function App() {
   const handleExitGame = () => {
     setActiveGame(null);
     refreshTelemetry();
+  };
+
+  const handleBackToGameHub = () => {
+    if (activeFamilyGame && session?.patientId) {
+      saveFamilyGameCompletion(session.patientId, activeFamilyGame);
+    }
+    setActiveFamilyGame(null);
+    refreshTelemetry();
+  };
+
+  const familyGameLaunchMap = {
+    'identity-recall': () => setActiveFamilyGame('identity_recall'),
+    'identity_recall': () => setActiveFamilyGame('identity_recall'),
+    'category-sorting': () => setActiveFamilyGame('category_sorting'),
+    'category_sorting': () => setActiveFamilyGame('category_sorting'),
+    'family-tree': () => setActiveFamilyGame('family_tree'),
+    'family_tree': () => setActiveFamilyGame('family_tree'),
+    'family-tree-builder': () => setActiveFamilyGame('family_tree'),
+    'life-timeline': () => setActiveFamilyGame('life_timeline'),
+    'life_timeline': () => setActiveFamilyGame('life_timeline'),
+    'life-story-timeline': () => setActiveFamilyGame('life_timeline')
+  };
+
+  const handlePlayFamilyGame = (gameId) => {
+    const launcher = familyGameLaunchMap[gameId];
+    if (launcher) {
+      launcher();
+    } else {
+      setActiveFamilyGame(gameId);
+    }
+  };
+
+  const handlePlayFamilyGameFromBanner = (gameId = null) => {
+    if (gameId && familyGameLaunchMap[gameId]) {
+      familyGameLaunchMap[gameId]();
+    } else {
+      navigateTo('family');
+    }
   };
 
   const selectedPatient = SAMPLE_ASHA_PATIENTS.find(p => p.id === selectedPatientId) || SAMPLE_ASHA_PATIENTS[0];
@@ -287,10 +335,12 @@ export default function App() {
     if (session && session.role === ROLES.PATIENT && session.patientId) {
       navigateTo('patient');
       setActiveGame(null);
+      setActiveFamilyGame(null);
     } else {
       setIsCheckModalOpen(true);
     }
   };
+
 
   const handleClosePinModal = () => {
     setIsPinModalOpen(false);
@@ -365,7 +415,9 @@ export default function App() {
             navigateTo(route);
             setActiveGame(null);
             setActiveRoadmapGame(null);
+            setActiveFamilyGame(null);
           }}
+
           session={session}
           pendingSyncCount={pendingSyncCount}
           onOpenRoleSelector={() => setIsRoleSelectorOpen(true)}
@@ -402,6 +454,7 @@ export default function App() {
           onLaunchPatient={handleLaunchPatient}
           onLaunchDashboard={() => navigateTo('dashboard')}
           onLaunchHub={() => navigateTo('hub')}
+          onLaunchFamilyGames={() => navigateTo('family')}
           onOpenRoleSelector={() => setIsRoleSelectorOpen(true)}
           onOpenSetup={() => {
             setIsOnboardingInitialSignup(!hasConfiguredPin());
@@ -412,6 +465,7 @@ export default function App() {
             setPatientProfile(prev => ({ ...prev, language: lang }));
           }}
         />
+
       )}
 
       {/* Surface: Cognitive Training Game Suite Hub */}
@@ -540,11 +594,14 @@ export default function App() {
               if (sec === 'games') {
                 setPatientSection('games');
                 setActiveGame(null);
+                setActiveFamilyGame(null);
               }
               if (sec === 'reminders') {
                 setPatientSection('reminders');
                 setActiveGame(null);
+                setActiveFamilyGame(null);
               }
+
               if (sec === 'progress') navigateTo('dashboard');
               if (sec === 'help') setIsSosOpen(true);
             }}
@@ -583,8 +640,25 @@ export default function App() {
               </GameWrapper>
             )}
 
+            {/* Active Family Reminiscence Games */}
+            {patientSection === 'games' && activeFamilyGame === 'identity_recall' && (
+              <IdentityRecallGame onBackToMenu={handleBackToGameHub} />
+            )}
+
+            {patientSection === 'games' && activeFamilyGame === 'category_sorting' && (
+              <CategorySortingGame onBackToMenu={handleBackToGameHub} />
+            )}
+
+            {patientSection === 'games' && activeFamilyGame === 'family_tree' && (
+              <FamilyTreeBuilderGame onBackToMenu={handleBackToGameHub} />
+            )}
+
+            {patientSection === 'games' && activeFamilyGame === 'life_timeline' && (
+              <LifeStoryTimelineGame onBackToMenu={handleBackToGameHub} />
+            )}
+
             {/* Direct Game Fallbacks */}
-            {patientSection === 'games' && !activeRoadmapGame && activeGame === 'memory' && (
+            {patientSection === 'games' && !activeRoadmapGame && !activeFamilyGame && activeGame === 'memory' && (
               <GridMemoryGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={activePatientProfile}
@@ -592,7 +666,7 @@ export default function App() {
               />
             )}
 
-            {patientSection === 'games' && !activeRoadmapGame && activeGame === 'pattern' && (
+            {patientSection === 'games' && !activeRoadmapGame && !activeFamilyGame && activeGame === 'pattern' && (
               <VisualMatchingGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={activePatientProfile}
@@ -600,7 +674,7 @@ export default function App() {
               />
             )}
 
-            {patientSection === 'games' && !activeRoadmapGame && activeGame === 'sequencing' && (
+            {patientSection === 'games' && !activeRoadmapGame && !activeFamilyGame && activeGame === 'sequencing' && (
               <SequenceOrderGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={activePatientProfile}
@@ -609,16 +683,18 @@ export default function App() {
             )}
 
             {/* Primary Roadmap Journey View (Clean, distraction-free patient experience) */}
-            {patientSection === 'games' && !activeRoadmapGame && !activeGame && (
+            {patientSection === 'games' && !activeRoadmapGame && !activeGame && !activeFamilyGame && (
               <RoadmapView
                 patientProfile={activePatientProfile}
                 level={patientLevel}
                 completedGameIds={completedGameIds}
                 gameScores={gameScores}
                 onSelectGame={handleLaunchRoadmapGame}
+                onPlayFamilyGame={handlePlayFamilyGame}
                 onExit={() => navigateTo('home')}
               />
             )}
+
           </PatientLayout>
         ) : (
           <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200/80 shadow-soft-xl text-center space-y-5 animate-slide-up">
@@ -670,18 +746,28 @@ export default function App() {
             <button
               type="button"
               onClick={() => navigateTo('home')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-semibold transition shadow-soft"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-semibold transition shadow-soft cursor-pointer"
             >
               ← Return to Home
             </button>
-            <button
-              type="button"
-              onClick={handleLaunchPatient}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-soft transition active:scale-95"
-            >
-              🎮 Launch Patient App →
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigateTo('family')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-soft transition active:scale-95 cursor-pointer"
+              >
+                👨‍👩‍👧‍👦 Family Memory Portal →
+              </button>
+              <button
+                type="button"
+                onClick={handleLaunchPatient}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-soft transition active:scale-95 cursor-pointer"
+              >
+                🎮 Launch Patient App →
+              </button>
+            </div>
           </div>
+
 
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
             <div className="min-w-0 max-w-full">
@@ -872,9 +958,17 @@ export default function App() {
         )
       )}
 
+      {/* Surface 3: Family Reminiscence & Memory Portal */}
+      {currentRoute === 'family' && (
+        <FamilyModuleRouter
+          onReturnToMainApp={() => navigateTo('home')}
+        />
+      )}
+
       {/* Surface: 404 Unknown Route Fallback */}
-      {!['home', 'hub', 'patient', 'dashboard'].includes(currentRoute) && (
+      {!['home', 'hub', 'patient', 'dashboard', 'family'].includes(currentRoute) && (
         <div data-testid="not-found-view" className="min-h-[70vh] flex items-center justify-center p-6 animate-fade-in">
+
           <div className="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 border border-slate-200/80 shadow-soft-xl text-center space-y-5">
             <div className="w-16 h-16 bg-teal-50 text-teal-700 rounded-3xl flex items-center justify-center mx-auto text-3xl font-bold border border-teal-200/80 shadow-soft">
               🧭

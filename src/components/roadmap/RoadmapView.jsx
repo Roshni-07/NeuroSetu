@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Trophy, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react';
 import RoadmapNode from './RoadmapNode.jsx';
 import {
@@ -10,6 +10,9 @@ import {
   assignDailyGames,
   resolveDailyGameCount
 } from '../../engine/dailyAssignmentEngine.js';
+import { getScheduledFamilyGames } from '../../utils/familyScheduling.js';
+import { getFamilyGameCompletion } from '../../utils/storage.js';
+
 
 // Fallback metadata for all 15 games ensuring reliable labels, icons, and categories
 const GAME_METADATA_FALLBACK = {
@@ -67,7 +70,9 @@ export default function RoadmapView({
   activeGameId = null,
   gameScores = {},
   onSelectGame = null,
-  onExit = null
+  onPlayFamilyGame = null,
+  onExit = null,
+  currentDate = null
 }) {
   // 1. Resolve Active Patient Profile (props -> local storage -> fallback preset-1)
   const activePatient = useMemo(() => {
@@ -82,6 +87,34 @@ export default function RoadmapView({
     // Default fallback to Profile 1 (Ramesh Patel, Mild / Early Stage)
     return PRESET_PATIENTS[0];
   }, [patientProfile]);
+
+  const dateStr = useMemo(() => {
+    if (!currentDate) return new Date().toISOString().slice(0, 10);
+    const d = currentDate instanceof Date ? currentDate : new Date(currentDate);
+    return d.toISOString().slice(0, 10);
+  }, [currentDate]);
+
+  // Family Game Scheduling & Completion State (strictly isolated per patient)
+  const scheduledFamilyGames = useMemo(() => {
+    return getScheduledFamilyGames(currentDate || new Date());
+  }, [currentDate]);
+
+  const [completedFamilyIds, setCompletedFamilyIds] = useState(() => {
+    return getFamilyGameCompletion(activePatient?.id, dateStr);
+  });
+
+  useEffect(() => {
+    setCompletedFamilyIds(getFamilyGameCompletion(activePatient?.id, dateStr));
+    const handleUpdate = (e) => {
+      if (!e.detail?.patientId || e.detail.patientId === (activePatient?.id || 'default_patient')) {
+        setCompletedFamilyIds(getFamilyGameCompletion(activePatient?.id, dateStr));
+      }
+    };
+    window.addEventListener('neurosetu:family-progress-updated', handleUpdate);
+    return () => window.removeEventListener('neurosetu:family-progress-updated', handleUpdate);
+  }, [activePatient?.id, dateStr]);
+
+
 
   // 2. Resolve Current Difficulty Level (1 to 10)
   const currentLevel = useMemo(() => {
@@ -321,6 +354,94 @@ export default function RoadmapView({
           </span>
         </div>
       </main>
+
+      {/* Dedicated Family Memory Bonus Section (Rendered ONLY on scheduled days: Monday & Thursday) */}
+      {scheduledFamilyGames.length > 0 && (
+        <section
+          data-testid="family-memory-section"
+          className="bg-gradient-to-r from-amber-50/80 via-white to-rose-50/60 rounded-3xl border-2 border-amber-300/80 shadow-soft p-5 sm:p-6 space-y-4 animate-fade-in text-left"
+          aria-label="Family Memory Reminiscence Games"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/70 pb-3">
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl" role="img" aria-label="Family">👨‍👩‍👧‍👦</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-300/80 px-2 py-0.5 rounded-md">
+                    Twice-Weekly Special
+                  </span>
+                  <span className="text-xs font-bold text-rose-700">
+                    {scheduledFamilyGames[0]?.thematicPair || 'Family Memory'}
+                  </span>
+                </div>
+                <h2 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
+                  Family Reminiscence Corner
+                </h2>
+              </div>
+            </div>
+            <span className="text-xs font-semibold text-amber-800/80 bg-amber-100/60 px-2.5 py-1 rounded-xl">
+              Bonus Activities • No Pressure
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Revisit memories of your loved ones, photos, and milestones. These sessions are gentle, un-timed, and do not affect your daily score.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+            {scheduledFamilyGames.map((game) => {
+              const isDone = completedFamilyIds.includes(game.id);
+              return (
+                <div
+                  key={game.id}
+                  data-testid={`family-card-${game.id}`}
+                  className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between space-y-3 ${
+                    isDone
+                      ? 'bg-emerald-50/70 border-emerald-300/80'
+                      : 'bg-white hover:bg-amber-50/40 border-amber-200/90 shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl p-2 rounded-xl bg-amber-100/70 border border-amber-200/80 shrink-0">
+                      {game.icon}
+                    </span>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="text-sm font-bold text-slate-900">
+                          {game.name}
+                        </h3>
+                        {isDone && (
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md">
+                            Cherished ✓
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-2">
+                        {game.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    data-testid={`play-family-game-${game.id}`}
+                    onClick={() => onPlayFamilyGame && onPlayFamilyGame(game.id)}
+                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                      isDone
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-xs active:scale-95'
+                    }`}
+                  >
+                    <span>{isDone ? 'Replay Memory' : 'Play Activity'}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
+
