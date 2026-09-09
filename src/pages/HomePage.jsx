@@ -4,11 +4,13 @@ export default function HomePage({
   onLaunchPatient = null,
   onLaunchDashboard = null,
   onLaunchHub = null,
+  onLaunchFamilyGames = null,
   onOpenSetup = null,
   onOpenRoleSelector = null,
   initialLanguage = 'en',
   onLanguageChange = null
 }) {
+
   const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage || 'en');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -128,7 +130,18 @@ export default function HomePage({
                 {isEn ? 'ASHA Dashboard' : 'আশা ডেচবৰ্ড'}
               </button>
             )}
+
+            {onLaunchFamilyGames && (
+              <button
+                type="button"
+                onClick={onLaunchFamilyGames}
+                className="text-xs font-semibold text-amber-200 hover:text-white px-3 py-1.5 transition cursor-pointer"
+              >
+                👨‍👩‍👧‍👦 {isEn ? 'Family Portal' : 'পৰিয়াল প’ৰ্টেল'}
+              </button>
+            )}
           </div>
+
 
           {/* Mobile Hamburger Toggle (< sm) */}
           <div className="flex sm:hidden items-center gap-2">
@@ -207,7 +220,21 @@ export default function HomePage({
                   📊 {isEn ? 'ASHA Dashboard' : 'আশা ডেচবৰ্ড'}
                 </button>
               )}
+
+              {onLaunchFamilyGames && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onLaunchFamilyGames();
+                  }}
+                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-amber-200 hover:bg-[#0d1c1a] rounded-xl transition"
+                >
+                  👨‍👩‍👧‍👦 {isEn ? 'Family Portal' : 'পৰিয়াল প’ৰ্টেল'}
+                </button>
+              )}
             </div>
+
           </div>
         )}
       </nav>
