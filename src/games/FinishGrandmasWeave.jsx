@@ -1,104 +1,191 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import PatternGrid from '../shared/PatternGrid.jsx';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
 /**
- * Game 14 — Finish Grandma's Weave (Visual Reasoning)
- * Uses PatternGrid. Player completes a traditional NER textile pattern by filling
- * in missing cells from a selection of colour/motif options.
+ * Game 14 — Finish Grandma's Weave (Visual Pattern Recognition)
+ * Player completes traditional northeastern textile weaving patterns by filling in
+ * missing cells using authentic cultural yarn/motif symbols.
+ * 
+ * Migrated to 10-Level Shared Difficulty Scaling Engine:
+ * - Missing cell count scales from 1 (Level 1) to 5 (Level 10)
+ * - Yarn option choices scale from 2 (Level 1) to 5 (Level 10)
+ * - Dynamic pattern masking replaces static hardcoded missing cells
+ * - Guarantees 10 distinct difficulty parameter states
  */
 
-// NER textile motifs represented as emoji/symbols
 const WEAVE_PUZZLES = [
   {
     title: "Muga Silk Border",
     description: "Complete the golden muga silk weaving pattern below.",
-    grid: [
-      [
-        { content: '🟡' }, { content: '🟤' }, { content: '🟡' }, { content: '🟤' }
-      ],
-      [
-        { content: '🟤' }, { content: '🟡', isMissing: true }, { content: '🟤' }, { content: '🟡', isMissing: true }
-      ],
-      [
-        { content: '🟡' }, { content: '🟤' }, { content: '🟡' }, { content: '🟤' }
-      ],
-      [
-        { content: '🟤', isMissing: true }, { content: '🟡' }, { content: '🟤', isMissing: true }, { content: '🟡' }
-      ]
+    completeGrid: [
+      ['🟡', '🟤', '🟡', '🟤'],
+      ['🟤', '🟡', '🟤', '🟡'],
+      ['🟡', '🟤', '🟡', '🟤'],
+      ['🟤', '🟡', '🟤', '🟡']
+    ],
+    candidates: [
+      [1, 1], // 🟡
+      [3, 2], // 🟤
+      [1, 3], // 🟡
+      [3, 0], // 🟤
+      [2, 1]  // 🟤
     ],
     options: ['🟡', '🟤', '🟠', '🟢', '🔵'],
-    correctAnswers: ['🟡', '🟡', '🟤', '🟤'],
     explanation: 'The pattern alternates gold (🟡) and brown (🟤) in a checkerboard — like traditional muga weaving.'
   },
   {
     title: "Mekhela Motif Row",
     description: "Fill in the missing flowers in this mekhela chador flower row.",
-    grid: [
-      [
-        { content: '🌸' }, { content: '🌿' }, { content: '🌸' }, { content: '🌿' }, { content: '🌸' }
-      ],
-      [
-        { content: '🌿' }, { content: '🌸', isMissing: true }, { content: '🌿' }, { content: '🌸', isMissing: true }, { content: '🌿' }
-      ],
-      [
-        { content: '🌸' }, { content: '🌿' }, { content: '🌸' }, { content: '🌿' }, { content: '🌸' }
-      ]
+    completeGrid: [
+      ['🌸', '🌿', '🌸', '🌿', '🌸'],
+      ['🌿', '🌸', '🌿', '🌸', '🌿'],
+      ['🌸', '🌿', '🌸', '🌿', '🌸']
+    ],
+    candidates: [
+      [1, 1], // 🌸
+      [1, 3], // 🌸
+      [0, 2], // 🌸
+      [2, 0], // 🌸
+      [2, 4]  // 🌸
     ],
     options: ['🌸', '🌿', '🌼', '🌺', '💐'],
-    correctAnswers: ['🌸', '🌸'],
     explanation: 'The flowers (🌸) and leaves (🌿) alternate — the missing cells sit where flowers should be.'
   },
   {
     title: "Eri Silk Border",
     description: "Complete this traditional Eri silk diamond pattern.",
-    grid: [
-      [
-        { content: '⬜' }, { content: '🔴' }, { content: '⬜' }, { content: '🔴' }, { content: '⬜' }
-      ],
-      [
-        { content: '🔴' }, { content: '⬜' }, { content: '🔴', isMissing: true }, { content: '⬜' }, { content: '🔴' }
-      ],
-      [
-        { content: '⬜' }, { content: '🔴', isMissing: true }, { content: '⬜' }, { content: '🔴', isMissing: true }, { content: '⬜' }
-      ],
-      [
-        { content: '🔴' }, { content: '⬜' }, { content: '🔴' }, { content: '⬜' }, { content: '🔴' }
-      ]
+    completeGrid: [
+      ['⬜', '🔴', '⬜', '🔴', '⬜'],
+      ['🔴', '⬜', '🔴', '⬜', '🔴'],
+      ['⬜', '🔴', '⬜', '🔴', '⬜'],
+      ['🔴', '⬜', '🔴', '⬜', '🔴']
+    ],
+    candidates: [
+      [1, 2], // 🔴
+      [2, 1], // 🔴
+      [2, 3], // 🔴
+      [0, 1], // 🔴
+      [3, 2]  // 🔴
     ],
     options: ['🔴', '⬜', '🟠', '🟡', '⚫'],
-    correctAnswers: ['🔴', '🔴', '🔴'],
     explanation: 'Red (🔴) sits at every alternate cell in a classic Eri diamond weave pattern.'
   },
   {
     title: "Naga Shawl Stripe",
     description: "Fill in the missing sections of this bold Naga warrior shawl stripe.",
-    grid: [
-      [
-        { content: '🟥' }, { content: '🟥' }, { content: '⬛' }, { content: '🟥' }, { content: '🟥' }
-      ],
-      [
-        { content: '⬛' }, { content: '⬛' }, { content: '🟥', isMissing: true }, { content: '⬛' }, { content: '⬛' }
-      ],
-      [
-        { content: '🟥' }, { content: '🟥' }, { content: '⬛' }, { content: '🟥', isMissing: true }, { content: '🟥' }
-      ],
-      [
-        { content: '⬛', isMissing: true }, { content: '⬛' }, { content: '🟥' }, { content: '⬛' }, { content: '⬛' }
-      ]
+    completeGrid: [
+      ['🟥', '🟥', '⬛', '🟥', '🟥'],
+      ['⬛', '⬛', '🟥', '⬛', '⬛'],
+      ['🟥', '🟥', '⬛', '🟥', '🟥'],
+      ['⬛', '⬛', '🟥', '⬛', '⬛']
+    ],
+    candidates: [
+      [1, 2], // 🟥
+      [2, 3], // 🟥
+      [3, 0], // ⬛
+      [0, 2], // ⬛
+      [2, 1]  // 🟥
     ],
     options: ['🟥', '⬛', '🟨', '🟦', '🟩'],
-    correctAnswers: ['🟥', '🟥', '⬛'],
     explanation: 'Naga shawl stripes use bold red (🟥) and black (⬛) in a mirror pattern — complete the rows symmetrically.'
   }
 ];
 
-export default function FinishGrandmasWeave({ onComplete, onExit, language = 'en' }) {
+export default function FinishGrandmasWeave({
+  onComplete,
+  onExit,
+  language = 'en',
+  level = null,
+  masteryScore = null,
+  tier = null,
+  startingTier = null,
+  initialTier = null,
+  patientProfile = null,
+  onLevelChange = null
+}) {
+  const isExplicitLevel = level !== null && level !== undefined;
+  const hasConfig = isExplicitLevel || masteryScore !== null || tier !== null || startingTier !== null || initialTier !== null || patientProfile !== null;
+
+  // Standardized fallback resolver: level prop -> masteryScore -> patientProfile -> legacy status -> 5
+  const currentLevel = useMemo(() => {
+    if (isExplicitLevel && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [isExplicitLevel, level, masteryScore, patientProfile, tier, startingTier, initialTier]);
+
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const difficultyParams = useMemo(() => {
+    return getDifficultyParams('finish-grandmas-weave', currentLevel);
+  }, [currentLevel]);
+
+  // Scaled missing cell count: 1 (L1) to 5 (L10). Defaults to 2 if unconfigured.
+  const activeMissingCount = useMemo(() => {
+    if (!hasConfig) return 2;
+    return Math.max(1, Math.min(5, difficultyParams.itemCount || 2));
+  }, [hasConfig, difficultyParams.itemCount]);
+
+  // Scaled option choices: 2 (L1) to 5 (L10). Defaults to 5 if unconfigured.
+  const activeOptionCount = useMemo(() => {
+    if (!hasConfig) return 5;
+    return Math.max(2, Math.min(5, 1 + (difficultyParams.distractorCount || 2)));
+  }, [hasConfig, difficultyParams.distractorCount]);
+
   const [puzzleIndex, setPuzzleIndex] = useState(0);
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
 
-  const puzzle = WEAVE_PUZZLES[puzzleIndex];
+  // Auto-seed puzzle based on level
+  useEffect(() => {
+    if (hasConfig) {
+      setPuzzleIndex((currentLevel - 1) % WEAVE_PUZZLES.length);
+      setResult(null);
+      setGameKey(k => k + 1);
+    }
+  }, [hasConfig, currentLevel]);
+
+  const puzzle = WEAVE_PUZZLES[puzzleIndex] || WEAVE_PUZZLES[0];
+
+  // Dynamically mask grid cells and collect correct answers
+  const { generatedGrid, correctAnswers, generatedOptions } = useMemo(() => {
+    const coordsToMask = puzzle.candidates.slice(0, activeMissingCount);
+    const answers = [];
+
+    const grid = puzzle.completeGrid.map((row, r) =>
+      row.map((val, c) => {
+        const isTarget = coordsToMask.some(([mr, mc]) => mr === r && mc === c);
+        if (isTarget) {
+          answers.push(val);
+          return { content: val, isMissing: true };
+        }
+        return { content: val, isMissing: false };
+      })
+    );
+
+    // Build selectable options: ensure all needed answers are included, fill with distractors
+    const requiredAnswers = Array.from(new Set(answers));
+    const distractors = puzzle.options.filter(o => !requiredAnswers.includes(o));
+    const combinedOptions = [...requiredAnswers, ...distractors].slice(0, activeOptionCount);
+
+    return {
+      generatedGrid: grid,
+      correctAnswers: answers,
+      generatedOptions: combinedOptions
+    };
+  }, [puzzle, activeMissingCount, activeOptionCount]);
 
   const instructions = `Grandma started weaving a beautiful traditional textile but left some cells incomplete.
 
@@ -107,8 +194,13 @@ Look at the pattern carefully — can you see how it repeats? Tap a colour piece
 When all cells are filled, tap "Check Pattern" to see how you did!`;
 
   const handleComplete = (res) => {
-    setResult(res);
-    if (onComplete) onComplete(res);
+    const fullRes = {
+      ...res,
+      level: currentLevel,
+      difficultyParams
+    };
+    setResult(fullRes);
+    if (onComplete) onComplete(fullRes);
   };
 
   const handleRetry = () => {
@@ -140,23 +232,41 @@ When all cells are filled, tap "Check Pattern" to see how you did!`;
           </button>
         </div>
       )}
-      {/* Puzzle selector */}
-      <div className="flex flex-wrap justify-center gap-2 mb-4">
-        {WEAVE_PUZZLES.map((p, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => { setPuzzleIndex(i); setResult(null); setGameKey(k => k + 1); }}
-            className={`min-h-[44px] px-3 rounded-xl text-sm font-bold border-2 transition-colors ${
-              i === puzzleIndex
-                ? 'bg-purple-700 text-white border-purple-600'
-                : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-            }`}
-          >
-            {p.title}
-          </button>
-        ))}
+
+      {/* Adaptive Level Badge */}
+      <div className="flex items-center justify-between px-4 py-2 mb-4 bg-teal-50 border border-teal-200 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-teal-700 text-white">
+            Level {currentLevel}
+          </span>
+          <span className="text-xs font-semibold text-slate-600">
+            Fill {activeMissingCount} Missing Cells • {generatedOptions.length} Yarn Choices
+          </span>
+        </div>
+        <span className="text-xs font-bold text-teal-800">
+          {currentLevel <= 3 ? 'Gentle Warmup' : currentLevel <= 7 ? 'Target Challenge' : 'Focused Mastery'}
+        </span>
       </div>
+
+      {/* Manual puzzle selector preserved when unconfigured */}
+      {!hasConfig && (
+        <div className="flex flex-wrap justify-center gap-2 mb-4">
+          {WEAVE_PUZZLES.map((p, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => { setPuzzleIndex(i); setResult(null); setGameKey(k => k + 1); }}
+              className={`min-h-[44px] px-3 rounded-xl text-sm font-bold border-2 transition-colors ${
+                i === puzzleIndex
+                  ? 'bg-purple-700 text-white border-purple-600'
+                  : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+              }`}
+            >
+              {p.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Loom header */}
       <div className="w-full rounded-2xl bg-gradient-to-r from-purple-800 to-indigo-700 text-white px-5 py-3 mb-4 flex items-center gap-3 shadow">
@@ -169,9 +279,9 @@ When all cells are filled, tap "Check Pattern" to see how you did!`;
 
       <PatternGrid
         key={gameKey}
-        grid={puzzle.grid}
-        options={puzzle.options}
-        correctAnswers={puzzle.correctAnswers}
+        grid={generatedGrid}
+        options={generatedOptions}
+        correctAnswers={correctAnswers}
         onComplete={handleComplete}
         language={language}
         title=""

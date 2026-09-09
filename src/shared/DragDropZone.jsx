@@ -102,6 +102,7 @@ export default function DragDropZone({
           return (
             <div
               key={zone.id}
+              data-testid={`drop-zone-${zone.id}`}
               onClick={() => handleZoneClick(zone.id)}
               onDragOver={(e) => handleDragOver(e, zone.id)}
               onDragLeave={() => handleDragLeave(zone.id)}
@@ -188,6 +189,7 @@ export default function DragDropZone({
               return (
                 <div
                   key={item.id}
+                  data-testid={`drag-item-${item.id}`}
                   draggable={!disabled}
                   onDragStart={(e) => handleDragStart(e, item)}
                   onClick={() => handleItemClick(item)}

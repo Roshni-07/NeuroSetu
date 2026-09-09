@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import { sounds } from '../utils/soundEffects.js';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
 /**
  * Game 13 — Care for Your Companion (Reasoning/Executive Function)
- * Player looks after a virtual pet/plant (a tea plant or a chicken) across
- * a simulated day. At each time step, they choose one action from a set.
- * "Right" actions are logical — wrong choices lead to gentle feedback.
+ * Player looks after a virtual pet/plant (a tea plant or a chicken) across a simulated day.
+ * 
+ * Migrated to 10-Level Shared Difficulty Scaling Engine:
+ * - Active steps scale from 2 (Level 1) to 5 (Level 10)
+ * - Decision options scale from 2 options (1 distractor) to 5 options (4 distractors)
+ * - Pacing & health feedback adapt smoothly
+ * - Preserves scoring and telemetry contracts
  */
-
 const COMPANIONS = [
   {
     id: 'tea_plant',
@@ -19,46 +24,66 @@ const COMPANIONS = [
       {
         time: 'Morning',
         icon: '🌅',
-        situation: 'Your tea plant looks thirsty — its leaves are drooping slightly.',
+        need: 'gentle moisture',
+        situation: 'Your tea plant looks thirsty — its leaves are drooping slightly in the morning air.',
         options: [
           { label: 'Water it gently 💧', correct: true, feedback: 'Perfect! The plant perks up with gentle watering.' },
-          { label: 'Add lots of fertilizer', correct: false, feedback: 'Too much fertilizer on a thirsty plant can burn the roots. Water first.' },
-          { label: 'Pull off the drooping leaves', correct: false, feedback: 'The leaves will recover with water — removing them wastes the plant\'s energy.' },
-          { label: 'Leave it for the evening', correct: false, feedback: 'Wilting leaves need water now, not later — plants can struggle in the heat.' }
+          { label: 'Leave it for the evening', correct: false, feedback: 'Wilting leaves need water now, not later.' },
+          { label: 'Add lots of fertilizer', correct: false, feedback: 'Too much fertilizer on a thirsty plant can burn the roots.' },
+          { label: 'Pull off the drooping leaves', correct: false, feedback: 'The leaves will recover with water — removing them wastes plant energy.' },
+          { label: 'Pour icy water over roots', correct: false, feedback: 'Icy water shocks delicate young roots.' }
         ]
       },
       {
         time: 'Late Morning',
         icon: '☀️',
-        situation: 'Strong sunlight is directly hitting your small tea plant.',
+        need: 'sunlight protection',
+        situation: 'Strong direct sunlight is hitting your small tea plant.',
         options: [
-          { label: 'Put a shade cloth over it 🌿', correct: true, feedback: 'Young tea plants need some shade in harsh sunlight — well done!' },
+          { label: 'Put a shade cloth over it 🌿', correct: true, feedback: 'Young tea plants need shade in harsh sunlight — well done!' },
           { label: 'Move it next to a cement wall', correct: false, feedback: 'Cement walls hold heat — this would make it even hotter for the plant.' },
-          { label: 'Pour cold water on the leaves', correct: false, feedback: 'Cold water on sun-heated leaves can cause shock. Light shading is better.' },
-          { label: 'Cut all the leaves off', correct: false, feedback: 'Leaves are needed for the plant to survive — cutting them all off would harm it.' }
+          { label: 'Pour cold water on the leaves', correct: false, feedback: 'Cold water on sun-heated leaves can cause shock.' },
+          { label: 'Cut all the leaves off', correct: false, feedback: 'Leaves are needed for the plant to survive.' },
+          { label: 'Enclose it in plastic wrap', correct: false, feedback: 'Plastic wrap creates an oven effect.' }
         ]
       },
       {
         time: 'Afternoon',
         icon: '🌤️',
+        need: 'pest protection',
         situation: 'You notice some small yellow bugs on a few leaves.',
         options: [
-            { label: 'Apply safe plant medicine 🧴', correct: true, feedback: 'The right plant medicine protects the leaves and helps the plant recover.' },
-            { label: 'Remove the bugs carefully by hand 🖐️', correct: false, feedback: 'Careful removal can help, but this outbreak needs the correct plant medicine.' },
-          { label: 'Pour kerosene on the plant', correct: false, feedback: 'Kerosene would damage the plant severely — never use it.' },
+          { label: 'Apply safe plant medicine 🧴', correct: true, feedback: 'The right plant medicine protects the leaves and helps the plant recover.' },
+          { label: 'Remove the bugs carefully by hand 🖐️', correct: false, feedback: 'Careful removal can help, but this outbreak needs the correct plant medicine.' },
+          { label: 'Pour kerosene on the plant', correct: false, feedback: 'Kerosene damages tea leaves severely — never use it.' },
           { label: 'Ignore them — they will go away', correct: false, feedback: 'Pest infestations grow quickly — early action is always better.' },
-          { label: 'Uproot the whole plant', correct: false, feedback: 'A few bugs on some leaves doesn\'t mean the plant needs to be uprooted.' }
+          { label: 'Uproot the whole plant', correct: false, feedback: 'Uprooting is unnecessary for a surface pest issue.' }
         ]
       },
       {
         time: 'Evening',
         icon: '🌙',
+        need: 'nighttime warmth',
         situation: 'The temperature is dropping. Your tea plant is still outside.',
         options: [
           { label: 'Cover it with a light cloth for the night 🌿', correct: true, feedback: 'Young plants benefit from cover on cool nights — a perfect gardener\'s choice!' },
-          { label: 'Water it heavily to keep it warm', correct: false, feedback: 'Over-watering at night creates waterlogged roots — not good for cold weather.' },
-          { label: 'Move it inside under a bright electric light', correct: false, feedback: 'Sudden changes and artificial light at night disrupt the plant\'s natural rhythm.' },
-          { label: 'Leave it as it is', correct: false, feedback: 'A light frost protection cloth would have helped — young plants need extra care.' }
+          { label: 'Water it heavily to keep it warm', correct: false, feedback: 'Over-watering at night creates chilling waterlogged roots.' },
+          { label: 'Move it inside under a bright electric light', correct: false, feedback: 'Artificial glare at night disrupts natural rhythms.' },
+          { label: 'Leave it as it is', correct: false, feedback: 'Valley chills can stunt tender saplings.' },
+          { label: 'Place hot burning coals near it', correct: false, feedback: 'Coals pose fire hazard and dry out the air.' }
+        ]
+      },
+      {
+        time: 'Night Rest',
+        icon: '✨',
+        need: 'soil aeration',
+        situation: 'The night settles in and you check the surrounding soil drainage for tomorrow.',
+        options: [
+          { label: 'Loosen topsoil gently around drainage holes 🪴', correct: true, feedback: 'Good soil drainage ensures healthy roots by sunrise!' },
+          { label: 'Tramp down the dirt firmly', correct: false, feedback: 'Compacting soil suffocates roots.' },
+          { label: 'Pour muddy slurry on top', correct: false, feedback: 'Slurry blocks oxygen from root systems.' },
+          { label: 'Dig deeply and slice surface roots', correct: false, feedback: 'Cutting root systems harms nutrient uptake.' },
+          { label: 'Flood the pot with detergent', correct: false, feedback: 'Detergent harms beneficial soil microbes.' }
         ]
       }
     ]
@@ -72,45 +97,66 @@ const COMPANIONS = [
       {
         time: 'Dawn',
         icon: '🌅',
-        situation: 'Your hen hasn\'t eaten yet and is pacing near the gate.',
+        need: 'wholesome feed',
+        situation: 'Your hen hasn\'t eaten yet and is pacing restlessly near the coop gate.',
         options: [
-          { label: 'Scatter grain and rice bran 🌾', correct: true, feedback: 'Morning grain feeding keeps the hen healthy and happy!' },
-          { label: 'Give her only water', correct: false, feedback: 'Water alone isn\'t enough — hens need grain in the morning to lay well.' },
-          { label: 'Let her find her own food', correct: false, feedback: 'Foraging helps but a hungry, pacing hen needs supplementary feeding.' },
-          { label: 'Give her cooked spicy food', correct: false, feedback: 'Spicy human food is not suitable for hens — grain and greens work best.' }
+          { label: 'Scatter grain and rice bran 🌾', correct: true, feedback: 'Morning grain feeding keeps the hen nourished and laying well.' },
+          { label: 'Give her only plain water', correct: false, feedback: 'Water alone is not enough for morning energy.' },
+          { label: 'Give her leftover spicy curry', correct: false, feedback: 'Spicy human food is harmful to poultry.' },
+          { label: 'Let her forage empty gravel', correct: false, feedback: 'Supplementary grain is required for healthy eggs.' },
+          { label: 'Feed dry raw beans', correct: false, feedback: 'Raw beans contain hemagglutinin toxic to poultry.' }
         ]
       },
       {
         time: 'Morning',
         icon: '🥚',
-        situation: 'You find an egg in the corner of the pen but the ground is wet.',
+        need: 'dry nest care',
+        situation: 'You find a fresh egg in the corner of the pen, but the ground is damp from rain.',
         options: [
-          { label: 'Pick it up carefully and place on dry straw 🌾', correct: true, feedback: 'Eggs need dry, clean storage — great care!' },
-          { label: 'Leave it where it is', correct: false, feedback: 'Eggs on wet ground can crack or get contaminated by bacteria.' },
-          { label: 'Wash it with soap immediately', correct: false, feedback: 'Washing removes the egg\'s natural protective coating — just dry it gently.' },
-          { label: 'Put it back under the hen', correct: false, feedback: 'If you don\'t want it to hatch, move it to dry storage instead.' }
+          { label: 'Pick it up and place on fresh dry straw 🌾', correct: true, feedback: 'Clean, dry straw protects eggs from moisture and contamination.' },
+          { label: 'Leave it in the muddy corner', correct: false, feedback: 'Moisture fosters bacterial contamination.' },
+          { label: 'Scrub it vigorously with soap', correct: false, feedback: 'Washing removes the natural protective bloom.' },
+          { label: 'Crack it into her feed immediately', correct: false, feedback: 'Feeding raw eggs encourages egg-eating habits.' },
+          { label: 'Bury it in wet soil', correct: false, feedback: 'Burying spoils the egg completely.' }
         ]
       },
       {
         time: 'Afternoon',
         icon: '☀️',
-        situation: 'The hen pen is very hot and the hen is panting.',
+        need: 'cooling shade',
+        situation: 'The courtyard is baking under afternoon sun and the hen is panting with wings out.',
         options: [
-          { label: 'Provide cool fresh water and open shade 🪣', correct: true, feedback: 'Hens regulate heat by panting — cool water and shade are essential in hot weather.' },
-          { label: 'Lock her in a small box to rest', correct: false, feedback: 'Confining a hot hen makes heat stress worse — she needs cool air and water.' },
-          { label: 'Spray cold water directly on her', correct: false, feedback: 'Sudden cold on a stressed hen can cause shock — cool the environment instead.' },
-          { label: 'Give her more grain to eat', correct: false, feedback: 'Digesting food generates more body heat — cool water is the priority now.' }
+          { label: 'Provide cool fresh water and open shaded shelter 🪣', correct: true, feedback: 'Cool water and ventilation quickly relieve poultry heat stress.' },
+          { label: 'Lock her in a tight wooden crate', correct: false, feedback: 'Enclosed spaces trap body heat dangerously.' },
+          { label: 'Douse her with icy cold water', correct: false, feedback: 'Sudden cold shock can cause cardiovascular collapse.' },
+          { label: 'Force-feed dry maize', correct: false, feedback: 'Digestion generates internal heat — hydration comes first.' },
+          { label: 'Chase her into the open field', correct: false, feedback: 'Exertion in midday sun worsens heat exhaustion.' }
         ]
       },
       {
-        time: 'Evening',
-        icon: '🌙',
-        situation: 'It is time to close the hen for the night. You see the door latch is loose.',
+        time: 'Dusk',
+        icon: '🌇',
+        need: 'clean coop inspection',
+        situation: 'Dusk is settling and wet droppings have accumulated around the roosting perch.',
         options: [
-          { label: 'Fix the latch before closing the pen 🔧', correct: true, feedback: 'A secure latch keeps predators out — safety first!' },
-          { label: 'Leave the door slightly open for air', correct: false, feedback: 'Predators can enter an open pen at night — always secure the latch.' },
-          { label: 'Tie it with a cloth temporarily', correct: false, feedback: 'A cloth tie is better than nothing but fixing the latch is the right choice.' },
-          { label: 'Leave it — predators won\'t come tonight', correct: false, feedback: 'Predators don\'t warn you before they come — always secure your animals at night.' }
+          { label: 'Rake out wet soiled bedding and add fresh dry shavings 🧹', correct: true, feedback: 'Clean bedding prevents respiratory illness and foot sores.' },
+          { label: 'Spray chemical disinfectant while hen is inside', correct: false, feedback: 'Fumes harm delicate avian airways.' },
+          { label: 'Cover the dampness with wet banana leaves', correct: false, feedback: 'Wet leaves trap moisture and mildew.' },
+          { label: 'Ignore the roost area', correct: false, feedback: 'Ammonia fumes build up rapidly overnight.' },
+          { label: 'Burn trash inside the pen', correct: false, feedback: 'Smoke inhalation is fatal to birds.' }
+        ]
+      },
+      {
+        time: 'Night',
+        icon: '🌙',
+        need: 'secure coop latch',
+        situation: 'Night has fallen and the pen door latch is loose and rattling in the breeze.',
+        options: [
+          { label: 'Fasten the secure latch and check the wire mesh 🔧', correct: true, feedback: 'A secure latch keeps civets and village predators out!' },
+          { label: 'Leave the door propped open', correct: false, feedback: 'Open coops invite nocturnal predators.' },
+          { label: 'Tie it loosely with flimsy yarn', correct: false, feedback: 'Yarn snaps easily under predator force.' },
+          { label: 'Assume predators won\'t come', correct: false, feedback: 'Night predators look for easy entry points.' },
+          { label: 'Turn on loud blaring music', correct: false, feedback: 'Noise stresses the hen throughout the night.' }
         ]
       }
     ]
@@ -118,63 +164,80 @@ const COMPANIONS = [
 ];
 
 export function getCompanionStatus(companionId, health) {
-  if (companionId === 'tea_plant') {
-    if (health >= 75) {
-      return {
-        icon: '🌿',
-        status: 'Thriving & Lush',
-        tier: 'thriving',
-        badgeCls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-        barColor: 'bg-emerald-500'
-      };
-    }
-    if (health >= 45) {
-      return {
-        icon: '🌱',
-        status: 'Doing Okay',
-        tier: 'okay',
-        badgeCls: 'bg-teal-100 text-teal-900 border-teal-300',
-        barColor: 'bg-teal-500'
-      };
-    }
+  if (health >= 75) {
     return {
-      icon: '🥀',
-      status: 'Needs Gentle Care',
-      tier: 'struggling',
-      badgeCls: 'bg-amber-100 text-amber-900 border-amber-300',
-      barColor: 'bg-amber-500'
-    };
-  } else {
-    // 'chicken'
-    if (health >= 75) {
-      return {
-        icon: '🐔',
-        status: 'Thriving & Content',
-        tier: 'thriving',
-        badgeCls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-        barColor: 'bg-emerald-500'
-      };
-    }
-    if (health >= 45) {
-      return {
-        icon: '🐥',
-        status: 'Doing Okay',
-        tier: 'okay',
-        badgeCls: 'bg-teal-100 text-teal-900 border-teal-300',
-        barColor: 'bg-teal-500'
-      };
-    }
-    return {
-      icon: '🤒',
-      status: 'Needs Gentle Care',
-      tier: 'struggling',
-      badgeCls: 'bg-amber-100 text-amber-900 border-amber-300',
-      barColor: 'bg-amber-500'
+      icon: companionId === 'tea_plant' ? '🌿' : '🐔',
+      status: companionId === 'tea_plant' ? 'Thriving & Lush' : 'Thriving & Content',
+      tier: 'thriving',
+      badgeCls: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      barColor: 'bg-emerald-500'
     };
   }
+  if (health >= 45) {
+    return {
+      icon: companionId === 'tea_plant' ? '🌱' : '🐥',
+      status: 'Doing Okay',
+      tier: 'okay',
+      badgeCls: 'bg-teal-100 text-teal-900 border-teal-300',
+      barColor: 'bg-teal-500'
+    };
+  }
+  return {
+    icon: companionId === 'tea_plant' ? '🥀' : '🤒',
+    status: 'Needs Gentle Care',
+    tier: 'struggling',
+    badgeCls: 'bg-amber-100 text-amber-900 border-amber-300',
+    barColor: 'bg-amber-500'
+  };
 }
 
-export default function CareForYourCompanion({ onComplete, onExit, language = 'en' }) {
+export default function CareForYourCompanion({
+  onComplete,
+  onExit,
+  language = 'en',
+  level = null,
+  masteryScore = null,
+  tier = null,
+  startingTier = null,
+  initialTier = null,
+  patientProfile = null,
+  onLevelChange = null
+}) {
+  // Standardized fallback resolver: level prop -> masteryScore -> patientProfile -> legacy status -> 5
+  const currentLevel = useMemo(() => {
+    if (level && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [level, masteryScore, patientProfile, tier, startingTier, initialTier]);
+
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const difficultyParams = useMemo(() => {
+    return getDifficultyParams('care-for-your-companion', currentLevel);
+  }, [currentLevel]);
+
+  const hasConfig = level !== null || masteryScore !== null || tier !== null || startingTier !== null || initialTier !== null || patientProfile !== null;
+
+  // Number of daily decision steps: 2 (Level 1) to 5 (Level 10). Defaults to 4 when unconfigured.
+  const activeStepCount = hasConfig
+    ? Math.max(2, Math.min(5, difficultyParams.itemCount || 3))
+    : 4;
+
+  // Number of options shown per step: 1 correct + distractorCount (2 options at L1, up to 5 options at L10)
+  const optionCount = hasConfig
+    ? Math.max(2, Math.min(5, 1 + (difficultyParams.distractorCount || 2)))
+    : 5;
+
   const [companionIndex, setCompanionIndex] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -185,13 +248,24 @@ export default function CareForYourCompanion({ onComplete, onExit, language = 'e
   const [companionHealth, setCompanionHealth] = useState(70);
 
   const companion = COMPANIONS[companionIndex];
-  const step = companion.steps[stepIndex];
-  const totalSteps = companion.steps.length;
+  const activeSteps = useMemo(() => {
+    return companion.steps.slice(0, activeStepCount);
+  }, [companion, activeStepCount]);
+
+  const step = activeSteps[stepIndex] || activeSteps[0];
+  const totalSteps = activeSteps.length;
   const currentStatus = getCompanionStatus(companion.id, companionHealth);
 
-  const needs = companion.id === 'tea_plant'
-    ? ['thirsty', 'needs shade', 'needs medicine', 'needs warmth']
-    : ['hungry', 'needs a dry nest', 'needs cool water', 'needs a secure home'];
+  // Filtered options for the current step (always keeping the correct choice)
+  const stepOptions = useMemo(() => {
+    if (!step || !step.options) return [];
+    if (!hasConfig) return step.options;
+    const correctOpt = step.options.find(o => o.correct) || step.options[0];
+    const distractorOpts = step.options.filter(o => !o.correct).slice(0, optionCount - 1);
+    const combined = [correctOpt, ...distractorOpts];
+    // Deterministic shuffle based on step index and level
+    return combined.sort((a, b) => (a.label.length + currentLevel) % 3 - (b.label.length + currentLevel) % 3);
+  }, [step, optionCount, currentLevel, hasConfig]);
 
   const instructions = `You will look after your village companion through the day.
 
@@ -201,7 +275,7 @@ There is no rush — take your time before choosing.`;
 
   const handleSelect = (optIdx) => {
     if (selected !== null) return;
-    const opt = step.options[optIdx];
+    const opt = stepOptions[optIdx];
     setSelected(optIdx);
     setShowFeedback(true);
     setCompanionHealth(value => Math.max(0, Math.min(100, value + (opt.correct ? 15 : -25))));
@@ -239,7 +313,9 @@ There is no rush — take your time before choosing.`;
         maxScore: 100,
         companionHealth,
         message,
-        subtext: `Made ${correctCount} of ${totalSteps} best decisions through the day • Final health: ${companionHealth}%.`
+        subtext: `Made ${correctCount} of ${totalSteps} decisions through the day at Level ${currentLevel} • Final health: ${companionHealth}%.`,
+        level: currentLevel,
+        difficultyParams
       };
       setResult(res);
       if (onComplete) onComplete(res);
@@ -286,6 +362,22 @@ There is no rush — take your time before choosing.`;
           </button>
         </div>
       )}
+
+      {/* Adaptive Level Header */}
+      <div className="flex items-center justify-between px-4 py-2 mb-4 bg-teal-50 border border-teal-200 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-teal-700 text-white">
+            Level {currentLevel}
+          </span>
+          <span className="text-xs font-semibold text-slate-600">
+            {totalSteps} Daily Steps • {optionCount} Options
+          </span>
+        </div>
+        <span className="text-xs font-bold text-teal-800">
+          {currentLevel <= 3 ? 'Gentle Care' : currentLevel <= 7 ? 'Mindful Routine' : 'Master Caretaker'}
+        </span>
+      </div>
+
       {/* Companion selector */}
       <div className="flex justify-center gap-2 mb-4">
         {COMPANIONS.map((c, i) => (
@@ -293,10 +385,11 @@ There is no rush — take your time before choosing.`;
             key={i}
             type="button"
             onClick={() => { setCompanionIndex(i); handleRetry(); }}
-            className={`min-h-[44px] px-4 rounded-xl text-base font-bold border-2 transition-colors ${i === companionIndex
+            className={`min-h-[44px] px-4 rounded-xl text-base font-bold border-2 transition-colors ${
+              i === companionIndex
                 ? 'bg-emerald-700 text-white border-emerald-600'
                 : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'
-              }`}
+            }`}
           >
             {i === companionIndex ? currentStatus.icon : c.icon} {c.name}
           </button>
@@ -311,7 +404,7 @@ There is no rush — take your time before choosing.`;
         />
       </div>
 
-      {/* Cumulative Companion Health Status Banner */}
+      {/* Health Status Banner */}
       <div className={`border-2 rounded-2xl px-4 py-3 mb-4 transition-all duration-300 ${currentStatus.badgeCls}`}>
         <div className="flex items-center justify-between text-sm font-bold">
           <span className="flex items-center gap-2">
@@ -331,31 +424,37 @@ There is no rush — take your time before choosing.`;
             style={{ width: `${companionHealth}%` }}
           />
         </div>
-        <p className="mt-2 text-sm font-semibold opacity-90">
-          Current need: <span className="underline decoration-current font-bold">{needs[stepIndex]}</span>
-        </p>
+        {step && (
+          <p className="mt-2 text-sm font-semibold opacity-90">
+            Current need: <span className="underline decoration-current font-bold">{step.need}</span>
+          </p>
+        )}
       </div>
 
       {/* Time of day banner */}
-      <div className="flex items-center gap-3 bg-teal-50 border-2 border-teal-300 rounded-2xl px-4 py-3 mb-4">
-        <span className="text-4xl">{step.icon}</span>
-        <div>
-          <p className="text-sm font-bold uppercase text-teal-600">{step.time}</p>
-          <p className="text-base font-bold text-teal-900">Step {stepIndex + 1} of {totalSteps}</p>
+      {step && (
+        <div className="flex items-center gap-3 bg-teal-50 border-2 border-teal-300 rounded-2xl px-4 py-3 mb-4">
+          <span className="text-4xl">{step.icon}</span>
+          <div>
+            <p className="text-sm font-bold uppercase text-teal-600">{step.time}</p>
+            <p className="text-base font-bold text-teal-900">Step {stepIndex + 1} of {totalSteps}</p>
+          </div>
+          <div className="ml-auto text-4xl" title={`${companion.name} (${currentStatus.status})`}>
+            {currentStatus.icon}
+          </div>
         </div>
-        <div className="ml-auto text-4xl" title={`${companion.name} (${currentStatus.status})`}>
-          {currentStatus.icon}
-        </div>
-      </div>
+      )}
 
       {/* Situation */}
-      <div className="bg-teal-50 border-2 border-teal-300 rounded-2xl px-4 py-4 mb-4">
-        <p className="text-lg font-bold text-teal-900 leading-snug">{step.situation}</p>
-      </div>
+      {step && (
+        <div className="bg-teal-50 border-2 border-teal-300 rounded-2xl px-4 py-4 mb-4">
+          <p className="text-lg font-bold text-teal-900 leading-snug">{step.situation}</p>
+        </div>
+      )}
 
       {/* Options */}
       <div className="grid gap-3" key={gameKey + '-' + stepIndex}>
-        {step.options.map((opt, i) => {
+        {stepOptions.map((opt, i) => {
           let cls = 'min-h-[64px] w-full rounded-2xl border-3 px-5 py-3 text-left text-lg font-semibold transition-all cursor-pointer';
           if (selected === null) {
             cls += ' bg-white border-slate-300 hover:border-teal-400 hover:bg-teal-50 text-slate-800';
@@ -378,19 +477,20 @@ There is no rush — take your time before choosing.`;
       </div>
 
       {/* Feedback */}
-      {showFeedback && (
-        <div className={`mt-4 rounded-2xl px-4 py-3 border-2 ${step.options[selected]?.correct
+      {showFeedback && stepOptions[selected] && (
+        <div className={`mt-4 rounded-2xl px-4 py-3 border-2 ${
+          stepOptions[selected]?.correct
             ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
             : 'bg-amber-50 border-amber-300 text-amber-900'
-          }`}>
+        }`}>
           <p className="text-base font-bold">
-            {step.options[selected]?.correct ? '🌟 ' : '💛 '}
-            {step.options[selected]?.feedback}
+            {stepOptions[selected]?.correct ? '🌟 ' : '💛 '}
+            {stepOptions[selected]?.feedback}
           </p>
           <p className="text-sm mt-1 font-semibold flex items-center gap-2">
             <span>{currentStatus.icon}</span>
             <span>
-              {step.options[selected]?.correct
+              {stepOptions[selected]?.correct
                 ? `${companion.name} gained health (+15%) and is ${currentStatus.status.toLowerCase()}!`
                 : `${companion.name} lost health (-25%). It needs gentle care in the next step.`}
             </span>
@@ -402,7 +502,7 @@ There is no rush — take your time before choosing.`;
         <button
           type="button"
           onClick={handleNext}
-          className="mt-4 w-full min-h-[56px] rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xl font-bold shadow-lg active:scale-95 transition-transform"
+          className="mt-4 w-full min-h-[56px] rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xl font-bold shadow-lg active:scale-95 transition-transform cursor-pointer"
         >
           {stepIndex < totalSteps - 1 ? 'Next Situation →' : 'See Results →'}
         </button>
@@ -410,3 +510,4 @@ There is no rush — take your time before choosing.`;
     </GameWrapper>
   );
 }
+

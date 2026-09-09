@@ -41,15 +41,15 @@ export const GAME_DIFFICULTY_ENDPOINTS = {
   // Batch 2 Games
   'remember-the-story': {
     level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
-    level10: { itemCount: 4, distractorCount: 3, previewTimeMs: 4000, distractorSimilarity: 'high' }
+    level10: { itemCount: 5, distractorCount: 3, previewTimeMs: 4000, distractorSimilarity: 'high' }
   },
   'whose-morning-is-it': {
-    level1: { itemCount: 2, distractorCount: 2, previewTimeMs: 3600, distractorSimilarity: 'low' },
-    level10: { itemCount: 4, distractorCount: 4, previewTimeMs: 2400, distractorSimilarity: 'high' }
+    level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 3600, distractorSimilarity: 'low' },
+    level10: { itemCount: 6, distractorCount: 4, previewTimeMs: 2400, distractorSimilarity: 'high' }
   },
   'find-the-difference': {
-    level1: { itemCount: 2, distractorCount: 0, previewTimeMs: 12000, distractorSimilarity: 'low' },
-    level10: { itemCount: 4, distractorCount: 0, previewTimeMs: 4000, distractorSimilarity: 'high' }
+    level1: { itemCount: 2, distractorCount: 0, previewTimeMs: 15000, distractorSimilarity: 'low' },
+    level10: { itemCount: 8, distractorCount: 0, previewTimeMs: 5000, distractorSimilarity: 'high' }
   },
   'tea-garden-detective': {
     level1: { itemCount: 4, distractorCount: 2, previewTimeMs: 3500, distractorSimilarity: 'low' },
@@ -59,15 +59,15 @@ export const GAME_DIFFICULTY_ENDPOINTS = {
   // Batch 3 Games
   'care-for-your-companion': {
     level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
-    level10: { itemCount: 4, distractorCount: 4, previewTimeMs: 5000, distractorSimilarity: 'high' }
+    level10: { itemCount: 5, distractorCount: 4, previewTimeMs: 5000, distractorSimilarity: 'high' }
   },
   'day-in-my-village': {
-    level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 10000, distractorSimilarity: 'low' },
-    level10: { itemCount: 4, distractorCount: 3, previewTimeMs: 4000, distractorSimilarity: 'high' }
+    level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
+    level10: { itemCount: 5, distractorCount: 3, previewTimeMs: 4000, distractorSimilarity: 'high' }
   },
   'finish-grandmas-weave': {
     level1: { itemCount: 1, distractorCount: 1, previewTimeMs: 12000, distractorSimilarity: 'low' },
-    level10: { itemCount: 4, distractorCount: 4, previewTimeMs: 4000, distractorSimilarity: 'high' }
+    level10: { itemCount: 5, distractorCount: 4, previewTimeMs: 4000, distractorSimilarity: 'high' }
   },
 
   // Batch 4 Games
@@ -76,16 +76,16 @@ export const GAME_DIFFICULTY_ENDPOINTS = {
     level10: { itemCount: 6, distractorCount: 4, previewTimeMs: 2500, distractorSimilarity: 'high' }
   },
   'pack-village-basket': {
-    level1: { itemCount: 2, distractorCount: 2, previewTimeMs: 10000, distractorSimilarity: 'low' },
-    level10: { itemCount: 4, distractorCount: 4, previewTimeMs: 4000, distractorSimilarity: 'high' }
+    level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 10000, distractorSimilarity: 'low' },
+    level10: { itemCount: 6, distractorCount: 6, previewTimeMs: 4000, distractorSimilarity: 'high' }
   },
   'what-belongs-here': {
-    level1: { itemCount: 4, distractorCount: 0, previewTimeMs: 10000, distractorSimilarity: 'low' },
-    level10: { itemCount: 9, distractorCount: 0, previewTimeMs: 4000, distractorSimilarity: 'high' }
+    level1: { itemCount: 3, distractorCount: 0, previewTimeMs: 10000, distractorSimilarity: 'low' },
+    level10: { itemCount: 12, distractorCount: 0, previewTimeMs: 4000, distractorSimilarity: 'high' }
   },
   'whose-emotion': {
     level1: { itemCount: 2, distractorCount: 1, previewTimeMs: 10000, distractorSimilarity: 'low' },
-    level10: { itemCount: 3, distractorCount: 3, previewTimeMs: 4000, distractorSimilarity: 'high' }
+    level10: { itemCount: 6, distractorCount: 3, previewTimeMs: 4000, distractorSimilarity: 'high' }
   }
 };
 

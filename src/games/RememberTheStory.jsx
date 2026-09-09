@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import StoryQuiz from '../shared/StoryQuiz.jsx';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
 /**
  * Game 11 — Remember the Story (Memory)
@@ -64,6 +66,17 @@ const STORIES = [
         ],
         correctIndex: 1,
         explanation: "The village shared a feast of rice, pithas, and curd."
+      },
+      {
+        question: "What dance were the young people performing in the clearing?",
+        options: [
+          { label: "Jhumur dance", icon: "💃" },
+          { label: "Bihu dance with hands like wings", icon: "🪽" },
+          { label: "Bagurumba dance", icon: "🦋" },
+          { label: "Sattriya dance", icon: "🎭" }
+        ],
+        correctIndex: 1,
+        explanation: "Young people were dancing the bihu dance with their hands moving like wings."
       }
     ]
   },
@@ -112,27 +125,135 @@ const STORIES = [
         ],
         correctIndex: 1,
         explanation: "She received an extra measure of rice and a silk gamosa."
+      },
+      {
+        question: "How much weight could Moina's tea basket hold when full?",
+        options: [
+          { label: "Five kilograms", icon: "⚖️" },
+          { label: "Eight kilograms", icon: "⚖️" },
+          { label: "Twelve kilograms", icon: "⚖️" },
+          { label: "Twenty kilograms", icon: "⚖️" }
+        ],
+        correctIndex: 2,
+        explanation: "Her basket could hold twelve kilograms of fresh tea leaves when full."
+      },
+      {
+        question: "By what time did Moina reach the tea bushes in the morning?",
+        options: [
+          { label: "Five o'clock", icon: "⏰" },
+          { label: "Six o'clock", icon: "⏰" },
+          { label: "Seven o'clock", icon: "⏰" },
+          { label: "Eight o'clock", icon: "⏰" }
+        ],
+        correctIndex: 1,
+        explanation: "She walked through the mist to reach the tea bushes by six o'clock."
       }
     ]
   }
 ];
 
-export default function RememberTheStory({ onComplete, onExit, language = 'en' }) {
+export default function RememberTheStory({
+  onComplete,
+  onExit,
+  language = 'en',
+  level = null,
+  masteryScore = null,
+  tier = null,
+  startingTier = null,
+  initialTier = null,
+  patientProfile = null,
+  onLevelChange = null
+}) {
+  const isExplicitLevel = level !== null && level !== undefined;
+  const hasConfig = isExplicitLevel || masteryScore !== null || tier !== null || startingTier !== null || initialTier !== null || patientProfile !== null;
+
+  // Standardized fallback resolver: level prop -> masteryScore -> patientProfile -> legacy status -> 5
+  const currentLevel = useMemo(() => {
+    if (isExplicitLevel && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [isExplicitLevel, level, masteryScore, patientProfile, tier, startingTier, initialTier]);
+
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const difficultyParams = useMemo(() => {
+    return getDifficultyParams('remember-the-story', currentLevel);
+  }, [currentLevel]);
+
+  // Scaled question count: 2 (L1) to 5 (L10). Defaults to 4 when unconfigured.
+  const activeQuestionCount = useMemo(() => {
+    if (!hasConfig) return 4;
+    return Math.max(2, Math.min(5, difficultyParams.itemCount || 3));
+  }, [hasConfig, difficultyParams.itemCount]);
+
+  // Scaled choices per question: 2 choices (L1, 1 distractor) to 4 choices (L10, 3 distractors). Defaults to 4 when unconfigured.
+  const activeDistractorCount = useMemo(() => {
+    if (!hasConfig) return 3; // 4 choices total
+    return Math.max(1, Math.min(3, difficultyParams.distractorCount || 2));
+  }, [hasConfig, difficultyParams.distractorCount]);
+
   const [storyIndex, setStoryIndex] = useState(0);
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
 
-  const current = STORIES[storyIndex];
+  // Auto-seed story based on level
+  useEffect(() => {
+    if (hasConfig) {
+      setStoryIndex((currentLevel - 1) % STORIES.length);
+      setResult(null);
+      setGameKey(k => k + 1);
+    }
+  }, [hasConfig, currentLevel]);
+
+  const current = STORIES[storyIndex] || STORIES[0];
+
+  // Sliced questions with scaled option counts while preserving the correct option
+  const preparedQuestions = useMemo(() => {
+    const rawQuestions = current.questions.slice(0, activeQuestionCount);
+    return rawQuestions.map((q) => {
+      const correctOption = q.options[q.correctIndex];
+      const distractorOptions = q.options.filter((_, idx) => idx !== q.correctIndex);
+      const selectedDistractors = distractorOptions.slice(0, activeDistractorCount);
+
+      // Deterministically place correct answer
+      const combinedOptions = (q.correctIndex % 2 === 0)
+        ? [correctOption, ...selectedDistractors]
+        : [...selectedDistractors.slice(0, 1), correctOption, ...selectedDistractors.slice(1)];
+
+      const newCorrectIndex = combinedOptions.findIndex(opt => opt.label === correctOption.label);
+
+      return {
+        ...q,
+        options: combinedOptions,
+        correctIndex: newCorrectIndex
+      };
+    });
+  }, [current, activeQuestionCount, activeDistractorCount]);
 
   const instructions = `You will read a short story about life in North-East India.
 
 Take your time — read every paragraph carefully. You can move through the pages at your own pace.
 
-After reading, you will answer a few questions about what happened in the story. There is no hurry!`;
+After reading, you will answer comprehension questions about what happened in the story. There is no hurry!`;
 
   const handleComplete = (res) => {
-    setResult(res);
-    if (onComplete) onComplete(res);
+    const fullRes = {
+      ...res,
+      level: currentLevel,
+      difficultyParams
+    };
+    setResult(fullRes);
+    if (onComplete) onComplete(fullRes);
   };
 
   const handleRetry = () => {
@@ -164,28 +285,46 @@ After reading, you will answer a few questions about what happened in the story.
           </button>
         </div>
       )}
-      {/* Story selector */}
-      <div className="flex justify-center gap-2 mb-4 flex-wrap">
-        {STORIES.map((s, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => { setStoryIndex(i); setResult(null); setGameKey(k => k + 1); }}
-            className={`min-h-[44px] px-4 rounded-xl text-sm font-bold border-2 transition-colors ${
-              i === storyIndex
-                ? 'bg-teal-600 text-white border-teal-500'
-                : 'bg-white text-teal-700 border-teal-300 hover:bg-teal-50'
-            }`}
-          >
-            {s.story.icon} {s.story.title}
-          </button>
-        ))}
+
+      {/* Adaptive Level Badge */}
+      <div className="flex items-center justify-between px-4 py-2 mb-4 bg-teal-50 border border-teal-200 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-teal-700 text-white">
+            Level {currentLevel}
+          </span>
+          <span className="text-xs font-semibold text-slate-600">
+            {activeQuestionCount} Questions • {activeDistractorCount + 1} Choices / Question
+          </span>
+        </div>
+        <span className="text-xs font-bold text-teal-800">
+          {currentLevel <= 3 ? 'Gentle Warmup' : currentLevel <= 7 ? 'Target Challenge' : 'Focused Mastery'}
+        </span>
       </div>
+
+      {/* Manual story selector preserved when unconfigured */}
+      {!hasConfig && (
+        <div className="flex justify-center gap-2 mb-4 flex-wrap">
+          {STORIES.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => { setStoryIndex(i); setResult(null); setGameKey(k => k + 1); }}
+              className={`min-h-[44px] px-4 rounded-xl text-sm font-bold border-2 transition-colors ${
+                i === storyIndex
+                  ? 'bg-teal-600 text-white border-teal-500'
+                  : 'bg-white text-teal-700 border-teal-300 hover:bg-teal-50'
+              }`}
+            >
+              {s.story.icon} {s.story.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       <StoryQuiz
         key={gameKey}
         story={current.story}
-        questions={current.questions}
+        questions={preparedQuestions}
         onComplete={handleComplete}
         language={language}
         readAloud={true}

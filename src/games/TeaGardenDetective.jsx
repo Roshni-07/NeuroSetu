@@ -1,30 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import GameWrapper from '../components2/GameWrapper.jsx';
 import MovingTargetLoop from '../shared/MovingTargetLoop.jsx';
+import { getDifficultyParams } from '../engine/difficultyScaling.js';
+import { getLevel } from '../engine/ddaEngine.js';
 
 /**
  * Game 9 — Tea Garden Detective (Attention)
  * Uses MovingTargetLoop to animate items along a tea garden path.
  * Player taps only when the target fresh leaf appears; scored on accuracy + false taps.
+ * 
+ * Migrated to 10-Level Shared Difficulty Scaling Engine:
+ * - Rounds scale from 4 to 12
+ * - Presentation itemDuration scales from 3500ms down to 2000ms
+ * - Decoy count scales from 2 to 4
  */
-const LEVELS = [
-  { rounds: 6, itemDuration: 3000, label: 'Gentle' },
-  { rounds: 9, itemDuration: 2000, label: 'Moderate' },
-  { rounds: 12, itemDuration: 1500, label: 'Watchful' }
+const ALL_DECOYS = [
+  { icon: '🍂', label: 'Dry Leaf', similarity: 'low' },
+  { icon: '🪨', label: 'River Stone', similarity: 'low' },
+  { icon: '🐛', label: 'Garden Bug', similarity: 'medium' },
+  { icon: '🌾', label: 'Grass Stem', similarity: 'high' }
 ];
 
-const DECOYS = [
-  { icon: '🍂', label: 'Dry Leaf' },
-  { icon: '🪨', label: 'River Stone' },
-  { icon: '🐛', label: 'Garden Bug' },
-  { icon: '🌾', label: 'Grass Stem' }
-];
+export default function TeaGardenDetective({
+  onComplete,
+  onExit,
+  language = 'en',
+  level = null,
+  masteryScore = null,
+  tier = null,
+  startingTier = null,
+  initialTier = null,
+  patientProfile = null,
+  onLevelChange = null
+}) {
+  // Standardized fallback resolver: level prop -> masteryScore -> patientProfile -> legacy status -> 5
+  const currentLevel = useMemo(() => {
+    if (level && Number(level) >= 1 && Number(level) <= 10) return Math.round(Number(level));
+    if (masteryScore !== null && masteryScore !== undefined) return getLevel(masteryScore);
+    if (patientProfile?.masteryScore !== undefined) return getLevel(patientProfile.masteryScore);
+    const legacyTier = tier || startingTier || initialTier || patientProfile?.starting_difficulty_tier || patientProfile?.startingTier || (patientProfile?.status === 'critical' ? 1 : patientProfile?.status === 'attention' ? 2 : patientProfile?.status === 'stable' ? 3 : null);
+    if (legacyTier) {
+      const t = Number(legacyTier);
+      if (t === 1) return 1;
+      if (t === 3) return 10;
+      return 5;
+    }
+    return 5;
+  }, [level, masteryScore, patientProfile, tier, startingTier, initialTier]);
 
-export default function TeaGardenDetective({ onComplete, onExit, language = 'en' }) {
-  const [levelIndex, setLevelIndex] = useState(0);
+  useEffect(() => {
+    if (onLevelChange) onLevelChange(currentLevel);
+  }, [currentLevel, onLevelChange]);
+
+  const difficultyParams = useMemo(() => {
+    return getDifficultyParams('tea-garden-detective', currentLevel);
+  }, [currentLevel]);
+
+  const activeDecoys = useMemo(() => {
+    const count = Math.min(ALL_DECOYS.length, Math.max(2, difficultyParams.distractorCount || 2));
+    return ALL_DECOYS.slice(0, count);
+  }, [difficultyParams.distractorCount]);
+
   const [gameKey, setGameKey] = useState(0);
   const [result, setResult] = useState(null);
-  const level = LEVELS[levelIndex];
 
   const instructions = `You are walking through Assam's lush tea garden. A worker passes by carrying items — some are fresh tea leaves 🍃, some are other things.
 
@@ -34,8 +72,13 @@ Do NOT tap for anything else!
 Take your time — watch each item carefully.`;
 
   const handleComplete = (res) => {
-    setResult(res);
-    if (onComplete) onComplete(res);
+    const enriched = {
+      ...res,
+      level: currentLevel,
+      difficultyParams
+    };
+    setResult(enriched);
+    if (onComplete) onComplete(enriched);
   };
 
   const handleRetry = () => {
@@ -67,22 +110,20 @@ Take your time — watch each item carefully.`;
           </button>
         </div>
       )}
-      {/* Level selector */}
-      <div className="flex justify-center gap-2 mb-4">
-        {LEVELS.map((l, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => { setLevelIndex(i); setResult(null); setGameKey(k => k + 1); }}
-            className={`min-h-[44px] px-4 rounded-xl text-base font-bold border-2 transition-colors ${
-              i === levelIndex
-                ? 'bg-teal-700 text-white border-teal-600'
-                : 'bg-white text-teal-700 border-teal-300 hover:bg-teal-50'
-            }`}
-          >
-            {l.label}
-          </button>
-        ))}
+
+      {/* Adaptive Level Badge */}
+      <div className="flex items-center justify-between px-4 py-2 mb-4 bg-teal-50 border border-teal-200 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-teal-700 text-white">
+            Level {currentLevel}
+          </span>
+          <span className="text-xs font-semibold text-slate-600">
+            {difficultyParams.itemCount} Items • {(difficultyParams.previewTimeMs / 1000).toFixed(1)}s Pace • {activeDecoys.length} Decoys
+          </span>
+        </div>
+        <span className="text-xs font-bold text-teal-800">
+          {currentLevel <= 3 ? 'Gentle Warmup' : currentLevel <= 7 ? 'Target Challenge' : 'Focused Mastery'}
+        </span>
       </div>
 
       {/* Background scene header */}
@@ -98,12 +139,13 @@ Take your time — watch each item carefully.`;
         key={gameKey}
         targetIcon="🍃"
         targetLabel="Fresh Tea Leaf"
-        decoys={DECOYS}
-        rounds={level.rounds}
-        itemDuration={level.itemDuration}
+        decoys={activeDecoys}
+        rounds={difficultyParams.itemCount}
+        itemDuration={difficultyParams.previewTimeMs}
         onComplete={handleComplete}
         language={language}
       />
     </GameWrapper>
   );
 }
+
