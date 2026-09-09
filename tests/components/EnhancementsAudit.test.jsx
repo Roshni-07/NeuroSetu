@@ -118,6 +118,7 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     fireEvent.change(screen.getByLabelText(/গৃহগাঁও বা চহৰ/i), { target: { value: 'Barpeta' } });
     fireEvent.change(screen.getByLabelText(/NER State/i), { target: { value: 'Assam' } });
     fireEvent.change(screen.getByLabelText(/Preferred Language/i), { target: { value: 'as' } });
+    fireEvent.change(screen.getByLabelText(/Sex/i), { target: { value: 'male' } });
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
     // Step 2
@@ -129,7 +130,9 @@ describe('Audit Enhancements & Fixes Verification (Items 1–6)', () => {
     fireEvent.click(screen.getByRole('button', { name: /তাঁতী \/ শিপিনী/i }));
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
-    // Step 4
+    // Step 4: fill required festival and food fields
+    fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Chapchar Kut' } });
+    fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Bai' } });
     fireEvent.click(screen.getByRole('button', { name: /পৰৱৰ্তী/i }));
 
     // Step 5: Daily Routine (4-6 items already populated by default)

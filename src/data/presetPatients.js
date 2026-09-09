@@ -19,6 +19,7 @@
  * @property {string} name - Patient's full name
  * @property {string} pin - 4-digit PIN authentication code
  * @property {number} age - Patient age in years
+ * @property {string} sex - Patient sex (male|female|other)
  * @property {string} stage - Clinical dementia severity stage
  * @property {number} dailyCap - Maximum recommended daily game sessions
  * @property {string[]} recommendedGames - Array of stage-appropriate game identifiers
@@ -35,6 +36,7 @@ export const PRESET_PATIENTS = [
     name: 'Ramesh Patel',
     pin: '100100',
     age: 68,
+    sex: 'male',
     stage: 'Mild / Early Stage',
     dailyCap: 5,
     recommendedGames: [
@@ -47,6 +49,7 @@ export const PRESET_PATIENTS = [
     homeState: 'Assam',
     villageTown: 'Guwahati',
     language: 'en',
+    formerOccupation: 'farmer',
     starting_difficulty_tier: 3,
     masteryScore: 65,
     isActive: true
@@ -56,6 +59,7 @@ export const PRESET_PATIENTS = [
     name: 'Savitri Devi',
     pin: '200200',
     age: 74,
+    sex: 'female',
     stage: 'Moderate / Middle Stage',
     dailyCap: 3,
     recommendedGames: [
@@ -66,6 +70,7 @@ export const PRESET_PATIENTS = [
     homeState: 'Meghalaya',
     villageTown: 'Shillong',
     language: 'en',
+    formerOccupation: 'homemaker',
     starting_difficulty_tier: 2,
     masteryScore: 45,
     isActive: true
@@ -75,6 +80,7 @@ export const PRESET_PATIENTS = [
     name: 'Anil Kumar',
     pin: '300300',
     age: 81,
+    sex: 'male',
     stage: 'Severe / Late Stage',
     dailyCap: 2,
     recommendedGames: [
@@ -84,6 +90,7 @@ export const PRESET_PATIENTS = [
     homeState: 'Tripura',
     villageTown: 'Agartala',
     language: 'en',
+    formerOccupation: 'fisherman',
     starting_difficulty_tier: 1,
     masteryScore: 20,
     isActive: true

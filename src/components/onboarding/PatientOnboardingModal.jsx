@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NER_STATES, NER_OCCUPATIONS } from '../../data/reminiscenceContent.js';
+import { NER_STATES, NER_OCCUPATIONS, NER_SEX_OPTIONS } from '../../data/reminiscenceContent.js';
 import { SUPPORTED_LANGUAGES } from '../../data/multilingualAudioHelp.js';
 import { saveProfile } from '../../db/indexedDb.js';
 import { setProfilePin, validatePinFormat, createSession } from '../../services/authService.js';
@@ -28,6 +28,7 @@ export default function PatientOnboardingModal({
       villageTown: initialProfile?.villageTown || '',
       language: initialProfile?.language || '',
       age: initialProfile?.age || '',
+      sex: initialProfile?.sex || '',
       familyMemberName: initialProfile?.familyMembers?.[0]?.name || '',
       familyMemberRel: initialProfile?.familyMembers?.[0]?.relationship || '',
       formerOccupation: initialFormerOcc,
@@ -72,6 +73,9 @@ export default function PatientOnboardingModal({
       if (!formData.language) {
         errors.language = 'অনুগ্ৰহ কৰি ভাষা বাছনি কৰক (Please select preferred language)';
       }
+      if (!formData.sex) {
+        errors.sex = 'অনুগ্ৰহ কৰি লিঙ্গ বাছনি কৰক (Please select sex)';
+      }
     } else if (step === 2) {
       if (!formData.familyMemberName.trim()) {
         errors.familyMemberName = 'অনুগ্ৰহ কৰি এজন পৰিয়ালৰ সদস্যৰ নাম দিয়ক (Please enter family member name)';
@@ -84,6 +88,13 @@ export default function PatientOnboardingModal({
         errors.formerOccupation = 'অনুগ্ৰহ কৰি পূৰ্বৰ কৰ্ম বা জীৱিকা বাছনি কৰক (Please select former occupation / life background)';
       } else if (formData.formerOccupation === 'other' && !formData.otherOccupation.trim()) {
         errors.otherOccupation = 'অনুগ্ৰহ কৰি আপোনাৰ জীৱিকা উল্লেখ কৰক (Please specify your occupation)';
+      }
+    } else if (step === 4) {
+      if (!formData.favoriteFestival.trim()) {
+        errors.favoriteFestival = 'Favorite festival is required (প্ৰিয় উৎসৱ আৱশ্যক)';
+      }
+      if (!formData.favoriteFood.trim()) {
+        errors.favoriteFood = 'Favorite food is required (প্ৰিয় খাদ্য আৱশ্যক)';
       }
     } else if (step === 5) {
       if (!formData.dailyRoutine || formData.dailyRoutine.length < 2) {
@@ -145,6 +156,7 @@ export default function PatientOnboardingModal({
       villageTown: formData.villageTown.trim(),
       language: formData.language,
       age: Number(formData.age) || null,
+      sex: formData.sex,
       familyMembers: [
         {
           name: formData.familyMemberName.trim(),
@@ -153,8 +165,8 @@ export default function PatientOnboardingModal({
       ],
       formerOccupation: resolvedOccupation,
       otherOccupation: formData.formerOccupation === 'other' ? formData.otherOccupation.trim() : '',
-      favoriteFestival: formData.favoriteFestival.trim() || 'Traditional Festival',
-      favoriteFood: formData.favoriteFood.trim() || 'Regional Food',
+      favoriteFestival: formData.favoriteFestival.trim(),
+      favoriteFood: formData.favoriteFood.trim(),
       starting_difficulty_tier: Number(formData.starting_difficulty_tier) || 1,
       dailyRoutine: (formData.dailyRoutine || []).map((item, idx) => ({
         id: item.id || `routine_${idx + 1}`,
@@ -332,6 +344,38 @@ export default function PatientOnboardingModal({
                 All game prompts, voice audio help, and daily reminders will speak in your chosen language.
               </p>
             </div>
+
+            <div>
+              <label htmlFor="patient-sex" className="text-xs font-bold text-slate-800 block mb-1.5">
+                লিঙ্গ (Sex) *
+              </label>
+              <select
+                id="patient-sex"
+                value={formData.sex}
+                onChange={e => {
+                  setFormData({ ...formData, sex: e.target.value });
+                  if (fieldErrors.sex) setFieldErrors(prev => ({ ...prev, sex: '' }));
+                }}
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition cursor-pointer ${
+                  fieldErrors.sex
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
+              >
+                <option value="">লিঙ্গ বাছনি কৰক (Select Sex)...</option>
+                {NER_SEX_OPTIONS.map(sexOpt => (
+                  <option key={sexOpt.id} value={sexOpt.id}>
+                    {sexOpt.icon} {sexOpt.labelAs} ({sexOpt.label})
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.sex && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.sex}</span>
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -483,30 +527,56 @@ export default function PatientOnboardingModal({
           <div className="space-y-4 text-left">
             <div>
               <label htmlFor="fav-festival" className="text-xs font-bold text-slate-800 block mb-1.5">
-                প্ৰিয় উৎসৱ (Favorite Cultural Festival)
+                প্ৰিয় উৎসৱ (Favorite Cultural Festival) *
               </label>
               <input
                 id="fav-festival"
                 type="text"
                 value={formData.favoriteFestival}
-                onChange={e => setFormData({ ...formData, favoriteFestival: e.target.value })}
+                onChange={e => {
+                  setFormData({ ...formData, favoriteFestival: e.target.value });
+                  if (fieldErrors.favoriteFestival) setFieldErrors(prev => ({ ...prev, favoriteFestival: '' }));
+                }}
                 placeholder="e.g. Rongali Bihu / Chapchar Kut / Yaoshang"
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition"
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition ${
+                  fieldErrors.favoriteFestival
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               />
+              {fieldErrors.favoriteFestival && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.favoriteFestival}</span>
+                </p>
+              )}
             </div>
 
             <div>
               <label htmlFor="fav-food" className="text-xs font-bold text-slate-800 block mb-1.5">
-                প্ৰিয় খাদ্য বা সোৱাদ (Favorite Traditional Dish)
+                প্ৰিয় খাদ্য বা সোৱাদ (Favorite Traditional Dish) *
               </label>
               <input
                 id="fav-food"
                 type="text"
                 value={formData.favoriteFood}
-                onChange={e => setFormData({ ...formData, favoriteFood: e.target.value })}
+                onChange={e => {
+                  setFormData({ ...formData, favoriteFood: e.target.value });
+                  if (fieldErrors.favoriteFood) setFieldErrors(prev => ({ ...prev, favoriteFood: '' }));
+                }}
                 placeholder="e.g. Masor Tenga / Bai / Kangshoi"
-                className="w-full min-h-[44px] px-4 py-2 bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20 transition"
+                className={`w-full min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-slate-900 focus-visible:outline-none transition ${
+                  fieldErrors.favoriteFood
+                    ? 'border-2 border-rose-400 bg-rose-50/30 focus:border-rose-500 focus-visible:ring-2 focus-visible:ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 focus:border-teal-600 focus:bg-white focus-visible:ring-2 focus-visible:ring-teal-600/20'
+                }`}
               />
+              {fieldErrors.favoriteFood && (
+                <p role="alert" className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>{fieldErrors.favoriteFood}</span>
+                </p>
+              )}
             </div>
 
             {/* Deferral note for photo uploads */}

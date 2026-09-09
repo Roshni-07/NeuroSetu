@@ -435,6 +435,59 @@ export const NER_OCCUPATIONS = [
 ];
 
 /**
+ * 2c. Sex / Gender Options
+ */
+export const NER_SEX_OPTIONS = [
+  { id: 'male', label: 'Male', labelAs: 'পুৰুষ', icon: '♂' },
+  { id: 'female', label: 'Female', labelAs: 'মহিলা', icon: '♀' },
+  { id: 'other', label: 'Other / Prefer not to say', labelAs: 'অন্যান্য / কৈ নিবলৈ নিবছো', icon: '⚧' }
+];
+
+/**
+ * 2d. Dementia Severity Stage Options (temporary local-only — awaiting backend schema)
+ */
+export const DEMENTIA_STAGE_OPTIONS = [
+  { id: 'mild', label: 'Mild / Early Stage', labelAs: 'সামান্য / আৰম্ভণি পৰ্যায়', sortWeight: 1 },
+  { id: 'moderate', label: 'Moderate / Middle Stage', labelAs: 'মধ্যম / মধ্য পৰ্যায়', sortWeight: 2 },
+  { id: 'severe', label: 'Severe / Late Stage', labelAs: 'গুৰুতৰ / শেহ পৰ্যায়', sortWeight: 3 }
+];
+
+/**
+ * Helper: Resolve a normalized dementia_stage key from a patient object.
+ * Derives from existing `stage` string or `dailyCap` correlation.
+ * This is a LOCAL-ONLY computation — no backend column exists yet.
+ * When the canonical `dementia_stage` DB column arrives, replace this
+ * with a direct read of patient.dementia_stage from the DB payload.
+ */
+export function resolveDementiaStage(patient) {
+  if (!patient) return 'mild';
+  const stageStr = (patient.dementia_stage || patient.stage || '').toLowerCase();
+  if (stageStr.includes('severe') || stageStr.includes('late')) return 'severe';
+  if (stageStr.includes('moderate') || stageStr.includes('middle')) return 'moderate';
+  if (stageStr.includes('mild') || stageStr.includes('early')) return 'mild';
+  if (patient.dailyCap !== undefined) {
+    if (patient.dailyCap <= 2) return 'severe';
+    if (patient.dailyCap <= 3) return 'moderate';
+  }
+  return 'mild';
+}
+
+/**
+ * Helper: Format patient sex label for UI display
+ */
+export function formatSexDisplay(profileOrSex) {
+  let sexId = '';
+  if (typeof profileOrSex === 'object' && profileOrSex !== null) {
+    sexId = profileOrSex.sex || '';
+  } else {
+    sexId = profileOrSex || '';
+  }
+  if (!sexId) return '';
+  const found = NER_SEX_OPTIONS.find(o => o.id === sexId);
+  return found ? found.label : sexId;
+}
+
+/**
  * 3. Daily Routine & Occupational Sequencing Tasks
  */
 export const OCCUPATION_SEQUENCING_TASKS = {
@@ -592,6 +645,21 @@ export function formatOccupationDisplay(profileOrOccupation, customOther) {
   }
 
   return custom || occId;
+}
+
+/**
+ * Helper: Format dementia stage label for UI display
+ */
+export function formatDementiaStageDisplay(profileOrStage) {
+  let stageId = '';
+  if (typeof profileOrStage === 'object' && profileOrStage !== null) {
+    stageId = profileOrStage.dementia_stage || '';
+  } else {
+    stageId = profileOrStage || '';
+  }
+  if (!stageId) return '';
+  const found = DEMENTIA_STAGE_OPTIONS.find(o => o.id === stageId);
+  return found ? found.label : stageId;
 }
 
 /**

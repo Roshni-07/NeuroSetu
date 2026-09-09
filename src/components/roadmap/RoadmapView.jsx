@@ -155,8 +155,10 @@ export default function RoadmapView({
 
   // 4. Track Progression State
   const completedCount = useMemo(() => {
-    return dailyGames.filter(g => completedGameIds.includes(g.id)).length;
-  }, [dailyGames, completedGameIds]);
+    const cognitiveCompleted = dailyGames.filter(g => completedGameIds.includes(g.id)).length;
+    const familyCompleted = completedFamilyIds.length;
+    return cognitiveCompleted + familyCompleted;
+  }, [dailyGames, completedGameIds, completedFamilyIds]);
 
   const progressPercentage = Math.min(
     100,
@@ -378,13 +380,13 @@ export default function RoadmapView({
                 </h2>
               </div>
             </div>
-            <span className="text-xs font-semibold text-amber-800/80 bg-amber-100/60 px-2.5 py-1 rounded-xl">
-              Bonus Activities • No Pressure
+              <span className="text-xs font-semibold text-amber-800/80 bg-amber-100/60 px-2.5 py-1 rounded-xl">
+              Family Reminiscence • Counts Toward Daily Goal
             </span>
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed">
-            Revisit memories of your loved ones, photos, and milestones. These sessions are gentle, un-timed, and do not affect your daily score.
+            Revisit memories of your loved ones, photos, and milestones. These gentle sessions count toward your daily goal.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">

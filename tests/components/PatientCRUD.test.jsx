@@ -83,7 +83,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
 
     expect(screen.queryByTestId('archive-patient-surface')).not.toBeInTheDocument();
     // Patient should remain active in list
-    expect(screen.getByText('Bhaben Kalita')).toBeInTheDocument();
+    expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
   });
 
   it('3. Add Patient form validates required fields, adds patient, prepends to list, and shows toast', async () => {
@@ -126,6 +126,9 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
     const occSelect = screen.getByLabelText(/Former Occupation \*/i);
     fireEvent.change(occSelect, { target: { value: 'weaver' } });
 
+    const sexSelect = screen.getByLabelText(/Sex \*/i);
+    fireEvent.change(sexSelect, { target: { value: 'male' } });
+
     // Add a second family member row
     const addFamilyBtn = screen.getByRole('button', { name: /Add Family Member/i });
     fireEvent.click(addFamilyBtn);
@@ -158,21 +161,21 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
 
     expect(screen.getByText(/All Patients \(3\)/i)).toBeInTheDocument();
 
-    // Open Edit for second patient (Malsawmi Ralte)
-    const editBtn = screen.getByRole('button', { name: /Edit Malsawmi Ralte/i });
+    // Open Edit for second patient (Savitri Devi)
+    const editBtn = screen.getByRole('button', { name: /Edit Savitri Devi/i });
     fireEvent.click(editBtn);
 
     expect(screen.getByTestId('edit-patient-surface')).toBeInTheDocument();
 
     // Inputs should be pre-filled
     const nameInput = screen.getByLabelText(/Patient Name \*/i);
-    expect(nameInput.value).toBe('Malsawmi Ralte');
+    expect(nameInput.value).toBe('Savitri Devi');
 
     const ageInput = screen.getByLabelText(/Age \(Years\) \*/i);
-    expect(ageInput.value).toBe('69');
+    expect(ageInput.value).toBe('74');
 
     // Update name and age
-    fireEvent.change(nameInput, { target: { value: 'Malsawmi Ralte Updated' } });
+    fireEvent.change(nameInput, { target: { value: 'Savitri Devi Updated' } });
     fireEvent.change(ageInput, { target: { value: '70' } });
 
     // Submit Edit form
@@ -183,15 +186,15 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
     expect(screen.queryByTestId('edit-patient-surface')).not.toBeInTheDocument();
 
     // Updated details render
-    expect(screen.getByText('Malsawmi Ralte Updated')).toBeInTheDocument();
+    expect(screen.getByText('Savitri Devi Updated')).toBeInTheDocument();
     expect(screen.getByText('(70 yrs)')).toBeInTheDocument();
-    expect(screen.queryByText('Malsawmi Ralte (69 yrs)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Savitri Devi (74 yrs)')).not.toBeInTheDocument();
 
     // Patient count remains 3
     expect(screen.getByText(/All Patients \(3\)/i)).toBeInTheDocument();
 
     // Toast notification visible
-    expect(screen.getByText(/Patient Malsawmi Ralte Updated updated successfully/i)).toBeInTheDocument();
+    expect(screen.getByText(/Patient Savitri Devi Updated updated successfully/i)).toBeInTheDocument();
   });
 
   it('5. Archive Patient enforces >= 10 chars reason, removes from active view, and decrements counters', () => {
@@ -201,10 +204,10 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
     expect(screen.getByText(/All Patients \(3\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Alerts \/ Decline \(2\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Stable \(1\)/i)).toBeInTheDocument();
-    expect(screen.getByText('Bhaben Kalita')).toBeInTheDocument();
+    expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
 
-    // Open Archive confirmation for Bhaben Kalita (critical patient)
-    const archiveBtn = screen.getByRole('button', { name: /Archive Bhaben Kalita/i });
+    // Open Archive confirmation for Ramesh Patel (critical patient)
+    const archiveBtn = screen.getByRole('button', { name: /Archive Ramesh Patel/i });
     fireEvent.click(archiveBtn);
 
     expect(screen.getByTestId('archive-patient-surface')).toBeInTheDocument();
@@ -231,7 +234,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
     expect(screen.queryByTestId('archive-patient-surface')).not.toBeInTheDocument();
 
     // Bhaben Kalita is removed from active list
-    expect(screen.queryByText('Bhaben Kalita')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ramesh Patel')).not.toBeInTheDocument();
 
     // Active counts decremented
     expect(screen.getByText(/All Patients \(2\)/i)).toBeInTheDocument();
@@ -239,7 +242,7 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
     expect(screen.getByText(/Stable \(1\)/i)).toBeInTheDocument();
 
     // Toast shown
-    expect(screen.getByText(/Patient Bhaben Kalita archived successfully/i)).toBeInTheDocument();
+    expect(screen.getByText(/Patient Ramesh Patel archived successfully/i)).toBeInTheDocument();
 
     // Archived section header indicates 1 archived patient
     expect(screen.getByText(/Archived Patients \(1\)/i)).toBeInTheDocument();
@@ -248,16 +251,16 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
   it('6. Archived section expands, displays archive reason, and unarchive action restores patient to active caseload', () => {
     render(<PatientTriageList patients={[...PRESET_PATIENTS]} />);
 
-    // Archive Tombi Devi (stable patient)
-    const archiveBtn = screen.getByRole('button', { name: /Archive Tombi Devi/i });
+    // Archive Anil Kumar (stable patient)
+    const archiveBtn = screen.getByRole('button', { name: /Archive Anil Kumar/i });
     fireEvent.click(archiveBtn);
 
     const reasonInput = screen.getByLabelText(/Reason for Archiving/i);
     fireEvent.change(reasonInput, { target: { value: 'Temporary travel out of state for 6 months.' } });
     fireEvent.click(screen.getByRole('button', { name: /Confirm Archive/i }));
 
-    // Tombi Devi removed from active list
-    expect(screen.queryByText('Tombi Devi')).not.toBeInTheDocument();
+    // Anil Kumar removed from active list
+    expect(screen.queryByText('Anil Kumar')).not.toBeInTheDocument();
     expect(screen.getByText(/All Patients \(2\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Stable \(0\)/i)).toBeInTheDocument();
 
@@ -265,25 +268,25 @@ describe('ASHA Dashboard Local-Only Patient CRUD Tests', () => {
     const toggleArchivedBtn = screen.getByRole('button', { name: /Toggle archived patients/i });
     fireEvent.click(toggleArchivedBtn);
 
-    // Archived card for Tombi Devi should be visible
-    expect(screen.getByTestId('archived-patient-patient_003')).toBeInTheDocument();
-    expect(screen.getByText('Tombi Devi')).toBeInTheDocument();
+    // Archived card for Anil Kumar should be visible
+    expect(screen.getByTestId('archived-patient-preset-3')).toBeInTheDocument();
+    expect(screen.getByText('Anil Kumar')).toBeInTheDocument();
     expect(screen.getByText(/Temporary travel out of state for 6 months/i)).toBeInTheDocument();
 
     // Click Unarchive Patient
-    const unarchiveBtn = screen.getByRole('button', { name: /Unarchive Tombi Devi/i });
+    const unarchiveBtn = screen.getByRole('button', { name: /Unarchive Anil Kumar/i });
     fireEvent.click(unarchiveBtn);
 
     // Toast shown
-    expect(screen.getByText(/Patient Tombi Devi unarchived successfully/i)).toBeInTheDocument();
+    expect(screen.getByText(/Patient Anil Kumar unarchived successfully/i)).toBeInTheDocument();
 
     // Archived count goes to 0
     expect(screen.getByText(/Archived Patients \(0\)/i)).toBeInTheDocument();
     expect(screen.getByText(/No archived patients/i)).toBeInTheDocument();
 
-    // Tombi Devi is restored to active list
+    // Anil Kumar is restored to active list
     expect(screen.getByText(/All Patients \(3\)/i)).toBeInTheDocument();
     expect(screen.getByText(/Stable \(1\)/i)).toBeInTheDocument();
-    expect(screen.getByText('Tombi Devi')).toBeInTheDocument();
+    expect(screen.getByText('Anil Kumar')).toBeInTheDocument();
   });
 });

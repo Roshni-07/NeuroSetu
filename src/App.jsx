@@ -279,6 +279,7 @@ export default function App() {
   const handleBackToGameHub = () => {
     if (activeFamilyGame && session?.patientId) {
       saveFamilyGameCompletion(session.patientId, activeFamilyGame);
+      setCompletedGameIds(prev => prev.includes(activeFamilyGame) ? prev : [...prev, activeFamilyGame]);
     }
     setActiveFamilyGame(null);
     refreshTelemetry();

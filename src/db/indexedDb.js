@@ -68,6 +68,7 @@ export const DEFAULT_PROFILE = {
   name: 'Bhaben Kalita',
   pin: '400400',
   stage: 'Mild / Early Stage',
+  sex: 'male',
   homeState: 'Assam',
   villageTown: 'Hajo',
   language: 'en',

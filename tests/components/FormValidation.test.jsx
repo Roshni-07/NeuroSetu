@@ -79,12 +79,13 @@ describe('Item 6: Form Validation & Inline Error States', () => {
         isOpen={true}
         isInitialSignup={true}
         initialProfile={{
-          name: 'Bhaben Kalita',
-          villageTown: 'Sualkuchi',
-          homeState: 'Assam',
-          language: 'as',
-          familyMembers: [{ name: 'Rumi', relationship: 'daughter' }],
-          formerOccupation: 'farmer',
+        name: 'Bhaben Kalita',
+        villageTown: 'Sualkuchi',
+        homeState: 'Assam',
+        language: 'as',
+        sex: 'female',
+        familyMembers: [{ name: 'Rumi', relationship: 'daughter' }],
+        formerOccupation: 'farmer',
           dailyRoutine: [
             { id: '1', label: 'Tea', time: '6 AM', icon: '☕' },
             { id: '2', label: 'Walk', time: '7 AM', icon: '🌿' },
@@ -100,6 +101,9 @@ describe('Item 6: Form Validation & Inline Error States', () => {
     fireEvent.click(nextBtn); // step 2
     fireEvent.click(nextBtn); // step 3
     fireEvent.click(nextBtn); // step 4
+    // Fill required fields on Step 4
+    fireEvent.change(screen.getByLabelText(/Favorite Cultural Festival/i), { target: { value: 'Rongali Bihu' } });
+    fireEvent.change(screen.getByLabelText(/Favorite Traditional Dish/i), { target: { value: 'Masor Tenga' } });
     fireEvent.click(nextBtn); // step 5
     fireEvent.click(nextBtn); // step 6
 

@@ -171,7 +171,7 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
       const cognitiveNodes = screen.getAllByRole('button', { name: /Step \d of 2/i });
       expect(cognitiveNodes).toHaveLength(2);
 
-      // Verify Family Memory Section sits alongside as bonus with Pair A
+      // Verify Family Memory Section sits alongside as part of daily quota with Pair A
       const familySection = screen.getByTestId('family-memory-section');
       expect(familySection).toBeInTheDocument();
       expect(screen.getByTestId('family-card-identity_recall')).toBeInTheDocument();
@@ -194,7 +194,7 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
 
       // Cognitive progress moves to 1 / 2
       expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 1 / 2 Games Completed');
-      // Family games are unaffected
+      // Family games are still present
       expect(screen.getByTestId('family-card-identity_recall')).toBeInTheDocument();
 
       // Complete 1 family game
@@ -209,10 +209,51 @@ describe('Family Module Scheduling & Roadmap Integration Suite', () => {
         />
       );
 
-      // Cognitive progress is STILL 1 / 2 (family completion does NOT bleed into cognitive cap)
-      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 1 / 2 Games Completed');
+      // Family completion now counts toward the daily quota: 1 cognitive + 1 family = 2 / 2
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 2 Games Completed');
       // Family game reflects Cherished state
       expect(screen.getByText('Cherished ✓')).toBeInTheDocument();
+    });
+
+    it('severe patient meets daily goal entirely through 2 completed family games on Monday', () => {
+      const severePatient = PRESET_PATIENTS[2]; // Anil Kumar, Severe / Late Stage, dailyCap = 2
+      const monday = new Date('2026-09-07T10:00:00');
+
+      saveFamilyGameCompletion(severePatient.id, 'identity_recall', '2026-09-07');
+      saveFamilyGameCompletion(severePatient.id, 'family_tree', '2026-09-07');
+
+      render(
+        <RoadmapView
+          patientProfile={severePatient}
+          currentDate={monday}
+          completedGameIds={[]}
+        />
+      );
+
+      // 0 cognitive + 2 family = 2 / 2 — daily goal achieved
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 2 Games Completed');
+      expect(screen.getByTestId('goal-achieved-banner')).toBeInTheDocument();
+    });
+
+    it('moderate patient with 1 cognitive + 1 family game shows 2 / 3 progress (goal not yet achieved)', () => {
+      const moderatePatient = PRESET_PATIENTS[1]; // Savitri Devi, Moderate, dailyCap = 3
+      const thursday = new Date('2026-09-10T10:00:00');
+      const assigned = assignDailyGames({ patientProfile: moderatePatient });
+      const firstGameId = assigned[0].id;
+
+      saveFamilyGameCompletion(moderatePatient.id, 'category_sorting', '2026-09-10');
+
+      render(
+        <RoadmapView
+          patientProfile={moderatePatient}
+          currentDate={thursday}
+          completedGameIds={[firstGameId]}
+        />
+      );
+
+      // 1 cognitive + 1 family = 2 / 3
+      expect(screen.getByTestId('daily-progress-tracker')).toHaveTextContent('Daily Progress: 2 / 3 Games Completed');
+      expect(screen.queryByTestId('goal-achieved-banner')).not.toBeInTheDocument();
     });
   });
 

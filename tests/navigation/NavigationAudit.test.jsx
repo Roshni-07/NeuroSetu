@@ -99,7 +99,7 @@ describe('Navigation Audit: Anti-Dead-End & Touch Target Compliance', () => {
       render(
         <PatientOnboardingModal
           isOpen={true}
-          initialProfile={{ name: 'Bhaben Kalita', villageTown: 'Hajo', homeState: 'Assam', language: 'as' }}
+          initialProfile={{ name: 'Bhaben Kalita', villageTown: 'Hajo', homeState: 'Assam', language: 'as', sex: 'male' }}
         />
       );
 
