@@ -23,6 +23,11 @@ export const DEFAULT_ROLE_PINS = {
 };
 
 /**
+ * Inactivity timeout duration for patient sessions (5 minutes default, configurable)
+ */
+export const PATIENT_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
  * Universal bypass PINs for development / testing environments
  */
 export const DEV_BYPASS_PINS = ['000000', '0000', '123456', '1234'];

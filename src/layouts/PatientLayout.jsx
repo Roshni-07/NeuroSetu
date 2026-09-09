@@ -153,17 +153,17 @@ export default function PatientLayout({
               </button>
             )}
 
-            {/* Lock / Logout Session Button */}
+            {/* Logout Session Button (Single unambiguous action, no modal/choice) */}
             {onLogout && (
               <button
                 type="button"
                 onClick={onLogout}
-                aria-label="Lock / Logout"
-                title="Lock / Logout Session"
+                aria-label="Logout (Lock / Logout)"
+                title="Logout Session"
                 className="min-h-touch px-3 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 active:bg-rose-100 text-slate-700 border border-slate-200 hover:border-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 shadow-soft transition cursor-pointer"
               >
-                <span className="text-sm" role="img" aria-hidden="true">🔒</span>
-                <span className="hidden sm:inline">Lock / Logout</span>
+                <span className="text-sm" role="img" aria-hidden="true">🚪</span>
+                <span className="hidden sm:inline">Logout</span>
               </button>
             )}
           </div>

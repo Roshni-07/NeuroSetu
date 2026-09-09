@@ -61,7 +61,7 @@ describe('Clean Patient Roadmap View & Header Controls Suite', () => {
     expect(screen.getByRole('button', { name: /Switch to Reminders and Routine/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Audio Guide/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Emergency Assistance SOS/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Lock \/ Logout/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Logout/i })).toBeInTheDocument();
   });
 
   it('2. Reminders toggle in header switches between Roadmap and RemindersHub without losing state', async () => {
@@ -119,8 +119,8 @@ describe('Clean Patient Roadmap View & Header Controls Suite', () => {
       expect(screen.getByTestId('roadmap-view-container')).toBeInTheDocument();
     });
 
-    // Click Lock / Logout
-    const logoutBtn = screen.getByRole('button', { name: /Lock \/ Logout/i });
+    // Click Logout
+    const logoutBtn = screen.getByRole('button', { name: /Logout/i });
     fireEvent.click(logoutBtn);
 
     // Returns to Home and Patient area is locked/gone

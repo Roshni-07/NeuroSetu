@@ -32,13 +32,21 @@ export default function GameWrapper({
   category = '',
   instructions = [],
   result = null,
-  onRetry = null
+  onRetry = null,
+  isPaused = false
 }) {
   const isNestedWrapper = useContext(GameWrapperContext);
   const [showInstructions, setShowInstructions] = useState(true);
   const [isMuted, setIsMuted] = useState(sounds.isMuted());
   const [resultData, setResultData] = useState(null);
   const [gameKey, setGameKey] = useState(0);
+
+  // Shared Pause Mechanism: cancel any active speech when paused by idle lock
+  React.useEffect(() => {
+    if (isPaused && typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, [isPaused]);
 
   // Merge raw config with full localization
   const rawConfig = gameConfig || {
@@ -166,7 +174,10 @@ export default function GameWrapper({
       )}
 
       {/* Main Game Surface */}
-      <main className={isNestedWrapper ? 'w-full' : 'flex-1 max-w-4xl w-full mx-auto p-3 sm:p-5 flex flex-col justify-center'}>
+      <main
+        aria-hidden={isPaused ? 'true' : undefined}
+        className={`${isNestedWrapper ? 'w-full' : 'flex-1 max-w-4xl w-full mx-auto p-3 sm:p-5 flex flex-col justify-center'} ${isPaused ? 'pointer-events-none opacity-90 select-none' : ''}`}
+      >
         {displayedResult ? (
           <ResultScreen
             gameName={displayConfig.name}
