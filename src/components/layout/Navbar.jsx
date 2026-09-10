@@ -65,7 +65,7 @@ export default function Navbar({
   };
 
   return (
-    <header className="bg-slate-950 text-slate-300 border-b border-slate-800 text-xs sticky top-0 z-40">
+    <header className="bg-white/95 border-b border-slate-200/80 shadow-soft text-slate-700 text-xs sticky top-0 z-40 backdrop-blur-md">
       {/* Top Bar Container */}
       <div className="py-2 px-4 max-w-7xl mx-auto flex items-center justify-between gap-3">
         {/* Brand & Left Navigation Links */}
@@ -78,15 +78,15 @@ export default function Navbar({
             className="flex items-center gap-2 hover:opacity-90 transition cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-lg p-0.5"
             aria-label="NeuroSetu Home"
           >
-            <div className="w-6 h-6 rounded-lg bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-300 font-black text-xs shadow-inner">
+            <div className="w-6 h-6 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 font-black text-xs shadow-inner">
               ন
             </div>
-            <span className="font-bold text-white tracking-tight text-sm">
-              NeuroSetu <span className="text-[10px] text-teal-400 font-normal px-1.5 py-0.2 bg-teal-950 border border-teal-800 rounded">NER</span>
+            <span className="font-bold text-slate-900 tracking-tight text-sm">
+              NeuroSetu <span className="text-[10px] text-teal-700 font-normal px-1.5 py-0.2 bg-teal-50 border border-teal-200 rounded">NER</span>
             </span>
           </button>
 
-          <span className="text-slate-700 hidden md:inline">|</span>
+          <span className="text-slate-200 hidden md:inline">|</span>
 
           {/* Desktop Route Links */}
           <nav className="hidden sm:flex items-center gap-1.5" aria-label="Main Navigation">
@@ -95,8 +95,8 @@ export default function Navbar({
               onClick={() => onNavigate('home')}
               className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer ${
                 currentRoute === 'home'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'hover:bg-slate-800/80 text-slate-300'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'hover:bg-slate-100 hover:text-slate-900 text-slate-600'
               }`}
             >
               Home
@@ -107,12 +107,12 @@ export default function Navbar({
               onClick={() => handleProtectedNavigate('patient', ROLES.PATIENT)}
               className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                 currentRoute === 'patient'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'hover:bg-slate-800/80 text-slate-300'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'hover:bg-slate-100 hover:text-slate-900 text-slate-600'
               }`}
             >
               <span>Patient UI</span>
-              {!isPatientSession && <span className="text-[10px] text-amber-400">🔒</span>}
+              {!isPatientSession && <span className="text-[10px] text-amber-500">🔒</span>}
             </button>
 
             <button
@@ -120,17 +120,17 @@ export default function Navbar({
               onClick={() => handleProtectedNavigate('dashboard', ROLES.ASHA_WORKER)}
               className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                 currentRoute === 'dashboard'
-                  ? 'bg-indigo-700 text-white shadow-xs'
-                  : 'hover:bg-slate-800/80 text-slate-300'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'hover:bg-slate-100 hover:text-slate-900 text-slate-600'
               }`}
             >
               <span>ASHA / Caregiver Dashboard</span>
               {pendingSyncCount > 0 && (
-                <span className="text-[10px] bg-indigo-900 border border-indigo-500 text-indigo-200 px-1.5 rounded-full font-bold">
+                <span className="text-[10px] bg-indigo-50 border border-indigo-200 text-indigo-700 px-1.5 rounded-full font-bold">
                   {pendingSyncCount}
                 </span>
               )}
-              {!isStaffSession && <span className="text-[10px] text-amber-400">🔒</span>}
+              {!isStaffSession && <span className="text-[10px] text-amber-500">🔒</span>}
             </button>
 
             <button
@@ -138,8 +138,8 @@ export default function Navbar({
               onClick={() => onNavigate(isStaffSession ? 'familyPortal' : 'family')}
               className={`px-3 py-1.5 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                 currentRoute === 'family'
-                  ? 'bg-amber-700 text-white shadow-xs'
-                  : 'hover:bg-slate-800/80 text-slate-300'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'hover:bg-slate-100 hover:text-slate-900 text-slate-600'
               }`}
             >
               <span>Family Portal</span>
@@ -152,10 +152,10 @@ export default function Navbar({
           {session ? (
             /* Authenticated Session Badge & Logout */
             <div className="flex items-center gap-2.5">
-              <span className="text-[11px] px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-slate-300 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="font-bold text-white">{session.profileName}</span>
-                <span className="text-teal-400 uppercase text-[9px] font-bold tracking-wider px-1 bg-teal-950 border border-teal-800/80 rounded">
+              <span className="text-[11px] px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="font-bold text-slate-900">{session.profileName}</span>
+                <span className="text-teal-700 uppercase text-[9px] font-bold tracking-wider px-1 bg-teal-50 border border-teal-200 rounded">
                   {session.role === ROLES.ASHA_WORKER ? 'ASHA' : session.role === ROLES.CAREGIVER ? 'Caregiver' : 'Patient'}
                 </span>
               </span>
@@ -164,7 +164,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={onOpenSetup}
-                  className="text-teal-300 hover:text-teal-200 font-semibold transition cursor-pointer"
+                  className="text-teal-600 hover:text-teal-700 font-semibold transition cursor-pointer"
                 >
                   👤 Setup / Edit Profile
                 </button>
@@ -173,7 +173,7 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={onLogout}
-                className="px-3 py-1 bg-slate-900 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-700 text-slate-300 hover:text-rose-200 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1"
+                className="px-3 py-1 bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-600 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1"
                 aria-label={`Lock / Logout (${session.profileName} - ${session.role || 'patient'})`}
               >
                 <span>🚪</span>
@@ -185,7 +185,7 @@ export default function Navbar({
             <div className="flex items-center gap-2">
               <span
                 data-testid="locked-status-badge"
-                className="px-2.5 py-1 rounded-xl bg-amber-950/60 border border-amber-600/50 text-amber-300 text-[11px] font-bold flex items-center gap-1 shadow-xs"
+                className="px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-bold flex items-center gap-1 shadow-xs"
               >
                 <span>🔒</span>
                 <span>Locked / Logged Out</span>
@@ -195,7 +195,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={onOpenSetup}
-                  className="text-teal-300 hover:text-teal-200 font-semibold transition cursor-pointer px-2"
+                  className="text-teal-600 hover:text-teal-700 font-semibold transition cursor-pointer px-2"
                 >
                   👤 Setup / Edit Profile
                 </button>
@@ -205,7 +205,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={onOpenRoleSelector}
-                  className="px-2.5 py-1 bg-teal-950/60 hover:bg-teal-900 border border-teal-700/60 text-teal-300 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1"
+                  className="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-700 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1"
                 >
                   <span>👥</span>
                   <span>Select Role</span>
@@ -232,7 +232,7 @@ export default function Navbar({
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label="Toggle navigation menu"
           aria-expanded={isMobileMenuOpen}
-          className="sm:hidden min-h-touch min-w-touch px-3 py-1.5 text-slate-300 hover:text-white bg-slate-900 border border-slate-800 rounded-xl flex items-center gap-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+          className="sm:hidden min-h-touch min-w-touch px-3 py-1.5 text-slate-700 hover:bg-slate-50 bg-white border border-slate-200 rounded-xl flex items-center gap-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
         >
           <span className="text-base leading-none" aria-hidden="true">{isMobileMenuOpen ? '✕' : '☰'}</span>
           <span>{isMobileMenuOpen ? 'Close' : 'Menu'}</span>
@@ -241,15 +241,15 @@ export default function Navbar({
 
       {/* Mobile Collapsed Drawer Menu (< sm) */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden border-t border-slate-800/80 bg-slate-950 px-4 py-3 space-y-2 animate-fade-in">
+        <div className="sm:hidden border-t border-slate-200/80 bg-white px-4 py-3 space-y-2 animate-fade-in">
           {/* Locked Status Notice on Mobile */}
           {!session && (
-            <div className="p-2 rounded-xl bg-amber-950/50 border border-amber-600/40 text-amber-300 text-xs font-bold flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <span>🔒</span>
                 <span>Session Locked</span>
               </span>
-              <span className="text-[10px] text-amber-400 font-normal">Auth Required</span>
+              <span className="text-[10px] text-amber-600 font-normal">Auth Required</span>
             </div>
           )}
 
@@ -261,7 +261,7 @@ export default function Navbar({
                 setIsMobileMenuOpen(false);
               }}
               className={`min-h-touch w-full text-left px-3 py-2 rounded-xl font-semibold transition ${
-                currentRoute === 'home' ? 'bg-teal-700 text-white' : 'hover:bg-slate-900 text-slate-300'
+                currentRoute === 'home' ? 'bg-teal-600 text-white' : 'hover:bg-slate-50 text-slate-600'
               }`}
             >
               🏠 Home
@@ -271,28 +271,28 @@ export default function Navbar({
               type="button"
               onClick={() => handleProtectedNavigate('patient', ROLES.PATIENT)}
               className={`min-h-touch w-full text-left px-3 py-2 rounded-xl font-semibold transition flex items-center justify-between ${
-                currentRoute === 'patient' ? 'bg-teal-700 text-white' : 'hover:bg-slate-900 text-slate-300'
+                currentRoute === 'patient' ? 'bg-teal-600 text-white' : 'hover:bg-slate-50 text-slate-600'
               }`}
             >
               <span>🎮 Patient UI</span>
-              {!isPatientSession && <span className="text-xs text-amber-400">🔒 Locked</span>}
+              {!isPatientSession && <span className="text-xs text-amber-500">🔒 Locked</span>}
             </button>
 
             <button
               type="button"
               onClick={() => handleProtectedNavigate('dashboard', ROLES.ASHA_WORKER)}
               className={`min-h-touch w-full text-left px-3 py-2 rounded-xl font-semibold transition flex items-center justify-between ${
-                currentRoute === 'dashboard' ? 'bg-indigo-700 text-white' : 'hover:bg-slate-900 text-slate-300'
+                currentRoute === 'dashboard' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-600'
               }`}
             >
               <span>📊 ASHA / Caregiver Dashboard</span>
               <div className="flex items-center gap-1.5">
                 {pendingSyncCount > 0 && (
-                  <span className="text-[10px] bg-indigo-900 border border-indigo-500 text-indigo-200 px-1.5 rounded-full font-bold">
+                  <span className="text-[10px] bg-indigo-50 border border-indigo-200 text-indigo-700 px-1.5 rounded-full font-bold">
                     {pendingSyncCount}
                   </span>
                 )}
-                {!isStaffSession && <span className="text-xs text-amber-400">🔒 Locked</span>}
+                {!isStaffSession && <span className="text-xs text-amber-500">🔒 Locked</span>}
               </div>
             </button>
 
@@ -303,7 +303,7 @@ export default function Navbar({
                 onNavigate(isStaffSession ? 'familyPortal' : 'family');
               }}
               className={`min-h-touch w-full text-left px-3 py-2 rounded-xl font-semibold transition flex items-center justify-between ${
-                currentRoute === 'family' ? 'bg-amber-700 text-white' : 'hover:bg-slate-900 text-slate-300'
+                currentRoute === 'family' ? 'bg-amber-600 text-white' : 'hover:bg-slate-50 text-slate-600'
               }`}
             >
               <span>👨‍👩‍👧 Family Portal</span>
@@ -316,7 +316,7 @@ export default function Navbar({
                   setIsMobileMenuOpen(false);
                   onOpenSetup();
                 }}
-                className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-teal-300 hover:bg-slate-900 font-semibold transition cursor-pointer"
+                className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-teal-600 hover:bg-slate-50 font-semibold transition cursor-pointer"
               >
                 👤 Setup / Edit Profile
               </button>
@@ -329,7 +329,7 @@ export default function Navbar({
                   setIsMobileMenuOpen(false);
                   onLogout();
                 }}
-                className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-rose-300 hover:bg-slate-900 font-semibold transition cursor-pointer flex items-center gap-1.5"
+                className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-rose-500 hover:bg-slate-50 font-semibold transition cursor-pointer flex items-center gap-1.5"
                 aria-label={`Lock / Logout (${session.profileName} - ${session.role || 'patient'})`}
               >
                 <span>🚪</span>
@@ -344,7 +344,7 @@ export default function Navbar({
                       setIsMobileMenuOpen(false);
                       onOpenRoleSelector();
                     }}
-                    className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-teal-300 hover:bg-slate-900 font-semibold transition cursor-pointer flex items-center gap-1.5"
+                    className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-teal-600 hover:bg-slate-50 font-semibold transition cursor-pointer flex items-center gap-1.5"
                   >
                     <span>👥</span>
                     <span>Select Role</span>
@@ -358,7 +358,7 @@ export default function Navbar({
                       setIsMobileMenuOpen(false);
                       onOpenPinAuth(ROLES.PATIENT);
                     }}
-                    className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-teal-300 hover:bg-slate-900 font-semibold transition cursor-pointer flex items-center gap-1.5"
+                    className="min-h-touch w-full text-left px-3 py-2 rounded-xl text-teal-600 hover:bg-slate-50 font-semibold transition cursor-pointer flex items-center gap-1.5"
                   >
                     <span>🔑</span>
                     <span>Enter Profile PIN</span>
