@@ -237,7 +237,9 @@ export default function App() {
     setIsCheckModalOpen(false);
     setIsRoleSelectorOpen(false);
 
-    if (newSession?.role === ROLES.CAREGIVER || newSession?.role === ROLES.ASHA_WORKER) {
+    if (newSession?.role === ROLES.CAREGIVER) {
+      navigateTo('family');
+    } else if (newSession?.role === ROLES.ASHA_WORKER) {
       navigateTo('dashboard');
     } else {
       navigateTo('patient');

@@ -19,7 +19,7 @@ describe('Role Selection to Route Wiring Tests', () => {
     await closeDB();
   });
 
-  it('1. Selecting Caregiver role and authenticating routes to #/dashboard', async () => {
+  it('1. Selecting Caregiver role and authenticating routes to #/family', async () => {
     render(<App />);
 
     // Click "Select Role" from top bar
@@ -49,10 +49,9 @@ describe('Role Selection to Route Wiring Tests', () => {
     fireEvent.change(passInput, { target: { value: 'caregiver123' } });
     fireEvent.click(submitBtn);
 
-    // Should navigate to dashboard
+    // Should navigate to family memory portal
     await waitFor(() => {
-      expect(window.location.hash).toBe('#/dashboard');
-      expect(screen.getByText(/North East Dementia Triage & Telemetry Portal/i)).toBeInTheDocument();
+      expect(window.location.hash).toBe('#/family');
     });
 
     const session = getActiveSession();
