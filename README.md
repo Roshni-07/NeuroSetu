@@ -166,8 +166,8 @@ Build for production: `npm run build`
 
 | Name | Contribution |
 |---|---|
-| **Roshni Barui** | Frontend lead: UI/UX, roadmap, portals, game fixes. Repo owner |
 | **Sharvesh B** | Frontend and UI support, voice integration |
+| **Roshni Barui** | Frontend lead: UI/UX, roadmap, portals, game fixes. Repo owner |
 | **Dhanyashree K P** | Family portal, games, roadmap concept, research, PPT |
 | **Anant Mavi** | Backend: Supabase schema and tables, auth, sync, deployment |
 | **Bhargavi V K** | PPT across all rounds, diagrams, research |
