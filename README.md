@@ -13,7 +13,7 @@
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-**[🚀 Live Demo](https://synaptyx-neurosethu-neredition.vercel.app/#/home)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)** · **[🏗 Architecture](./docs/ARCHITECTURE.md)** · **[🎬 Demo Script](./docs/DEMO_SCRIPT.md)**
+**[🚀 Live Demo](https://neurosetu-synaptyx.vercel.app/)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)** · **[🏗 Architecture](./docs/ARCHITECTURE.md)** · **[🎬 Demo Script](./docs/DEMO_SCRIPT.md)**
 
 </div>
 
@@ -166,14 +166,14 @@ Build for production: `npm run build`
 
 | Name | Contribution |
 |---|---|
-| **Sharvesh B** | Frontend and UI support, voice integration |
-| **Roshni Barui** | Frontend lead: UI/UX, roadmap, portals, game fixes. Repo owner |
+| **Sharvesh B** | Team leader. Frontend and UI support, voice integration |
+| **Roshni Barui** | Frontend lead: UI/UX, roadmap, portals, game fixes |
 | **Dhanyashree K P** | Family portal, games, roadmap concept, research, PPT |
 | **Anant Mavi** | Backend: Supabase schema and tables, auth, sync, deployment |
 | **Bhargavi V K** | PPT across all rounds, diagrams, research |
 | **K P Vikas** | PPT, research, coordination with teachers |
 
-*Built collaboratively. Code was consolidated into this repository by the repo owner, so the GitHub commit history does not reflect every member's contribution.*
+*Built collaboratively. Some work was consolidated before being pushed to this repository, so the commit history may not reflect every member's contribution.*
 
 Built for **Smart India Hackathon 2026** · BMS Institute of Technology
 
