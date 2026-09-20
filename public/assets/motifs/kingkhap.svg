@@ -1,0 +1,7 @@
+<svg width="48" height="12" viewBox="0 0 48 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Kingkhap Pattern Strip (Ahom Crowned Diamond Weave) -->
+  <path d="M0 6L6 0H18L24 6L18 12H6L0 6Z" fill="#D4AF37"/>
+  <circle cx="12" cy="6" r="2.5" fill="#B5952F"/>
+  <path d="M24 6L30 0H42L48 6L42 12H30L24 6Z" fill="#D4AF37"/>
+  <circle cx="36" cy="6" r="2.5" fill="#B5952F"/>
+</svg>

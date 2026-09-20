@@ -16,9 +16,9 @@ describe('RoleSelector UI Component & Accessibility Tests', () => {
     expect(screen.getByTestId('role-card-caregiver')).toBeInTheDocument();
     expect(screen.getByTestId('role-card-asha_worker')).toBeInTheDocument();
 
-    expect(screen.getByText('Patient')).toBeInTheDocument();
-    expect(screen.getByText('Family Caregiver')).toBeInTheDocument();
-    expect(screen.getByText('ASHA Worker')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Patient/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Caregiver/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /ASHA Worker/i })).toBeInTheDocument();
   });
 
   it('2. Each role card satisfies touch target requirement (>= 44px)', () => {

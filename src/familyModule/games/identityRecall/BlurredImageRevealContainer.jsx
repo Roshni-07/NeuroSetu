@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 /**
  * BlurredImageRevealContainer
@@ -13,6 +13,7 @@ const BlurredImageRevealContainer = ({
   onResetClarity,
   isRevealed = false,
 }) => {
+  const [imgError, setImgError] = useState(false);
   // Compute blur pixel value based on percentage (from ~20px blur down to 0px)
   const blurPx = isRevealed ? 0 : Math.round((blurPercentage / 100) * 22);
 
@@ -20,15 +21,18 @@ const BlurredImageRevealContainer = ({
     <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-patient-surface p-4 rounded-2xl shadow-soft border border-patient-border">
       {/* Photo Frame */}
       <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden shadow-inner bg-patient-canvas border-2 border-patient-border-subtle flex items-center justify-center">
-        {photoUrl ? (
+        {photoUrl && !imgError ? (
           <img
             src={photoUrl}
             alt={name ? `Mystery family member: ${name}` : 'Family member'}
+            onError={() => setImgError(true)}
             style={{ filter: `blur(${blurPx}px)` }}
             className="w-full h-full object-cover transition-all duration-300 select-none pointer-events-none"
           />
         ) : (
-          <div className="text-4xl text-patient-muted font-bold">?</div>
+          <div className="w-full h-full flex items-center justify-center font-bold text-4xl" style={{ backgroundColor: 'var(--color-bamboo-light)', color: 'var(--color-bamboo)' }}>
+            {name ? name.charAt(0).toUpperCase() : '?'}
+          </div>
         )}
 
         {/* Floating Clarity Badge */}

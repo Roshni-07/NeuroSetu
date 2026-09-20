@@ -10,6 +10,7 @@ import {
   getGameVoiceExplanation
 } from '../data/gamesLocalization.js';
 import { assignDailyGames } from '../engine/dailyAssignmentEngine.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 export const CATEGORIES = [
   { id: 'Memory', title: 'Memory', titleAs: 'স্মৃতি অনুশীলন', icon: '🧠', color: 'from-teal-500 to-teal-600' },
@@ -35,10 +36,12 @@ export default function Hub({
   patientProfile = null,
   onSelectGame,
   onOpenSettings = null,
-  language = 'en',
+  language: languageProp = null,
   onLanguageChange = null,
   isLoading = false
 }) {
+  const { language: globalLang } = useI18n();
+  const language = languageProp || globalLang || 'en';
   const [progress, setProgress] = useState({});
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
 

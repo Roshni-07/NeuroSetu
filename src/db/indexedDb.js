@@ -3,13 +3,14 @@ import { PRESET_PATIENTS } from '../data/presetPatients.js';
 import { updateMasteryScore } from '../engine/ddaEngine.js';
 
 const DB_NAME = 'NeuroSetuDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   PROFILES: 'profiles',
   GAME_SESSIONS: 'game_sessions',
   TELEMETRY_LOGS: 'telemetry_logs',
-  SYNC_QUEUE: 'sync_queue'
+  SYNC_QUEUE: 'sync_queue',
+  SETTINGS: 'settings'
 };
 
 let dbPromise = null;
@@ -48,6 +49,11 @@ export async function getDB() {
           const syncStore = db.createObjectStore(STORES.SYNC_QUEUE, { keyPath: 'id' });
           syncStore.createIndex('by-created', 'createdAt');
           syncStore.createIndex('by-retry', 'retryCount');
+        }
+
+        // Store 5: Application Settings (Language, Preferences)
+        if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+          db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
         }
       }
     });
@@ -439,17 +445,48 @@ export async function dequeueSyncEvents(eventIds) {
  */
 export async function clearAllLocalData() {
   const db = await getDB();
-  const tx = db.transaction(
-    [STORES.PROFILES, STORES.GAME_SESSIONS, STORES.TELEMETRY_LOGS, STORES.SYNC_QUEUE],
-    'readwrite'
-  );
-  await Promise.all([
-    tx.objectStore(STORES.PROFILES).clear(),
-    tx.objectStore(STORES.GAME_SESSIONS).clear(),
-    tx.objectStore(STORES.TELEMETRY_LOGS).clear(),
-    tx.objectStore(STORES.SYNC_QUEUE).clear()
-  ]);
+  const stores = [STORES.PROFILES, STORES.GAME_SESSIONS, STORES.TELEMETRY_LOGS, STORES.SYNC_QUEUE];
+  if (db.objectStoreNames.contains(STORES.SETTINGS)) {
+    stores.push(STORES.SETTINGS);
+  }
+  const tx = db.transaction(stores, 'readwrite');
+  await Promise.all(stores.map(s => tx.objectStore(s).clear()));
   await tx.done;
+}
+
+/**
+ * Retrieve a persistent application setting from IndexedDB
+ * @param {string} key
+ * @returns {Promise<any>}
+ */
+export async function getSetting(key) {
+  try {
+    const db = await getDB();
+    if (!db.objectStoreNames.contains(STORES.SETTINGS)) return null;
+    const entry = await db.get(STORES.SETTINGS, key);
+    return entry ? entry.value : null;
+  } catch (err) {
+    console.error('Error fetching setting from IndexedDB:', err);
+    return null;
+  }
+}
+
+/**
+ * Save an application setting to IndexedDB
+ * @param {string} key
+ * @param {any} value
+ * @returns {Promise<boolean>}
+ */
+export async function setSetting(key, value) {
+  try {
+    const db = await getDB();
+    if (!db.objectStoreNames.contains(STORES.SETTINGS)) return false;
+    await db.put(STORES.SETTINGS, { key, value, updatedAt: new Date().toISOString() });
+    return true;
+  } catch (err) {
+    console.error('Error saving setting to IndexedDB:', err);
+    return false;
+  }
 }
 
 /**

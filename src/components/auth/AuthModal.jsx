@@ -10,6 +10,9 @@ import {
   ROLES
 } from '../../services/authService.js';
 import { PRESET_PATIENTS } from '../../data/presetPatients.js';
+import { useI18n } from '../../i18n/I18nContext.jsx';
+import LanguageSwitcher from '../LanguageSwitcher.jsx';
+import { Lock, Stethoscope, Home as HomeIcon } from 'lucide-react';
 
 export default function AuthModal({
   isOpen,
@@ -22,9 +25,10 @@ export default function AuthModal({
   onBackToRoleSelector = null,
   origin = null
 }) {
+  const { t } = useI18n();
   const isFromRoleSelector = openedFromRoleSelector || origin === 'RoleSelector' || Boolean(onBackToRoleSelector);
   const isPatient = role === ROLES.PATIENT || role === 'patient';
-  const roleLabel = role === ROLES.CAREGIVER ? 'Caregiver' : role === ROLES.ASHA_WORKER ? 'ASHA Worker' : 'Patient';
+  const roleLabel = role === ROLES.CAREGIVER ? t('roleCaregiver') : role === ROLES.ASHA_WORKER ? t('roleAsha') : t('rolePatient');
 
   // State
   const [pin, setPin] = useState('');
@@ -238,37 +242,50 @@ export default function AuthModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in"
     >
       <div className="w-full max-w-sm bg-white rounded-3xl p-6 sm:p-7 shadow-soft-xl border border-slate-200/80 text-center animate-slide-up my-auto max-h-[90vh] overflow-y-auto">
+        {/* Top Language Switcher Bar */}
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher variant="clinical" placement="header" />
+        </div>
+
         {/* Header */}
         <div className="mb-4">
-          <div className="w-12 h-12 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center mx-auto mb-2.5 text-xl font-bold border border-teal-100/80 shadow-xs">
-            {isPatient ? '🔒' : role === ROLES.ASHA_WORKER ? '🩺' : '🏡'}
+          <div 
+            className="w-12 h-12 rounded-btn flex items-center justify-center mx-auto mb-2.5 text-xl font-bold border shadow-flat"
+            style={{ backgroundColor: 'var(--color-bamboo-light)', color: 'var(--color-bamboo)', borderColor: 'var(--border-hairline)' }}
+          >
+            {isPatient ? <Lock size={24} /> : role === ROLES.ASHA_WORKER ? <Stethoscope size={24} /> : <HomeIcon size={24} />}
           </div>
           <h2
             id="auth-modal-title"
-            aria-label={isPatient ? (isSetupMode ? 'Create Profile PIN' : 'Enter 6-Digit PIN') : `${roleLabel} PIN / Login`}
-            className="text-xl font-bold tracking-tight text-slate-900"
+            className="text-xl font-bold tracking-tight"
+            style={{ color: 'var(--ink-primary)' }}
           >
             {isPatient
               ? isSetupMode
                 ? 'Create Profile PIN'
-                : 'Enter 6-Digit PIN'
-              : `${roleLabel} Portal Login`}
+                : (t('enter6DigitPin') || 'Enter 6-Digit PIN')
+              : role === ROLES.CAREGIVER
+              ? 'Caregiver PIN / Portal Login'
+              : role === ROLES.ASHA_WORKER
+              ? 'ASHA Worker Portal Login / PIN'
+              : `${roleLabel} Login`}
           </h2>
-          <p className="text-xs text-slate-500 mt-1 font-normal">
+          <p className="text-xs mt-1 font-normal" style={{ color: 'var(--ink-secondary)' }}>
             {isPatient
               ? isSetupMode
-                ? 'Choose a memorable 6-digit code for your daily session.'
-                : `Profile: ${profileName}`
-              : `Sign in with your ${roleLabel.toLowerCase()} credentials to access the clinical portal.`}
+                ? t('authPromptPatient')
+                : `${profileName}`
+              : t('authPromptClinical')}
           </p>
           {onChangeRole && (
             <button
               type="button"
               onClick={onChangeRole}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-600 hover:text-teal-700 underline mt-1.5 cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-semibold underline mt-2 cursor-pointer"
+              style={{ color: 'var(--color-bamboo)' }}
             >
               <span>⇄</span>
-              <span>Switch Role</span>
+              <span>{t('switchRole')}</span>
             </button>
           )}
         </div>

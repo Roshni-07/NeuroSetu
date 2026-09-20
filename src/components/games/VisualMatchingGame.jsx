@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TEXTILE_PATTERN_TASKS } from '../../data/reminiscenceContent.js';
 import SpeakButton from '../../components2/SpeakButton.jsx';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 const task = TEXTILE_PATTERN_TASKS[0];
 
@@ -11,10 +12,11 @@ const task = TEXTILE_PATTERN_TASKS[0];
  */
 export default function VisualMatchingGame({
   patientProfile = null,
+  language: propLanguage = null,
   onComplete = null,
   onExit = null
 }) {
-  const language = patientProfile?.language || 'as';
+  const language = propLanguage || patientProfile?.language || 'as';
   const isEnglish = language === 'en';
   const isHindi = language === 'hi';
   const [selected, setSelected] = useState(null);

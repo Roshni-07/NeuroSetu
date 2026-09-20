@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { synthesizeSpeech } from '../../services/bhashiniService.js';
 import VoiceInputHandler from '../voice/VoiceInputHandler.jsx';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 const DEFAULT_REMINDERS = {
   medicines: [
@@ -26,9 +27,11 @@ const DEFAULT_REMINDERS = {
 
 export default function RemindersHub({
   patientProfile = null,
+  language: propLanguage = null,
   onExit = null
 }) {
-  const language = patientProfile?.language || 'as';
+  const { language: globalLang } = useI18n();
+  const language = propLanguage || globalLang || patientProfile?.language || 'as';
   const isEn = language === 'en';
   const isHi = language === 'hi';
 
@@ -86,7 +89,7 @@ export default function RemindersHub({
         hydration: {
           ...prev.hydration,
           consumedGlasses: nextCount,
-          lastTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          lastTime: new Intl.DateTimeFormat(language || 'en-IN', { hour: '2-digit', minute: '2-digit' }).format(new Date())
         }
       };
     });

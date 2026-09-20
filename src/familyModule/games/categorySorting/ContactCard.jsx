@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 /**
  * ContactCard
@@ -11,6 +11,7 @@ const ContactCard = ({
   onSelect,
   isShaking = false,
 }) => {
+  const [imgError, setImgError] = useState(false);
   const handleDragStart = (e) => {
     e.dataTransfer.setData('text/plain', member.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -42,12 +43,19 @@ const ContactCard = ({
       }}
     >
       {/* Photo */}
-      <div className="w-16 h-16 rounded-full overflow-hidden mb-2 border-2 border-patient-border bg-patient-canvas">
-        <img
-          src={member.photoUrl}
-          alt={member.name}
-          className="w-full h-full object-cover pointer-events-none"
-        />
+      <div className="w-16 h-16 rounded-full overflow-hidden mb-2 border-2 border-patient-border bg-patient-canvas flex items-center justify-center">
+        {member.photoUrl && !imgError ? (
+          <img
+            src={member.photoUrl}
+            alt={member.name}
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover pointer-events-none"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center font-bold text-xl" style={{ backgroundColor: 'var(--color-bamboo-light)', color: 'var(--color-bamboo)' }}>
+            {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+          </div>
+        )}
       </div>
 
       {/* Name */}

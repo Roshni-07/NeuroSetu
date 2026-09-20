@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Volume2, Square } from 'lucide-react';
 import { synthesizeSpeech, stopAllSpeech } from '../services/bhashiniService.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
-export default function SpeakButton({ text = '', language = 'en', label = 'Read aloud', className = '', onClick = null }) {
+export default function SpeakButton({ text = '', language = null, label = 'Read aloud', className = '', onClick = null }) {
+  const { language: currentGlobalLang } = useI18n();
+  const targetLanguage = language || currentGlobalLang;
   const [isSpeaking, setIsSpeaking] = useState(false);
   const isInitiatorRef = useRef(false);
 
   useEffect(() => {
     const handleSpeechStarted = (e) => {
-      // If another component or button triggered speech, reset this button's active speaking state
       if (!isInitiatorRef.current) {
         setIsSpeaking(false);
       }
@@ -35,7 +38,6 @@ export default function SpeakButton({ text = '', language = 'en', label = 'Read 
     if (onClick) onClick(event);
     if (!text) return;
 
-    // If currently speaking, toggle off immediately
     if (isSpeaking) {
       isInitiatorRef.current = false;
       setIsSpeaking(false);
@@ -46,7 +48,7 @@ export default function SpeakButton({ text = '', language = 'en', label = 'Read 
     isInitiatorRef.current = true;
     setIsSpeaking(true);
     try {
-      await synthesizeSpeech(text, language);
+      await synthesizeSpeech(text, targetLanguage);
     } finally {
       isInitiatorRef.current = false;
       setIsSpeaking(false);
@@ -60,12 +62,16 @@ export default function SpeakButton({ text = '', language = 'en', label = 'Read 
       disabled={!text}
       aria-label={isSpeaking ? 'Stop audio' : label}
       title={isSpeaking ? 'Stop audio' : label}
-      className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 text-base text-slate-700 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-60 ${
-        isSpeaking ? 'border-teal-400 bg-teal-50 text-teal-700 ring-2 ring-teal-300 ring-offset-1' : ''
+      className={`inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-btn border shadow-flat transition-transform active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+        isSpeaking ? 'ring-2' : ''
       } ${className}`}
+      style={{
+        backgroundColor: isSpeaking ? 'var(--color-muga)' : 'var(--surface-sunken)',
+        borderColor: 'var(--border-hairline)',
+        color: 'var(--ink-primary)'
+      }}
     >
-      <span aria-hidden="true">{isSpeaking ? '⏹️' : '🔊'}</span>
+      {isSpeaking ? <Square size={20} className="fill-current" /> : <Volume2 size={20} />}
     </button>
   );
 }
-

@@ -4,6 +4,7 @@ import {
   getSequencingTaskByOccupation
 } from '../../data/reminiscenceContent.js';
 import SpeakButton from '../../components2/SpeakButton.jsx';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 /**
  * SequenceOrderGame.jsx - Occupation & Cultural Activity Step Sequencing Game
@@ -12,9 +13,11 @@ import SpeakButton from '../../components2/SpeakButton.jsx';
  */
 export default function SequenceOrderGame({
   patientProfile = null,
+  language: propLanguage = null,
   onComplete = null,
   onExit = null
 }) {
+  const language = propLanguage || patientProfile?.language || 'as';
   const task = useMemo(
     () =>
       patientProfile?.formerOccupation
@@ -22,7 +25,6 @@ export default function SequenceOrderGame({
         : CULINARY_SEQUENCING_TASKS[0],
     [patientProfile?.formerOccupation]
   );
-  const language = patientProfile?.language || 'as';
   const isEnglish = language === 'en';
   const isHindi = language === 'hi';
   const [selected, setSelected] = useState([]);

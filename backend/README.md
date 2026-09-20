@@ -2,7 +2,7 @@
 
 Production backend service for the **NeuroSetu** cognitive stimulation and dementia care platform across North-Eastern India (NER).
 
-Built with **FastAPI**, **PostgreSQL**, and **Redis**, designed for offline-first delta synchronization, passive biomarker telemetry ingestion, ASHA caseload triage management, and secure Bhashini speech proxying.
+Built with **FastAPI**, **PostgreSQL**, and **Redis**, designed for offline-first delta synchronization, passive biomarker telemetry ingestion, ASHA caseload triage management, and secure regional speech proxying.
 
 ---
 
@@ -15,7 +15,7 @@ For the complete architectural design, database DDL, API contracts, offline sync
 1. **ASHA Caseload Management**: Full CRUD for patient profiles, demographic capture (8 NER states, languages, family members), and soft-archiving with $\ge 10$ characters clinical justification.
 2. **Offline-First Delta Sync**: Idempotent batch ingestion (`POST /api/v1/sync/delta`) of accumulated IndexedDB telemetry and session events from low-connectivity rural households.
 3. **Biomarker Analytics & Triage Engine**: Real-time evaluation of response latencies ($>15$s alerts), DDA level adjustments, error streaks, and automatic triage status classification (`critical`, `attention`, `stable`).
-4. **Bhashini Speech Gateway**: Server-side proxy for government Bhashini ULCA ASR/TTS/NMT APIs, keeping credentials secure and caching common regional audio clips in Redis.
+4. **Regional Speech Gateway**: Server-side proxy for regional sovereign ASR/TTS/NMT APIs, keeping credentials secure and caching common regional audio clips in Redis.
 5. **Data Protection & Compliance**: Adherence to India's DPDP Act 2023, data localization within Indian borders, and ABDM ABHA integration readiness.
 
 ---
@@ -36,7 +36,7 @@ backend/
 │   │       ├── patients.py      # /api/v1/patients (ASHA caseload CRUD & archive)
 │   │       ├── sync.py          # /api/v1/sync/delta (offline queue ingestion)
 │   │       ├── telemetry.py     # /api/v1/telemetry (biomarkers & trends)
-│   │       └── speech.py        # /api/v1/speech (Bhashini proxy)
+│   │       └── speech.py        # /api/v1/speech (Regional speech proxy)
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── config.py            # Environment settings (Pydantic BaseSettings)
@@ -54,7 +54,7 @@ backend/
 │   └── services/                # Business logic & external clients
 │       ├── triage_service.py    # Rule-based biomarker evaluation
 │       ├── sync_service.py      # Idempotent delta processor
-│       └── bhashini_service.py  # Bhashini ULCA REST client
+│       └── bhashini_service.py  # Regional Speech REST client
 ├── requirements.txt             # Python dependencies
 ├── .env.example                 # Example configuration environment variables
 └── README.md                    # This document
@@ -80,8 +80,8 @@ Key environment variables:
 DATABASE_URL=postgresql+asyncpg://neuro_user:secret@localhost:5432/neurosetu_db
 REDIS_URL=redis://localhost:6379/0
 JWT_SECRET_KEY=change_this_to_a_secure_random_string_in_production
-BHASHINI_API_KEY=your_bhashini_ulca_api_key
-BHASHINI_USER_ID=your_bhashini_user_id
+SPEECH_API_KEY=your_regional_speech_api_key
+SPEECH_USER_ID=your_speech_user_id
 ```
 
 ### 3. Install Dependencies
@@ -118,5 +118,5 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `POST` | `/api/v1/patients/{id}/unarchive` | Restore archived patient to active caseload | ASHA / Clinician |
 | `POST` | `/api/v1/sync/delta` | Batch delta push from offline client IndexedDB | Patient / ASHA |
 | `GET` | `/api/v1/telemetry/trends/{patient_id}` | Fetch biomarker latency trend & alert history | Caregiver / ASHA |
-| `POST` | `/api/v1/speech/asr` | Transcode & forward audio to Bhashini ASR | Patient |
+| `POST` | `/api/v1/speech/asr` | Transcode & forward audio to Regional ASR | Patient |
 | `POST` | `/api/v1/speech/tts` | Synthesize & cache regional voice audio | Patient |

@@ -15,6 +15,7 @@ import {
   getChatMessages,
   addChatMessage
 } from '../../services/chatStorage.js';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 export const CAREGIVER_OBSERVATION_TAGS = [
   'Evening Confusion',
@@ -55,6 +56,7 @@ export default function PatientCareChat({
   initialRole = 'caregiver',
   onBack = null
 }) {
+  const { language, formatTime } = useI18n();
   const [messages, setMessages] = useState([]);
   const [activeRole, setActiveRole] = useState(initialRole);
   const [inputText, setInputText] = useState('');
@@ -285,10 +287,7 @@ export default function PatientCareChat({
                   <span>•</span>
                   <span className="flex items-center gap-0.5">
                     <Clock className="w-3 h-3 inline" />
-                    {new Date(msg.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {formatTime ? formatTime(msg.timestamp) : new Intl.DateTimeFormat(language || 'en-IN', { hour: '2-digit', minute: '2-digit' }).format(new Date(msg.timestamp))}
                   </span>
                 </div>
 

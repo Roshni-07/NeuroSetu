@@ -4,6 +4,7 @@ import PinAuthModal from './components/auth/PinAuthModal.jsx';
 import RoleSelector from './components/auth/RoleSelector.jsx';
 import ProfileCheckModal from './components/auth/ProfileCheckModal.jsx';
 import PatientLayout from './layouts/PatientLayout.jsx';
+import ClinicalShell from './layouts/ClinicalShell.jsx';
 import SosEmergencyButton from './components/sos/SosEmergencyButton.jsx';
 import PatientOnboardingModal from './components/onboarding/PatientOnboardingModal.jsx';
 import PatientTriageList from './components/dashboard/PatientTriageList.jsx';
@@ -24,6 +25,7 @@ import { GAMES_CONFIG } from './data/gamesConfig.js';
 import { getLocalizedGame, getGameVoiceExplanation, getUIString } from './data/gamesLocalization.js';
 import { formatOccupationDisplay } from './data/reminiscenceContent.js';
 import { useAppRoute } from './router/AppRouter.jsx';
+import { I18nProvider, useI18n, I18nContext } from './i18n/I18nContext.jsx';
 import { getActiveSession, logout, hasConfiguredPin, ROLES, PATIENT_IDLE_TIMEOUT_MS } from './services/authService.js';
 import useIdleTimer from './hooks/useIdleTimer.js';
 import PatientIdleLockModal from './components/auth/PatientIdleLockModal.jsx';
@@ -59,7 +61,8 @@ const resolvePatientProfile = (patientId) => {
   return { ...DEFAULT_PROFILE, id: patientId };
 };
 
-export default function App() {
+function AppInner() {
+  const { t, language } = useI18n();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { currentRoute, navigateTo } = useAppRoute();
   const [session, setSession] = useState(() => getActiveSession());
@@ -437,48 +440,32 @@ export default function App() {
     refreshTelemetry();
   };
 
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50/60 font-sans antialiased text-slate-800 selection:bg-teal-600 selection:text-white">
-      {/* Session-Aware Navigation Bar & Strict Route Guard (Hidden for authenticated patients for clutter-free cognitive space) */}
-      {!(currentRoute === 'patient' && session?.role === ROLES.PATIENT) && (
-        <Navbar
-          currentRoute={currentRoute}
-          onNavigate={(route) => {
-            navigateTo(route);
-            setActiveGame(null);
-            setActiveRoadmapGame(null);
-            setActiveFamilyGame(null);
-          }}
-
-          session={session}
-          pendingSyncCount={pendingSyncCount}
-          onOpenRoleSelector={() => setIsRoleSelectorOpen(true)}
-          onOpenPinAuth={(reqRole) => {
-            setAuthRole(reqRole || ROLES.PATIENT);
-            setIsPinModalOpen(true);
-          }}
-          onOpenSetup={() => {
-            setIsOnboardingInitialSignup(!hasConfiguredPin());
-            setIsOnboardingOpen(true);
-          }}
-          onLogout={handleLogout}
-        />
+      {/* Network Status Banner */}
+      {!isOnline ? (
+        <div
+          data-testid="network-status"
+          className="w-full bg-amber-600 text-white text-xs font-semibold py-1.5 px-4 text-center flex items-center justify-center gap-2"
+        >
+          <span>Offline Mode Active — Service Worker Serving Shell</span>
+        </div>
+      ) : (
+        <div data-testid="network-status" className="sr-only" aria-hidden="true">
+          Online — Cloud Sync Ready
+        </div>
       )}
-
-      {/* Offline / Network Status Banner */}
-      <div
-        role="status"
-        aria-live="polite"
-        data-testid="network-status"
-        className={`w-full py-1.5 px-4 text-center font-semibold text-xs transition-colors shadow-xs ${isOnline
-          ? 'bg-emerald-700 text-white'
-          : 'bg-teal-700 text-white'
-          }`}
-      >
-        {isOnline
-          ? (isEn ? '● Online — Cloud Sync Ready' : '● অনলাইন — ক্লাউড ছিংক সাজু (Online — Cloud Sync Ready)')
-          : (isEn ? '● Offline Mode Active — Service Worker Serving Shell' : '● অফলাইন ম’ড সক্ৰিয় — (Offline Mode Active — Service Worker Serving Shell)')}
-      </div>
 
       {/* Surface 0: Home Surface (Default Entry View on "/" and refresh) */}
       {currentRoute === 'home' && (
@@ -491,6 +478,10 @@ export default function App() {
           onOpenSetup={() => {
             setIsOnboardingInitialSignup(!hasConfiguredPin());
             setIsOnboardingOpen(true);
+          }}
+          onEnterPin={() => {
+            setAuthRole(ROLES.PATIENT);
+            setIsPinModalOpen(true);
           }}
           initialLanguage={patientProfile?.language || 'en'}
           onLanguageChange={(lang) => {
@@ -571,12 +562,10 @@ export default function App() {
           <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200/80 shadow-soft-xl text-center space-y-5 animate-slide-up">
             <span className="text-3xl block">🔒</span>
             <h2 className="text-lg font-bold text-slate-900">
-              {isEn ? 'Authentication Required' : 'প্ৰৱেশ পিন প্ৰয়োজন'}
+              {t('authRequired')}
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
-              {isEn
-                ? 'Please enter your 6-digit PIN or register your profile to access cognitive games.'
-                : 'ৰোগীৰ খেলসমূহ উপভোগ কৰিবলৈ অনুগ্ৰহ কৰি আপোনাৰ ৬-সংখ্যাৰ পিন দিয়ক।'}
+              {t('authPromptPatient')}
             </p>
             <div className="space-y-2.5 pt-2">
               <button
@@ -585,23 +574,26 @@ export default function App() {
                   setAuthRole(ROLES.PATIENT);
                   setIsPinModalOpen(true);
                 }}
-                className="w-full min-h-[48px] py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-xs shadow-soft transition active:scale-95 flex items-center justify-center gap-1.5"
+                className="w-full min-h-[48px] py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-xs shadow-soft transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                🔑 {isEn ? 'Enter Profile PIN' : 'পিন প্ৰৱেশ কৰক'}
+                <span>🔑</span>
+                <span>{t('enterPin')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setIsRoleSelectorOpen(true)}
-                className="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5"
+                className="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                👥 {isEn ? 'Switch / Select Role' : 'ভূমিকা সলনি কৰক (Switch Role)'}
+                <span>👥</span>
+                <span>{t('switchRole')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => navigateTo('home')}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition cursor-pointer"
               >
-                ← {isEn ? 'Return to Home' : 'মুখ্য পৃষ্ঠালৈ উভতি যাওক'}
+                <span>←</span>
+                <span>{t('returnToHome')}</span>
               </button>
             </div>
           </div>
@@ -613,35 +605,22 @@ export default function App() {
         (session && session.role === ROLES.PATIENT && session.patientId && activePatientProfile) ? (
           <PatientLayout
             profileName={patientDisplayTitle}
-            language={activePatientProfile?.language || 'en'}
-            onLanguageChange={(lang) => {
-              setPatientProfile(prev => ({ ...(prev || activePatientProfile), language: lang }));
-            }}
+            language={language || activePatientProfile?.language || 'en'}
             activeSection={patientSection}
-            isOnline={isOnline}
-            onOpenSos={() => setIsSosOpen(true)}
-            onLogout={handleLogout}
-            onNavigate={(sec) => {
-              if (sec === 'home') navigateTo('home');
-              if (sec === 'games') {
-                setPatientSection('games');
-                setActiveGame(null);
-                setActiveFamilyGame(null);
-              }
-              if (sec === 'reminders') {
-                setPatientSection('reminders');
-                setActiveGame(null);
-                setActiveFamilyGame(null);
-              }
-
-              if (sec === 'progress') navigateTo('dashboard');
-              if (sec === 'help') setIsSosOpen(true);
+            onNavigate={(section) => {
+              if (section === 'home') navigateTo('home');
+              else setPatientSection(section);
             }}
+            onLogout={handleLogout}
+            onOpenSos={() => setIsSosOpen(true)}
+            onLanguageChange={(code) => setLanguage(code)}
+            isOnline={isOnline}
           >
             {/* Reminders & Routine Hub */}
             {patientSection === 'reminders' && (
               <RemindersHub
                 patientProfile={activePatientProfile}
+                language={language}
                 onExit={() => setPatientSection('games')}
               />
             )}
@@ -652,12 +631,12 @@ export default function App() {
                 gameConfig={activeRoadmapGame.gameConfig}
                 onBack={handleExitRoadmapGame}
                 onExit={handleExitRoadmapGame}
-                language={activePatientProfile?.language || 'en'}
+                language={language}
                 isPaused={isPatientIdleLocked}
               >
                 {activeRoadmapGame.gameConfig.component ? (
                   React.createElement(activeRoadmapGame.gameConfig.component, {
-                    language: activePatientProfile?.language || 'en',
+                    language,
                     patientProfile: activePatientProfile,
                     level: activeRoadmapGame.level,
                     difficultyParams: activeRoadmapGame.difficultyParams,
@@ -718,6 +697,7 @@ export default function App() {
               <GridMemoryGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={activePatientProfile}
+                language={language}
                 onExit={handleExitGame}
               />
             )}
@@ -726,6 +706,7 @@ export default function App() {
               <VisualMatchingGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={activePatientProfile}
+                language={language}
                 onExit={handleExitGame}
               />
             )}
@@ -734,6 +715,7 @@ export default function App() {
               <SequenceOrderGame
                 profileId={session?.profileName || 'default_patient'}
                 patientProfile={activePatientProfile}
+                language={language}
                 onExit={handleExitGame}
               />
             )}
@@ -796,36 +778,15 @@ export default function App() {
       {/* Surface 2: ASHA Worker & Caregiver Clinical Dashboard */}
       {currentRoute === 'dashboard' && (
         (session && (session.role === ROLES.ASHA_WORKER || session.role === ROLES.CAREGIVER)) ? (
-          <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 animate-fade-in">
-          {/* In-Page Navigation Header */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => navigateTo('home')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-xl text-xs font-semibold transition shadow-soft cursor-pointer"
-            >
-              ← Return to Home
-            </button>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => navigateTo('family')}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-soft transition active:scale-95 cursor-pointer"
-              >
-                👨‍👩‍👧‍👦 Family Memory Portal →
-              </button>
-              <button
-                type="button"
-                onClick={handleLaunchPatient}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-soft transition active:scale-95 cursor-pointer"
-              >
-                🎮 Launch Patient App →
-              </button>
-            </div>
-          </div>
-
-
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
+          <ClinicalShell
+            profileName={session?.profileName || 'ASHA Worker'}
+            role={session?.role === ROLES.ASHA_WORKER ? 'ASHA Worker' : 'Caregiver'}
+            isOnline={isOnline}
+            currentRoute={currentRoute}
+            onNavigate={(route) => navigateTo(route)}
+            onLogout={handleLogout}
+          >
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft mb-6">
             <div className="min-w-0 max-w-full">
               <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
                 Primary Health Centre (PHC) & ASHA Portal
@@ -839,6 +800,20 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigateTo('home')}
+                className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                ← Return to Home
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo('family')}
+                className="text-xs px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                👥 Family Memory Portal
+              </button>
               <span className="text-xs px-3 py-1 bg-slate-50 text-slate-700 border border-slate-200 font-semibold rounded-xl">
                 Jurisdiction: Kamrup & Bishnupur
               </span>
@@ -976,17 +951,15 @@ export default function App() {
           {dashboardTab === 'content' && (
             <PatientContentManager />
           )}
-        </div>
+          </ClinicalShell>
       ) : (
         <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200/80 shadow-soft-xl text-center space-y-5 animate-slide-up">
             <span className="text-3xl block">🔒</span>
             <h2 className="text-lg font-bold text-slate-900">
-              {isEn ? 'Authentication Required' : 'প্ৰৱেশ পিন প্ৰয়োজন'}
+              {t('authRequired')}
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
-              {isEn
-                ? 'Please enter your staff credentials or PIN to access the clinical dashboard.'
-                : 'ক্লিনিকেল ডেচবৰ্ডত প্ৰৱেশ কৰিবলৈ অনুগ্ৰহ কৰি কৰ্মী প্ৰমাণীকৰণ দিয়ক।'}
+              {t('authPromptClinical')}
             </p>
             <div className="space-y-2.5 pt-2">
               <button
@@ -995,23 +968,26 @@ export default function App() {
                   setAuthRole(ROLES.CAREGIVER);
                   setIsPinModalOpen(true);
                 }}
-                className="w-full min-h-[48px] py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-xs shadow-soft transition active:scale-95 flex items-center justify-center gap-1.5"
+                className="w-full min-h-[48px] py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl text-xs shadow-soft transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                🔑 {isEn ? 'Enter Profile PIN' : 'পিন প্ৰৱেশ কৰক'}
+                <span>🔑</span>
+                <span>{t('enterPin')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setIsRoleSelectorOpen(true)}
-                className="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5"
+                className="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                👥 {isEn ? 'Switch / Select Role' : 'ভূমিকা সলনি কৰক (Switch Role)'}
+                <span>👥</span>
+                <span>{t('switchRole')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => navigateTo('home')}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition cursor-pointer"
               >
-                ← {isEn ? 'Return to Home' : 'মুখ্য পৃষ্ঠালৈ উভতি যাওক'}
+                <span>←</span>
+                <span>{t('returnToHome')}</span>
               </button>
             </div>
           </div>
@@ -1153,5 +1129,17 @@ export default function App() {
         }}
       />
     </div>
+  );
+}
+
+export default function App() {
+  const existingI18n = React.useContext(I18nContext);
+  if (existingI18n) {
+    return <AppInner />;
+  }
+  return (
+    <I18nProvider>
+      <AppInner />
+    </I18nProvider>
   );
 }

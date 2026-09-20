@@ -1,9 +1,48 @@
-/**
- * bhashiniService.js - Multilingual Voice Engine (Web Speech API + Bhashini Cloud + Offline Lexicon)
- * Supports: Assamese ('as'), Bengali ('bn'), Hindi ('hi'), Manipuri ('mni'), English ('en')
- */
+import { getCurrentLanguage } from '../i18n/I18nContext.jsx';
+import { TRANSLATIONS } from '../i18n/translations.js';
+import { AUDIO_HELP_SCRIPTS } from '../data/multilingualAudioHelp.js';
+import { GAMES_LOCALIZATION } from '../data/gamesLocalization.js';
 
 const BHASHINI_PIPELINE_URL = 'https://dhruva-api.bhashini.gov.in/services/inference/pipeline';
+
+/**
+ * Resolves spoken text in the active target language if passed an English string or i18n key
+ */
+export function resolveSpokenTextInLanguage(text, targetLanguage) {
+  if (!text || typeof text !== 'string') return '';
+  const lang = targetLanguage || getCurrentLanguage() || 'en';
+  if (lang === 'en') return text;
+
+  // If text already contains Indic characters, it is already native script
+  if (/[\u0900-\u09FF]/.test(text)) {
+    return text;
+  }
+
+  // 1. Check if text is a direct i18n translation key
+  if (TRANSLATIONS[lang] && TRANSLATIONS[lang][text]) {
+    return TRANSLATIONS[lang][text];
+  }
+
+  // 2. Check if text matches an English translation value in TRANSLATIONS.en
+  if (TRANSLATIONS.en && TRANSLATIONS[lang]) {
+    for (const [key, enVal] of Object.entries(TRANSLATIONS.en)) {
+      if (typeof enVal === 'string' && (enVal.trim().toLowerCase() === text.trim().toLowerCase())) {
+        return TRANSLATIONS[lang][key] || text;
+      }
+    }
+  }
+
+  // 3. Check audio help scripts for standard prompts (welcome, games, reminders, progress, sos)
+  if (AUDIO_HELP_SCRIPTS[lang]) {
+    for (const [scriptKey, enScript] of Object.entries(AUDIO_HELP_SCRIPTS.en || {})) {
+      if (typeof enScript === 'string' && (enScript.trim().toLowerCase() === text.trim().toLowerCase() || text.trim().toLowerCase().startsWith(enScript.slice(0, 25).toLowerCase()))) {
+        return AUDIO_HELP_SCRIPTS[lang][scriptKey] || text;
+      }
+    }
+  }
+
+  return text;
+}
 
 // Comprehensive NER Cultural & Daily Routine Lexicon for offline and low-connectivity gameplay
 export const ASSAMESE_OFFLINE_KEYWORDS = {
@@ -144,7 +183,7 @@ export function isWebSpeechSupported() {
  * Create and start a Live Web Speech Recognition session (Zero-key native browser ASR)
  */
 export function startLiveSpeechRecognition({
-  language = 'as',
+  language = getCurrentLanguage() || 'as',
   onInterimResult = null,
   onFinalResult = null,
   onError = null,
@@ -213,7 +252,7 @@ export function startLiveSpeechRecognition({
 /**
  * Transcribe Audio (Supports Bhashini Cloud API with graceful native on-device keyword fallback)
  */
-export async function transcribeAudio(audioBlob, sourceLanguage = 'as') {
+export async function transcribeAudio(audioBlob, sourceLanguage = getCurrentLanguage() || 'as') {
   const isOnline = typeof navigator === 'undefined' || navigator.onLine;
 
   // 1. If offline or unconfigured, execute on-device keyword spotting fallback
@@ -569,61 +608,71 @@ export function getBestVoiceForLanguage(targetLanguage = 'en') {
   const voices = window.speechSynthesis.getVoices() || [];
   if (voices.length === 0) return null;
 
-  const locale = getSpeechLocale(targetLanguage).toLowerCase();
-  const langPrefix = targetLanguage.toLowerCase();
+  const lang = (targetLanguage || getCurrentLanguage() || 'en').toLowerCase();
 
-  // Preferred voice keywords for warm, human-like, non-robotic tones
-  const naturalKeywords = [
-    'swara', 'heera', 'prabhat', 'madhur', 'kalpana', 'hemant', 'neerja',
-    'natural', 'neural', 'google', 'online', 'zira', 'samantha', 'karen', 'veena', 'ravi'
-  ];
-
-  // 1. Direct language exact match (e.g. hi-IN, bn-IN, as-IN)
-  let matchingVoices = voices.filter(v => {
-    if (!v.lang) return false;
-    const l = v.lang.toLowerCase();
-    const name = (v.name || '').toLowerCase();
-    if (langPrefix === 'hi') {
-      return l === 'hi-in' || l.startsWith('hi') || name.includes('hindi') || name.includes('swara') || name.includes('heera') || name.includes('prabhat');
-    }
-    if (langPrefix === 'bn') {
-      return l === 'bn-in' || l.startsWith('bn') || name.includes('bengali') || name.includes('bangla');
-    }
-    if (langPrefix === 'as') {
-      return l === 'as-in' || l.startsWith('as') || name.includes('assamese');
-    }
-    return l === locale || l.startsWith(langPrefix);
+  // Find Bengali / Eastern Nagari voices (Google বাংলা, Microsoft Tanishaa / Bashkar, bn-IN, bn-BD)
+  const bengaliVoices = voices.filter(v => {
+    const l = (v.lang || '').toLowerCase();
+    const n = (v.name || '').toLowerCase();
+    return l.startsWith('bn') || n.includes('bengali') || n.includes('bangla') || n.includes('tanishaa') || n.includes('bashkar') || n.includes('বাংলা');
   });
 
-  // 2. If no direct match for Northeast regional dialects, map to closest phonetically compatible voice
-  if (matchingVoices.length === 0) {
-    if (langPrefix === 'hi') {
-      // For Hindi, check if any Indian English or Indian voice exists
-      matchingVoices = voices.filter(v => {
-        const l = (v.lang || '').toLowerCase();
-        const n = (v.name || '').toLowerCase();
-        return l.includes('hi') || l.includes('en-in') || n.includes('india') || n.includes('heera') || n.includes('swara') || n.includes('veena') || n.includes('ravi');
-      });
-    } else if (langPrefix === 'as' || langPrefix === 'bn' || langPrefix === 'brx') {
-      matchingVoices = voices.filter(v => v.lang && (v.lang.toLowerCase().includes('bn') || v.lang.toLowerCase().includes('hi') || v.lang.toLowerCase().includes('in')));
-    } else if (langPrefix === 'mni') {
-      matchingVoices = voices.filter(v => v.lang && (v.lang.toLowerCase().includes('hi') || v.lang.toLowerCase().includes('in')));
-    } else {
-      matchingVoices = voices.filter(v => v.lang && (v.lang.toLowerCase().includes('en-in') || v.lang.toLowerCase().startsWith('en')));
-    }
-  }
-
-  if (matchingVoices.length === 0) {
-    matchingVoices = voices;
-  }
-
-  // 3. Find most natural/human-sounding female or neural voice in candidates
-  const bestNatural = matchingVoices.find(v => {
-    const nameLower = (v.name || '').toLowerCase();
-    return naturalKeywords.some(kw => nameLower.includes(kw));
+  // Find Assamese voices if installed
+  const assameseVoices = voices.filter(v => {
+    const l = (v.lang || '').toLowerCase();
+    const n = (v.name || '').toLowerCase();
+    return l.startsWith('as') || n.includes('assamese') || n.includes('অসমীয়া') || n.includes('yashica');
   });
 
-  return bestNatural || matchingVoices[0] || null;
+  // Find Hindi / Devanagari voices (Google हिन्दी, Microsoft Swara / Heera / Prabhat / Madhur, hi-IN)
+  const hindiVoices = voices.filter(v => {
+    const l = (v.lang || '').toLowerCase();
+    const n = (v.name || '').toLowerCase();
+    return l.startsWith('hi') || n.includes('hindi') || n.includes('हिन्दी') || n.includes('swara') || n.includes('heera') || n.includes('kalpana') || n.includes('prabhat') || n.includes('madhur') || n.includes('hemant');
+  });
+
+  // Find Indian English voices (Microsoft Neerja, Microsoft Ravi, Google English India, en-IN)
+  const indianEnglishVoices = voices.filter(v => {
+    const l = (v.lang || '').toLowerCase();
+    const n = (v.name || '').toLowerCase();
+    return (l === 'en-in' || l.startsWith('en-in') || l.includes('in')) && (n.includes('india') || n.includes('neerja') || n.includes('ravi') || n.includes('veena') || n.includes('heera'));
+  });
+
+  // General English voices
+  const generalEnglishVoices = voices.filter(v => (v.lang || '').toLowerCase().startsWith('en'));
+
+  const findNatural = (list) => {
+    if (!list || list.length === 0) return null;
+    const naturalKeywords = ['natural', 'online', 'neural', 'swara', 'tanishaa', 'heera', 'google', 'neerja', 'veena', 'zira', 'samantha'];
+    return list.find(v => naturalKeywords.some(kw => (v.name || '').toLowerCase().includes(kw))) || list[0];
+  };
+
+  if (lang === 'as') {
+    // For Assamese: native Assamese -> Bengali (shares Eastern Nagari script and pronounces Assamese accurately) -> Hindi -> Indian English -> Any
+    return findNatural(assameseVoices) || findNatural(bengaliVoices) || findNatural(hindiVoices) || findNatural(indianEnglishVoices) || findNatural(voices);
+  }
+
+  if (lang === 'bn') {
+    return findNatural(bengaliVoices) || findNatural(hindiVoices) || findNatural(indianEnglishVoices) || findNatural(voices);
+  }
+
+  if (lang === 'hi') {
+    return findNatural(hindiVoices) || findNatural(bengaliVoices) || findNatural(indianEnglishVoices) || findNatural(voices);
+  }
+
+  if (lang === 'mni') {
+    return findNatural(bengaliVoices) || findNatural(hindiVoices) || findNatural(indianEnglishVoices) || findNatural(voices);
+  }
+
+  if (lang === 'brx') {
+    return findNatural(hindiVoices) || findNatural(bengaliVoices) || findNatural(indianEnglishVoices) || findNatural(voices);
+  }
+
+  if (lang === 'lus' || lang === 'kha' || lang === 'grt') {
+    return findNatural(indianEnglishVoices) || findNatural(generalEnglishVoices) || findNatural(voices);
+  }
+
+  return findNatural(indianEnglishVoices) || findNatural(generalEnglishVoices) || findNatural(voices);
 }
 
 /**
@@ -928,7 +977,7 @@ async function synthesizeAzure(text, targetLanguage = 'hi', sessionId) {
 /**
  * Synthesize Speech via Browser Web Speech API with promise completion
  */
-function playWebSpeechPromise(text, targetLanguage, sessionId) {
+function playWebSpeechPromise(rawText, targetLanguage, sessionId) {
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       resolve({
@@ -945,32 +994,47 @@ function playWebSpeechPromise(text, targetLanguage, sessionId) {
         window.speechSynthesis.resume();
       }
 
-      const bestVoice = getBestVoiceForLanguage(targetLanguage);
-      const locale = getSpeechLocale(targetLanguage);
+      const activeLang = targetLanguage || getCurrentLanguage() || 'en';
+      const text = resolveSpokenTextInLanguage(rawText, activeLang);
+      const bestVoice = getBestVoiceForLanguage(activeLang);
+      const locale = getSpeechLocale(activeLang);
 
       const voiceLang = (bestVoice?.lang || '').toLowerCase();
       const voiceName = (bestVoice?.name || '').toLowerCase();
-      const isNativeHindiVoice = voiceLang.startsWith('hi') || voiceName.includes('hindi') || voiceName.includes('swara') || voiceName.includes('heera') || voiceName.includes('kalpana') || voiceName.includes('madhur');
-      const isNativeBengaliVoice = voiceLang.startsWith('bn') || voiceName.includes('bengali') || voiceName.includes('bangla') || voiceName.includes('tanishaa');
-      const isNativeVoice = targetLanguage === 'hi' ? isNativeHindiVoice : (targetLanguage === 'bn' ? isNativeBengaliVoice : (voiceLang.startsWith(targetLanguage)));
-      const isEnglishVoice = !isNativeVoice;
+
+      const isVoiceIndic = voiceLang.startsWith('hi') || voiceLang.startsWith('bn') || voiceLang.startsWith('as') ||
+                           voiceName.includes('hindi') || voiceName.includes('bengali') || voiceName.includes('bangla') ||
+                           voiceName.includes('swara') || voiceName.includes('tanishaa') || voiceName.includes('heera') ||
+                           voiceName.includes('বাংলা') || voiceName.includes('हिन्दी');
+
+      const isTextIndic = /[\u0900-\u09FF]/.test(text);
 
       let processedText = text;
-      // If the browser only has English voices installed, transliterate Indic script so the English TTS engine can pronounce it
-      if (isEnglishVoice && /[\u0900-\u09FF]/.test(text)) {
-        processedText = transliterateIndicToLatin(text);
+      let finalLang = locale;
+
+      if (bestVoice) {
+        if (isVoiceIndic) {
+          // Indic voice handles native Bengali/Assamese/Devanagari scripts directly — do NOT transliterate!
+          finalLang = bestVoice.lang || locale;
+        } else if (isTextIndic) {
+          // Only if no Indic voice is installed on device, provide phonetic transliteration for English engine
+          processedText = transliterateIndicToLatin(text);
+          finalLang = bestVoice.lang || 'en-IN';
+        } else {
+          finalLang = bestVoice.lang || 'en-IN';
+        }
+      } else {
+        finalLang = locale;
       }
 
       const utterance = new SpeechSynthesisUtterance(processedText);
 
       if (bestVoice) {
         utterance.voice = bestVoice;
-        utterance.lang = isEnglishVoice ? (bestVoice.lang || 'en-IN') : locale;
-      } else {
-        utterance.lang = locale;
       }
+      utterance.lang = finalLang;
 
-      utterance.rate = 0.90;
+      utterance.rate = 0.88;
       utterance.pitch = 1.02;
       utterance.volume = 1.0;
 
@@ -1001,8 +1065,8 @@ function playWebSpeechPromise(text, targetLanguage, sessionId) {
       utterance.onend = finish;
       utterance.onerror = finish;
 
-      // Safety timeout: estimated speaking duration based on length
-      const estimatedDurationMs = Math.max(3000, Math.min(30000, processedText.length * 130));
+      // Safety timeout based on text length
+      const estimatedDurationMs = Math.max(3000, Math.min(35000, processedText.length * 140));
       setTimeout(finish, estimatedDurationMs);
 
       // Speak after 20ms to allow cancel cycle to settle cleanly
@@ -1040,8 +1104,11 @@ function playWebSpeechPromise(text, targetLanguage, sessionId) {
  * Supports: ElevenLabs, OpenAI, Google Cloud, Azure, Bhashini, with graceful browser fallback.
  * Strictly guarantees only ONE audio/speech instance plays at any given time.
  */
-export async function synthesizeSpeech(text, targetLanguage = 'as') {
-  if (!text) return { success: false };
+export async function synthesizeSpeech(rawText, targetLanguage = null) {
+  if (!rawText) return { success: false };
+
+  const currentLang = targetLanguage || getCurrentLanguage() || 'en';
+  const text = resolveSpokenTextInLanguage(rawText, currentLang);
 
   // 1. Immediately cancel any currently active speech or audio across the entire application
   stopAllSpeech();
@@ -1052,7 +1119,7 @@ export async function synthesizeSpeech(text, targetLanguage = 'as') {
   if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
     try {
       window.dispatchEvent(new CustomEvent('neurosetu:speech-started', {
-        detail: { text, targetLanguage, sessionId }
+        detail: { text, targetLanguage: currentLang, sessionId }
       }));
     } catch (e) {}
   }
@@ -1064,16 +1131,16 @@ export async function synthesizeSpeech(text, targetLanguage = 'as') {
   if (isOnline && activeProvider !== 'browser_web_speech') {
     try {
       if (activeProvider === 'elevenlabs') {
-        return await synthesizeElevenLabs(text, targetLanguage, sessionId);
+        return await synthesizeElevenLabs(text, currentLang, sessionId);
       }
       if (activeProvider === 'openai') {
-        return await synthesizeOpenAI(text, targetLanguage, sessionId);
+        return await synthesizeOpenAI(text, currentLang, sessionId);
       }
       if (activeProvider === 'google') {
-        return await synthesizeGoogleCloud(text, targetLanguage, sessionId);
+        return await synthesizeGoogleCloud(text, currentLang, sessionId);
       }
       if (activeProvider === 'azure') {
-        return await synthesizeAzure(text, targetLanguage, sessionId);
+        return await synthesizeAzure(text, currentLang, sessionId);
       }
       if (activeProvider === 'bhashini') {
         const apiKey = getEnv('VITE_BHASHINI_API_KEY');
@@ -1084,7 +1151,7 @@ export async function synthesizeSpeech(text, targetLanguage = 'as') {
             {
               taskType: 'tts',
               config: {
-                language: { sourceLanguage: targetLanguage },
+                language: { sourceLanguage: currentLang },
                 gender: 'female'
               }
             }
@@ -1119,5 +1186,5 @@ export async function synthesizeSpeech(text, targetLanguage = 'as') {
   }
 
   // 3. Fallback to Browser Web Speech API
-  return await playWebSpeechPromise(text, targetLanguage, sessionId);
+  return await playWebSpeechPromise(text, currentLang, sessionId);
 }

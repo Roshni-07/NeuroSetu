@@ -1,0 +1,12 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Majuli Ferry & Brahmaputra Waves -->
+  <!-- Ferry Hull -->
+  <path d="M8 38L16 48H48L56 38H8Z" fill="#2D5A27"/>
+  <!-- Canopy / Cabin -->
+  <rect x="20" y="24" width="24" height="14" rx="2" fill="#D4AF37"/>
+  <rect x="24" y="28" width="6" height="6" rx="1" fill="#FAF8F4"/>
+  <rect x="34" y="28" width="6" height="6" rx="1" fill="#FAF8F4"/>
+  <!-- River Waves -->
+  <path d="M4 52C10 50 16 54 22 52C28 50 34 54 40 52C46 50 52 54 60 52" stroke="#B5952F" stroke-width="2" stroke-linecap="round"/>
+  <path d="M8 58C14 56 20 60 26 58C32 56 38 60 44 58C50 56 56 60 62 58" stroke="#2D5A27" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const CardContainer = ({
   photoUrl,
@@ -9,6 +9,7 @@ const CardContainer = ({
   className = '',
   size = 'md', // 'sm', 'md', 'lg'
 }) => {
+  const [imgError, setImgError] = useState(false);
   const stateStyles = {
     default: 'bg-white border-patient-border shadow-soft',
     selected: 'bg-patient-accent-light border-patient-accent border-2 shadow-soft-md',
@@ -43,14 +44,15 @@ const CardContainer = ({
       aria-label={name ? `Card for ${name}` : 'Card'}
     >
       <div className={`w-full relative bg-patient-canvas ${imgSizeStyles[size]}`}>
-        {photoUrl ? (
+        {photoUrl && !imgError ? (
           <img
             src={photoUrl}
             alt={name || "Avatar"}
+            onError={() => setImgError(true)}
             className={`w-full h-full object-cover ${hintOverlay === true ? 'blur-md' : ''}`}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-patient-muted text-white text-3xl font-bold">
+          <div className="w-full h-full flex items-center justify-center font-bold text-2xl" style={{ backgroundColor: 'var(--color-bamboo-light)', color: 'var(--color-bamboo)' }}>
             {name ? name.charAt(0).toUpperCase() : '?'}
           </div>
         )}

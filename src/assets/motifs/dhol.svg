@@ -1,0 +1,10 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dhol Body (Asymmetrical Folk Drum) -->
+  <path d="M12 20C12 14 20 10 32 10C44 10 52 14 52 20V44C52 50 44 54 32 54C20 54 12 50 12 44V20Z" fill="#D4AF37" stroke="#B5952F" stroke-width="2"/>
+  <ellipse cx="32" cy="20" rx="20" ry="8" fill="#B5952F"/>
+  <ellipse cx="32" cy="44" rx="20" ry="8" fill="#B5952F"/>
+  <!-- Bracing Ropes -->
+  <path d="M14 22L32 44L50 22M14 42L32 20L50 42" stroke="#2D5A27" stroke-width="2" stroke-linecap="round"/>
+  <!-- Center Strap -->
+  <ellipse cx="32" cy="32" rx="20" ry="4" stroke="#D32F2F" stroke-width="2" fill="none"/>
+</svg>

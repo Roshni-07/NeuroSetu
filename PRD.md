@@ -20,7 +20,7 @@ Elderly dementia patients in rural NER lack access to specialist neurological ca
 
 ### 3.1 Primary Goals
 - Deliver a voice-first, offline-capable cognitive stimulation platform usable by elderly, low-literacy users with motor/visual decline.
-- Support NER regional languages via Bhashini / AI4Bharat speech and translation infrastructure.
+- Support NER regional languages via sovereign Indian speech and translation infrastructure.
 - Generate passive digital biomarkers (response latency, voice prosody, session frequency) to flag cognitive decline early.
 - Bridge patients to caregivers and ASHA workers via low-bandwidth sync, without requiring patient effort.
 
@@ -41,9 +41,9 @@ Elderly dementia patients in rural NER lack access to specialist neurological ca
 ## 5. Core Features (v1 Scope)
 
 ### 5.1 Language & Voice
-- Bhashini-integrated ASR/TTS/NMT for Assamese, Bodo, Manipuri (Meiteilon), Bengali; beta-tier support for Khasi/Mizo with English/Hindi fallback.
+- Integrated ASR/TTS/NMT for Assamese, Bodo, Manipuri (Meiteilon), Bengali; beta-tier support for Khasi/Mizo with English/Hindi fallback.
 - On-device constrained keyword-spotting model (~50 core words/numbers) for offline gameplay loop.
-- Cloud Bhashini calls only for non-critical, richer interactions when network is available.
+- Cloud speech API calls only for non-critical, richer interactions when network is available.
 
 ### 5.2 Cognitive Gameplay Engine
 - Memory recall, attention, pattern recognition, daily-routine recall game modules.
@@ -104,7 +104,7 @@ Elderly dementia patients in rural NER lack access to specialist neurological ca
 
 ## 8. Technical Dependencies
 
-- Bhashini APIs (ASR, NMT, TTS) — Udbhav/Sahyogi access.
+- Regional Speech & Translation APIs (ASR, NMT, TTS) — Udbhav/Sahyogi access.
 - AI4Bharat open models (IndicWav2Vec, Indic-TTS, IndicTrans2) for local/offline fallback, quantized for edge deployment.
 - PWA stack: Service Workers, IndexedDB, Background Sync API.
 - Optional: BLE Mesh / Wi-Fi Direct for ASHA-device sync in fully offline households.

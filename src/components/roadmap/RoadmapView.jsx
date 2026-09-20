@@ -13,6 +13,8 @@ import {
 } from '../../engine/dailyAssignmentEngine.js';
 import { getScheduledFamilyGames } from '../../utils/familyScheduling.js';
 import { getFamilyGameCompletion } from '../../utils/storage.js';
+import { useI18n } from '../../i18n/I18nContext.jsx';
+import { getLocalizedGame } from '../../data/gamesLocalization.js';
 
 
 // Fallback metadata for all 15 games ensuring reliable labels, icons, and categories
@@ -74,6 +76,8 @@ export default function RoadmapView({
   onExit = null,
   currentDate = null
 }) {
+  const { t, language } = useI18n();
+
   // 1. Resolve Active Patient Profile (props -> local storage -> fallback preset-1)
   const activePatient = useMemo(() => {
     if (patientProfile) return patientProfile;
@@ -106,7 +110,7 @@ export default function RoadmapView({
   useEffect(() => {
     setCompletedFamilyIds(getFamilyGameCompletion(activePatient?.id, dateStr));
     const handleUpdate = (e) => {
-      if (!e.detail?.patientId || e.detail.patientId === (activePatient?.id || 'default_patient')) {
+      if (!e.detail || !e.detail.patientId || e.detail.patientId === activePatient?.id) {
         setCompletedFamilyIds(getFamilyGameCompletion(activePatient?.id, dateStr));
       }
     };
@@ -135,8 +139,9 @@ export default function RoadmapView({
       date: currentDate || new Date()
     });
 
-    // Enrich with fallback metadata for display
+    // Enrich with localized metadata for display
     return assigned.map((g) => {
+      const localized = getLocalizedGame(g, language) || {};
       const fallback = GAME_METADATA_FALLBACK[g.id] || FAMILY_GAMES_METADATA[g.id] || {
         name: g.id.split(/[_-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
         icon: g.isFamilyGame ? '👨‍👩‍👧‍👦' : '🎮',
@@ -144,22 +149,25 @@ export default function RoadmapView({
       };
       return {
         id:           g.id,
-        name:         g.name        || fallback.name,
-        icon:         g.icon        || fallback.icon,
-        category:     g.category    || fallback.category,
-        culturalTag:  g.culturalTag || (g.isFamilyGame ? 'Family Memory' : ''),
+        name:         localized.name || g.name || fallback.name,
+        icon:         g.icon || fallback.icon,
+        category:     localized.culturalTag || g.category || fallback.category,
+        culturalTag:  localized.culturalTag || g.culturalTag || (g.isFamilyGame ? 'Family Memory' : ''),
         sessionLevel: g.sessionLevel || currentLevel,
         isFamilyGame: Boolean(g.isFamilyGame),
-        domain:       g.domain || fallback.category
+        domain:       g.domain || fallback.category,
+        gameConfig:   localized
       };
     });
-  }, [activePatient, currentLevel, currentDate]);
+  }, [activePatient, currentLevel, currentDate, language]);
 
   const totalDailyTarget = dailyGames.length;
 
   // 4. Track Progression State
   const completedCount = useMemo(() => {
-    const cognitiveCompleted = dailyGames.filter(g => !g.isFamilyGame && completedGameIds.includes(g.id)).length;
+    const matchedCognitive = dailyGames.filter(g => !g.isFamilyGame && completedGameIds.includes(g.id)).length;
+    const directCognitive = completedGameIds.filter(id => !id.startsWith('family_') && id !== 'category_sorting' && id !== 'identity_recall' && id !== 'family_tree' && id !== 'life_timeline').length;
+    const cognitiveCompleted = Math.max(matchedCognitive, directCognitive);
     const familyInDaily = dailyGames.find(g => g.isFamilyGame);
     const isDailyFamilyDone = familyInDaily && (completedGameIds.includes(familyInDaily.id) || completedFamilyIds.includes(familyInDaily.id));
     const familyCompleted = Math.max(

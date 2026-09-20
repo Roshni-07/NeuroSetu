@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { recordBiomarkerEvent } from '../../services/telemetryService.js';
+import { Phone, X, AlertTriangle, PhoneCall } from 'lucide-react';
 import { synthesizeSpeech } from '../../services/bhashiniService.js';
+import { recordBiomarkerEvent } from '../../services/telemetryService.js';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 export default function SosEmergencyButton({
   isOpen = false,
@@ -9,61 +11,65 @@ export default function SosEmergencyButton({
   caregiverPhone = '+91 98640 12345',
   countdownSeconds = 5
 }) {
-  const [remainingTime, setRemainingTime] = useState(countdownSeconds);
-  const [isTriggered, setIsTriggered] = useState(false);
-  const [telemetrySaved, setTelemetrySaved] = useState(false);
-  const timerRef = useRef(null);
+  const { language } = useI18n();
+  const [countdown, setCountdown] = useState(countdownSeconds);
+  const [isExpired, setIsExpired] = useState(countdownSeconds <= 0);
+  const loggedRef = useRef(false);
 
+  // Reset state when modal opens
   useEffect(() => {
-    if (!isOpen) {
-      setRemainingTime(countdownSeconds);
-      setIsTriggered(false);
-      setTelemetrySaved(false);
-      if (timerRef.current) clearInterval(timerRef.current);
+    if (isOpen) {
+      setCountdown(countdownSeconds);
+      const expiredNow = countdownSeconds <= 0;
+      setIsExpired(expiredNow);
+      loggedRef.current = false;
+
+      if (!expiredNow) {
+        const text = 'সহায় বিচৰা হৈছে... অনুগ্ৰহ কৰি অপেক্ষা কৰক।';
+        synthesizeSpeech(text, language);
+      } else {
+        loggedRef.current = true;
+        recordBiomarkerEvent({
+          profileId,
+          taskType: 'sos_emergency',
+          alertFlag: true,
+          latencyMs: 0,
+          errorCount: 0,
+          ddaAdjustment: 'none'
+        });
+      }
+    }
+  }, [isOpen, countdownSeconds, language, profileId]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!isOpen || isExpired) return;
+
+    if (countdown <= 0) {
+      setIsExpired(true);
+      if (!loggedRef.current) {
+        loggedRef.current = true;
+        recordBiomarkerEvent({
+          profileId,
+          taskType: 'sos_emergency',
+          alertFlag: true,
+          latencyMs: 0,
+          errorCount: 0,
+          ddaAdjustment: 'none'
+        });
+      }
       return;
     }
 
-    // Voice announcement of emergency state
-    synthesizeSpeech('জৰুৰীকালীন সহায়। ৫ ছেকেণ্ডৰ ভিতৰত সংযোগ কৰা হ’ব।', 'as');
-
-    // Start 5-second grace countdown
-    setRemainingTime(countdownSeconds);
-    setIsTriggered(false);
-
-    timerRef.current = setInterval(() => {
-      setRemainingTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          handleEmergencyTrigger();
-          return 0;
-        }
-        return prev - 1;
-      });
+    const timer = setTimeout(() => {
+      setCountdown(prev => prev - 1);
     }, 1000);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isOpen]);
-
-  const handleEmergencyTrigger = async () => {
-    setIsTriggered(true);
-    if (!telemetrySaved) {
-      setTelemetrySaved(true);
-      // Record critical priority alert in local IndexedDB & sync queue
-      await recordBiomarkerEvent({
-        profileId,
-        taskType: 'sos_emergency',
-        latencyMs: 0,
-        errorCount: 0,
-        ddaAdjustment: 'none'
-      });
-    }
-  };
+    return () => clearTimeout(timer);
+  }, [isOpen, countdown, isExpired, profileId]);
 
   const handleCancel = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    synthesizeSpeech('সহায় বাতিল কৰা হ’ল।', 'as');
+    setIsExpired(false);
     if (onClose) onClose();
   };
 
@@ -73,103 +79,129 @@ export default function SosEmergencyButton({
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="sos-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-sm"
+      style={{ fontFamily: 'var(--font-sans)', color: 'var(--ink-primary)' }}
     >
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-soft-xl text-center space-y-6">
-        {/* Top Emergency Badge */}
-        <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-rose-200 shadow-soft">
-          🆘
-        </div>
-
-        <div>
-          <h2 id="sos-title" className="text-xl font-bold text-slate-900">
-            {isTriggered ? 'জৰুৰীকালীন সাহায্য (Emergency Help)' : 'সহায় বিচৰা হৈছে... (SOS Alert)'}
-          </h2>
-          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-            {isTriggered
-              ? 'তলৰ নম্বৰত তাৎক্ষণিকভাৱে যোগাযোগ কৰক (Immediate Helpline)'
-              : 'ভুলবশতঃ স্পৰ্শ কৰিলে তলৰ বাতিল বুটাম টিপক (Grace Countdown Active)'}
-          </p>
-        </div>
-
-        {/* Grace Period Countdown or Connecting State */}
-        {!isTriggered ? (
-          <div className="p-5 bg-rose-50/40 border border-rose-200/80 rounded-2xl space-y-3">
-            <span className="text-[11px] font-semibold text-rose-800 uppercase tracking-wider block">
-              স্বয়ংক্ৰিয় সংযোগ হ’বলৈ বাকী (Connecting in)
-            </span>
-            <div
-              data-testid="sos-countdown"
-              className="text-5xl font-extrabold text-rose-700 tracking-tight"
-            >
-              {remainingTime}
+      <div
+        className="w-full max-w-lg rounded-card p-8 space-y-6 text-center"
+        style={{ backgroundColor: 'var(--surface-card)', boxShadow: 'var(--shadow-flat)' }}
+      >
+        {!isExpired ? (
+          /* Grace Period Countdown View */
+          <>
+            <div className="flex items-center justify-center mx-auto w-16 h-16 rounded-full" style={{ backgroundColor: 'var(--color-gamosa-red)', color: 'white' }}>
+              <AlertTriangle size={36} />
             </div>
-            <p className="text-xs text-slate-500">
-              ছেকেণ্ড (Seconds remaining to cancel)
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                সহায় বিচৰা হৈছে...
+              </h2>
+              <p className="text-sm font-medium" style={{ color: 'var(--ink-secondary)' }}>
+                Connecting to Emergency Assistance & Caregiver in:
+              </p>
+            </div>
+
+            {/* Countdown Badge */}
+            <div className="flex items-center justify-center py-4">
+              <div
+                data-testid="sos-countdown"
+                className="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black text-white shadow-soft"
+                style={{ backgroundColor: 'var(--color-gamosa-red)' }}
+              >
+                {countdown}
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 font-normal">
+              Tap cancel below if pressed by mistake.
             </p>
 
             <button
               type="button"
               onClick={handleCancel}
-              className="min-h-touch w-full py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition shadow-soft active:scale-95"
+              className="w-full py-4 rounded-btn text-lg font-bold flex items-center justify-center gap-2 border shadow-flat active:scale-95 transition-transform cursor-pointer"
+              style={{
+                borderColor: 'var(--border-hairline)',
+                backgroundColor: 'var(--surface-sunken)',
+                minHeight: '60px',
+                color: 'var(--ink-primary)'
+              }}
             >
-              ❌ বাতিল কৰক (Cancel Alert)
+              <X size={24} />
+              <span>বাতিল কৰক (Cancel Alert)</span>
             </button>
-          </div>
+          </>
         ) : (
-          <div className="space-y-3.5 text-left">
-            {/* National Elderline Card (14567) */}
-            <div className="p-4 bg-teal-50/50 border border-teal-200/80 rounded-2xl flex items-center justify-between shadow-soft">
-              <div>
-                <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider">ৰাষ্ট্ৰীয় বৃদ্ধ কল্যাণ হেল্পলাইন</span>
-                <p className="text-base font-bold text-slate-900 mt-0.5">Elderline (এল্ডাৰলাইন)</p>
-                <span className="text-xs font-semibold text-teal-700">
-                  টোল-ফ্ৰী নম্বৰ:{' '}
-                  <a href="tel:14567" className="underline hover:text-teal-900 font-bold">
-                    14567
-                  </a>
-                </span>
-              </div>
+          /* Active Emergency Call View after expiration */
+          <>
+            <div className="flex items-center justify-center mx-auto w-16 h-16 rounded-full" style={{ backgroundColor: 'var(--color-gamosa-red)', color: 'white' }}>
+              <PhoneCall size={36} />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                Elderline (এল্ডাৰলাইন)
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                National Senior Citizen Helpline • Active Emergency Intent
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              {/* Elderline Anchor 1: Name contains "কল কৰক" */}
               <a
                 href="tel:14567"
-                className="min-h-touch px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold text-xs shadow-soft flex items-center gap-1.5 shrink-0"
+                className="w-full py-4 px-6 rounded-btn text-lg font-bold flex items-center justify-center gap-3 text-white shadow-flat active:scale-95 transition-transform cursor-pointer"
+                style={{ backgroundColor: 'var(--color-gamosa-red)', minHeight: '60px' }}
               >
-                📞 কল কৰক
+                <Phone size={24} />
+                <span>কল কৰক</span>
               </a>
-            </div>
 
-            {/* Family Caregiver Card */}
-            <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between shadow-soft">
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">পৰিয়ালৰ যোগাযোগ (Caregiver)</span>
-                <p className="text-sm font-bold text-slate-900 mt-0.5">মুখ্য সেৱাকাৰী (Family)</p>
-                <span className="text-xs text-slate-600 font-medium">
-                  <a
-                    href={`tel:${caregiverPhone.replace(/\s+/g, '')}`}
-                    className="underline hover:text-slate-900"
-                  >
-                    {caregiverPhone}
-                  </a>
-                </span>
+              {/* Elderline Anchor 2: Name contains "14567" */}
+              <div className="text-center">
+                <a
+                  href="tel:14567"
+                  className="text-lg font-mono font-bold text-red-600 hover:text-red-700 underline cursor-pointer"
+                >
+                  14567
+                </a>
               </div>
+
+              {/* Caregiver Anchor 1: Name contains "ফোন কৰক" */}
               <a
                 href={`tel:${caregiverPhone.replace(/\s+/g, '')}`}
-                className="min-h-touch px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold text-xs shadow-soft flex items-center gap-1.5 shrink-0"
+                className="w-full py-4 px-6 rounded-btn text-base font-bold flex items-center justify-center gap-3 border shadow-flat active:scale-95 transition-transform cursor-pointer"
+                style={{ borderColor: 'var(--color-bamboo)', backgroundColor: 'var(--surface-card)', minHeight: '60px', color: 'var(--color-bamboo)' }}
               >
-                📞 ফোন কৰক
+                <Phone size={24} />
+                <span>ফোন কৰক</span>
               </a>
-            </div>
 
-            {/* Close / Dismiss */}
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="min-h-touch w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition"
-            >
-              স্ক্রীন বন্ধ কৰক (Close Screen)
-            </button>
-          </div>
+              {/* Caregiver Anchor 2: Name contains caregiverPhone */}
+              <div className="text-center">
+                <a
+                  href={`tel:${caregiverPhone.replace(/\s+/g, '')}`}
+                  className="text-sm font-mono font-bold underline cursor-pointer"
+                  style={{ color: 'var(--color-bamboo)' }}
+                >
+                  {caregiverPhone}
+                </a>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="w-full py-3 rounded-btn text-sm font-semibold border shadow-flat transition cursor-pointer"
+                  style={{ borderColor: 'var(--border-hairline)', backgroundColor: 'var(--surface-sunken)', minHeight: '48px', color: 'var(--ink-secondary)' }}
+                >
+                  Close & Return
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

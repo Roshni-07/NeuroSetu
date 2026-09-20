@@ -3,6 +3,7 @@ import { getCulturalContentByState, getTaskPrompt } from '../../data/reminiscenc
 import { synthesizeSpeech } from '../../services/bhashiniService.js';
 import { recordBiomarkerEvent } from '../../services/telemetryService.js';
 import SpeakButton from '../../components2/SpeakButton.jsx';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 /**
  * GridMemoryGame.jsx - Cultural Reminiscence Memory Grid Game
@@ -13,11 +14,12 @@ export default function GridMemoryGame({
   profileId = 'default_patient',
   patientProfile = null,
   initialTier = 1,
+  language: propLanguage = null,
   onComplete = null,
   onExit = null
 }) {
+  const language = propLanguage || patientProfile?.language || 'as';
   const task = getCulturalContentByState(patientProfile?.homeState).memoryTasks[0];
-  const language = patientProfile?.language || 'as';
   const isEnglish = language === 'en';
   const isHindi = language === 'hi';
   const [selected, setSelected] = useState(null);

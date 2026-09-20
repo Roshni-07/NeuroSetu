@@ -3,6 +3,7 @@ import { getRecentBiomarkers, getBiomarkerSummary } from '../../services/telemet
 import { getGameSessions, getActiveProfile, DEFAULT_PROFILE } from '../../db/indexedDb.js';
 import { PRESET_PATIENTS } from '../../data/presetPatients.js';
 import { getActiveSession } from '../../services/authService.js';
+import { getCurrentLanguage } from '../../i18n/I18nContext.jsx';
 import CognitiveTrendChart from '../../components/dashboard/CognitiveTrendChart.jsx';
 
 /**
@@ -39,7 +40,7 @@ function resolveInitialPatient(patientProfile, patientId) {
 /**
  * Calculate consecutive days streak and last 7 days activity status
  */
-function calculateStreakAndWeeklyActivity(timestamps = []) {
+function calculateStreakAndWeeklyActivity(timestamps = [], locale = 'en-IN') {
   if (!timestamps || timestamps.length === 0) {
     return { currentStreak: 0, weeklyActivity: [] };
   }
@@ -59,12 +60,15 @@ function calculateStreakAndWeeklyActivity(timestamps = []) {
   // Generate last 7 days ending today
   const today = new Date();
   const weeklyActivity = [];
+  const narrowFormatter = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
+  const shortFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
-    const dayLabel = d.toLocaleDateString('en-US', { weekday: 'narrow' });
-    const fullDayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayLabel = narrowFormatter.format(d);
+    const fullDayName = shortFormatter.format(d);
     weeklyActivity.push({
       dateStr,
       dayLabel,
@@ -187,9 +191,12 @@ export default function WardProgressTracker({
     return list;
   }, [biomarkers, gameSessions, selectedPatient]);
 
+  const activeLang = getCurrentLanguage() || 'en';
+  const activeLocale = activeLang === 'as' ? 'as-IN' : (activeLang === 'hi' ? 'hi-IN' : (activeLang === 'bn' ? 'bn-IN' : 'en-IN'));
+
   const { currentStreak, weeklyActivity } = useMemo(
-    () => calculateStreakAndWeeklyActivity(activityTimestamps),
-    [activityTimestamps]
+    () => calculateStreakAndWeeklyActivity(activityTimestamps, activeLocale),
+    [activityTimestamps, activeLocale]
   );
 
   // Transform recent biomarkers into CognitiveTrendChart data format
@@ -200,10 +207,11 @@ export default function WardProgressTracker({
 
     // Chronological order (oldest first)
     const chronological = [...biomarkers].reverse();
+    const shortDayFormatter = new Intl.DateTimeFormat(activeLocale, { weekday: 'short' });
 
     return chronological.map((log, index) => {
       const d = new Date(log.timestamp);
-      const weekday = isNaN(d.getTime()) ? `S${index + 1}` : d.toLocaleDateString('en-US', { weekday: 'short' });
+      const weekday = isNaN(d.getTime()) ? `S${index + 1}` : shortDayFormatter.format(d);
       const latencySec = Math.round(((log.latencyMs || 0) / 1000) * 10) / 10;
       return {
         session: `S${index + 1} (${weekday})`,
@@ -213,7 +221,7 @@ export default function WardProgressTracker({
         alert: Boolean(log.alertFlag) || latencySec >= 15
       };
     });
-  }, [biomarkers]);
+  }, [biomarkers, activeLocale]);
 
   // Active alerts extracted from biomarker records
   const activeAlertLogs = useMemo(() => {
@@ -286,9 +294,13 @@ export default function WardProgressTracker({
             <span className="text-xl">🔥</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-amber-600" data-testid="streak-count">
-              {currentStreak}
-            </span>
+            {isLoading ? (
+              <span className="text-3xl font-black text-amber-600 animate-pulse">...</span>
+            ) : (
+              <span className="text-3xl font-black text-amber-600" data-testid="streak-count">
+                {currentStreak}
+              </span>
+            )}
             <span className="text-xs font-bold text-slate-600">
               {currentStreak === 1 ? 'Day' : 'Days'} in a row
             </span>
@@ -525,8 +537,10 @@ export default function WardProgressTracker({
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {biomarkers.map((log, idx) => {
-                    const time = log.timestamp ? new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
-                    const date = log.timestamp ? new Date(log.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '—';
+                    const timeFormatter = new Intl.DateTimeFormat(activeLocale, { hour: '2-digit', minute: '2-digit' });
+                    const dateFormatter = new Intl.DateTimeFormat(activeLocale, { month: 'short', day: 'numeric' });
+                    const time = log.timestamp ? timeFormatter.format(new Date(log.timestamp)) : '—';
+                    const date = log.timestamp ? dateFormatter.format(new Date(log.timestamp)) : '—';
                     const rawLatency = log.responseTimeMs ?? log.latencyMs;
                     const latencySec = rawLatency ? (rawLatency / 1000).toFixed(1) + 's' : '0.0s';
                     const isAlert = Boolean(log.alertFlag) || (rawLatency && rawLatency >= 15000) || (log.errorCount >= 2);

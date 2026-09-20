@@ -5,6 +5,7 @@ import { sounds } from '../utils/soundEffects.js';
 import { saveGameScore } from '../utils/storage.js';
 import SpeakButton from './SpeakButton.jsx';
 import { getLocalizedGame, getGameVoiceExplanation, getUIString } from '../data/gamesLocalization.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
 const GameWrapperContext = createContext(false);
 
@@ -26,7 +27,7 @@ export default function GameWrapper({
   onExit,
   onComplete,
   children,
-  language = 'en',
+  language = null,
   title = '',
   emoji = '🎮',
   category = '',
@@ -35,6 +36,8 @@ export default function GameWrapper({
   onRetry = null,
   isPaused = false
 }) {
+  const { language: globalLang } = useI18n();
+  const activeLang = language || globalLang || 'en';
   const isNestedWrapper = useContext(GameWrapperContext);
   const [showInstructions, setShowInstructions] = useState(true);
   const [isMuted, setIsMuted] = useState(sounds.isMuted());
@@ -57,7 +60,7 @@ export default function GameWrapper({
     instructions
   };
 
-  const displayConfig = getLocalizedGame(rawConfig, language) || rawConfig;
+  const displayConfig = getLocalizedGame(rawConfig, activeLang) || rawConfig;
 
   const instructionSteps = Array.isArray(displayConfig.instructions) && displayConfig.instructions.length > 0
     ? displayConfig.instructions
@@ -67,7 +70,7 @@ export default function GameWrapper({
         'Take all the time you need!'
       ];
 
-  const voiceExplanationText = getGameVoiceExplanation(displayConfig.id, language) ||
+  const voiceExplanationText = getGameVoiceExplanation(displayConfig.id, activeLang) ||
     `${displayConfig.name}. ${instructionSteps.join('. ')}`;
 
   const displayedResult = resultData || result;
@@ -118,10 +121,10 @@ export default function GameWrapper({
                 else if (onBack) onBack();
               }}
               className="flex items-center space-x-2 px-3 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-xl font-bold text-base border border-slate-300 shadow-sm cursor-pointer transition-colors"
-              aria-label={getUIString('gamesHub', language)}
+              aria-label={getUIString('gamesHub', activeLang)}
             >
               <span className="text-2xl leading-none">←</span>
-              <span className="hidden sm:inline">{getUIString('gamesHub', language)}</span>
+              <span className="hidden sm:inline">{getUIString('gamesHub', activeLang)}</span>
             </button>
 
             {/* Game Title & Category Badge */}
@@ -144,8 +147,8 @@ export default function GameWrapper({
               {/* Voice Guide Button */}
               <SpeakButton
                 text={voiceExplanationText}
-                language={language}
-                label={`${getUIString('voiceGuide', language)}: ${displayConfig.name}`}
+                language={activeLang}
+                label={`${getUIString('voiceGuide', activeLang)}: ${displayConfig.name}`}
                 className="bg-teal-50 border-teal-300 text-teal-800 hover:bg-teal-100 font-bold"
               />
 
@@ -163,8 +166,8 @@ export default function GameWrapper({
                 type="button"
                 onClick={() => setShowInstructions(true)}
                 className="w-11 h-11 flex items-center justify-center rounded-xl bg-teal-100 hover:bg-teal-200 text-lg font-bold border border-teal-300 cursor-pointer"
-                title={getUIString('howToPlay', language)}
-                aria-label={getUIString('howToPlay', language)}
+                title={getUIString('howToPlay', activeLang)}
+                aria-label={getUIString('howToPlay', activeLang)}
               >
                 ?
               </button>
@@ -186,14 +189,14 @@ export default function GameWrapper({
             accuracy={displayedResult.accuracy}
             message={displayedResult.message}
             subtext={displayedResult.subtext}
-            language={language}
+            language={activeLang}
             onPlayAgain={handlePlayAgain}
             onBackToHub={onExit || onBack}
           />
         ) : (
           <div key={gameKey} className="w-full">
             {typeof children === 'function'
-              ? children({ onComplete: handleGameComplete, language, onExit: onExit || onBack })
+              ? children({ onComplete: handleGameComplete, language: activeLang, onExit: onExit || onBack })
               : React.Children.map(children, (child) =>
                   React.isValidElement(child) && typeof child.type !== 'string'
                     ? React.cloneElement(child, {
@@ -203,7 +206,7 @@ export default function GameWrapper({
                           }
                           handleGameComplete(data || {});
                         },
-                        language,
+                        language: activeLang,
                         onExit: child.props.onExit || onExit || onBack
                       })
                     : child
@@ -221,7 +224,7 @@ export default function GameWrapper({
           onExit={onExit || onBack}
           gameName={displayConfig.name}
           culturalTag={displayConfig.culturalTag}
-          language={language}
+          language={activeLang}
           steps={instructionSteps}
           voiceText={voiceExplanationText}
         />

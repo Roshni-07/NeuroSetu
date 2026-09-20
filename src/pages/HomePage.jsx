@@ -1,529 +1,681 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Play, Activity, Users, Phone, Heart, Menu, X, CheckCircle2, Volume2, WifiOff, Compass, BarChart3 } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext.jsx';
+import LanguageSwitcher from '../components/LanguageSwitcher.jsx';
+
+const LANDING_COPY = {
+  en: {
+    badge: 'Culturally Grounded Cognitive Healthcare for North East India',
+    headline: 'Cognitive Games That Speak Your Language.',
+    lead: 'Memory care in your own language. Culturally rooted reminiscence therapy and passive digital biomarker care for North East India. Evidence-based cognitive stimulation designed with dementia-gentle feedback.',
+    launchPatient: 'Launch Patient Experience',
+    selectRole: 'Select Role & Log In',
+    viewDashboard: 'View ASHA Triage Dashboard',
+    enterPin: '🔑 Enter Profile PIN',
+    gameSuite: '🌾 Game Suite (15 Games)',
+    profileSetup: 'Profile Setup',
+    ashaClinical: 'ASHA Clinical (ASHA / Caregiver Dashboard)',
+    patientUi: 'Patient UI',
+    home: 'NeuroSetu Home'
+  },
+  as: {
+    badge: 'উত্তৰ-পূৰ্বাঞ্চলৰ বাবে সাংস্কৃতিকভাৱে আধাৰিত ডিমেনচিয়া স্বাস্থ্য সেৱা',
+    headline: 'ঘৰুৱা চিনাকি পৰিৱেশত স্মৃতিৰ সেঁতু।',
+    lead: 'অসম আৰু উত্তৰ-পূৰ্বাঞ্চলৰ লোকসকলৰ বাবে স্মৃতি উদ্দীপনা আৰু নিষ্ক্ৰিয় বায়’মাৰ্কাৰ যত্ন। ঘৰুৱা সাংস্কৃতিক পৰিৱেশত নিৰ্ভয়ে খেলক।',
+    launchPatient: 'ৰোগীৰ খেল আৰম্ভ কৰক',
+    selectRole: 'ভূমিকা বাছক আৰু প্ৰৱেশ কৰক',
+    viewDashboard: 'আশা ক্লিনিকেন্স ডেচবৰ্ড চাওক',
+    enterPin: '🔑 প্ৰফাইল পিন দিয়ক',
+    gameSuite: '🌾 খেলৰ সম্ভাৰ (১৫টা খেল)',
+    profileSetup: 'প্ৰফাইল ছেটিংছ',
+    ashaClinical: 'আশা ক্লিনিকেন্স (ASHA / Caregiver Dashboard)',
+    patientUi: 'ৰোগীৰ খেল (Patient UI)',
+    home: 'নিওৰোসেতু ঘৰ'
+  },
+  bn: {
+    badge: 'উত্তর-পূর্ব ভারতের জন্য ঐতিহ্য ও সংস্কৃতি নির্ভর ডিমেনশিয়া যত্ন',
+    headline: 'আপনার পরিচিত পরিবেশে স্মৃতির সেতুবন্ধন।',
+    lead: 'উত্তর-পূর্ব ভারতের জন্য নিজস্ব ভাষায় স্মৃতি উদ্দীপনা ও ডিজিটাল বায়োমার্কার যত্ন। পরিচিত পারিবারিক পরিবেশে নির্ভয়ে খেলুন।',
+    launchPatient: 'রোগীর খেলা শুরু করুন',
+    selectRole: 'ভূমিকা বেছে নিয়ে লগ ইন করুন',
+    viewDashboard: 'আশা ক্লিনিকাল ড্যাশবোর্ড দেখুন',
+    enterPin: '🔑 প্রোফাইল পিন দিন',
+    gameSuite: '🌾 গেম স্যুট (১৫টি গেম)',
+    profileSetup: 'প্রোফাইল সেটআপ',
+    ashaClinical: 'আশা ক্লিনিকাল (ASHA / Caregiver Dashboard)',
+    patientUi: 'রোগীর অভিজ্ঞতা (Patient UI)',
+    home: 'নিউরোসেতু হোম'
+  },
+  hi: {
+    badge: 'पूर्वोत्तर भारत के लिए सांस्कृतिक रूप से समर्थित डिमेंशिया देखभाल',
+    headline: 'अपनी जानी-पहचानी भाषा और माहौल में स्मृति की देखभाल।',
+    lead: 'पूर्वोत्तर भारत के लिए अपनी भाषा में स्मृति उत्तेजना और बायोमार्कर देखभाल। घरेलू सांस्कृतिक माहौल में सहजता से खेलें।',
+    launchPatient: 'मरीज का खेल शुरू करें',
+    selectRole: 'भूमिका चुनें और लॉग इन करें',
+    viewDashboard: 'आशा क्लिनिकल डैशबोर्ड देखें',
+    enterPin: '🔑 प्रोफाइल पिन दर्ज करें',
+    gameSuite: '🌾 गेम सुइट (15 गेम्स)',
+    profileSetup: 'प्रोफाइल सेटअप',
+    ashaClinical: 'आशा क्लिनिकल (ASHA / Caregiver Dashboard)',
+    patientUi: 'मरीज इंटरफेस (Patient UI)',
+    home: 'न्यूरोसेतु होम'
+  },
+  mni: {
+    badge: 'অৱাং-নোংপোক ভারতকী নাৎকা মরী লৈনবা ডিমেনসিয়া লায়েং',
+    headline: 'নহাক্কী মশাগী লোলদা নিংশিং য়েংশিনবা।',
+    lead: 'অৱাং-নোংপোক ভারতকী লোলদা নিংশিং থৌওং অমসুং য়েংশিনবা।',
+    launchPatient: 'অনাবগী শান্নবা হৌবা',
+    selectRole: 'থৌদাং খনবা অমসুং চঙবা',
+    viewDashboard: 'আশা ক্লিনিক্যাল দেশবোর্ড য়েংবা',
+    enterPin: '🔑 প্রোফাইল পিন চঙহনবা',
+    gameSuite: '🌾 শান্নবা মখল (১৫)',
+    profileSetup: 'প্রোফাইল শেম্বা',
+    ashaClinical: 'আশা ক্লিনিক্যাল (ASHA / Caregiver Dashboard)',
+    patientUi: 'অনাবগী শান্নবা (Patient UI)',
+    home: 'নিউরোসেতু য়ুম'
+  },
+  lus: {
+    badge: 'North East India tana hnam zia nena inmil Dementia Enkawlna',
+    headline: 'Mahni ṭawng ngeia hriatrengna enkawlna.',
+    lead: 'North East India tana mahni ṭawng ngeia hriatrengna tihhmasawnna leh enkawlna.',
+    launchPatient: 'Damlotu Game Ṭan Rawh',
+    selectRole: 'Role Thlang la Lut Rawh',
+    viewDashboard: 'ASHA Dashboard En Rawh',
+    enterPin: '🔑 Profile PIN Chhu Lut Rawh',
+    gameSuite: '🌾 Game Suite (15 Games)',
+    profileSetup: 'Profile Setup',
+    ashaClinical: 'ASHA Clinical (ASHA / Caregiver Dashboard)',
+    patientUi: 'Damlotu UI (Patient UI)',
+    home: 'NeuroSetu Inpui'
+  },
+  kha: {
+    badge: 'Ka jingsumar Dementia kaba iahap bad ka tynrai na ka bynta ka North East',
+    headline: 'Ka jingriewspah kaba kren ha ka ktien jong phi.',
+    lead: 'Ka jinghikai ban kynmaw ha ka ktien jong phi na ka bynta ka North East.',
+    launchPatient: 'Sdang ia ka Ktien Kynmaw',
+    selectRole: 'Jied ia ka Bynta & Log In',
+    viewDashboard: 'Peit ia ka ASHA Dashboard',
+    enterPin: '🔑 Thep ia ka PIN',
+    gameSuite: '🌾 Game Suite (15 Games)',
+    profileSetup: 'Profile Setup',
+    ashaClinical: 'ASHA Clinical (ASHA / Caregiver Dashboard)',
+    patientUi: 'Patient UI',
+    home: 'NeuroSetu Home'
+  },
+  grt: {
+    badge: 'North East-na dingtangmancha tari·gimin Dementia Sanani',
+    headline: 'An·tangni ku·siko gisik ra·aniko sandiani.',
+    lead: 'North East-na an·tang ku·siko gisik ra·aniko bilakatani aro sanna.',
+    launchPatient: 'Sagipani Kal·aniko A·bachenggibo',
+    selectRole: 'Kamko Seoke Log In Ka·bo',
+    viewDashboard: 'ASHA Dashboard-ko Nibos',
+    enterPin: '🔑 Profile PIN-ko On·bo',
+    gameSuite: '🌾 Kal·ani Suite (15 Games)',
+    profileSetup: 'Profile Setup',
+    ashaClinical: 'ASHA Clinical (ASHA / Caregiver Dashboard)',
+    patientUi: 'Sagipani UI',
+    home: 'NeuroSetu Nok'
+  },
+  brx: {
+    badge: 'सानजा-सा भारतनि थाखाय हारिमुआरि डिमेनशिया नायदिंथि',
+    headline: 'गावनि रावजों गोसोखांथि नायदिंथि।',
+    lead: 'सानजा-सा भारतनि थाखाय गावनि रावजों गोसोखांथि नायदिंथि आरो हेफाफा।',
+    launchPatient: 'गोगोयैनि गेलेनाय जागाय',
+    selectRole: 'बिबान सायख\' आरो हाब',
+    viewDashboard: 'आशा डेशबोर्ड नाय',
+    enterPin: '🔑 प्र\'फाइल पिन थिसन',
+    gameSuite: '🌾 गेलेनाय खन्थाइ (15)',
+    profileSetup: 'प्र\'फाइल सेटअप',
+    ashaClinical: 'आशा क्लिनिकेल (ASHA / Caregiver Dashboard)',
+    patientUi: 'गोगोयै UI',
+    home: 'निउर\'सेतु न\''
+  }
+};
 
 export default function HomePage({
+  initialLanguage = 'en',
   onLaunchPatient = null,
   onLaunchDashboard = null,
   onLaunchHub = null,
   onLaunchFamilyGames = null,
   onOpenSetup = null,
   onOpenRoleSelector = null,
-  initialLanguage = 'en',
+  onEnterPin = null,
   onLanguageChange = null
 }) {
+  const { t, language, setLanguage } = useI18n();
+  const [overrideLang, setOverrideLang] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const currentYear = new Date().getFullYear().toString();
 
-  const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage || 'en');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const activeLang = overrideLang || language || initialLanguage || 'en';
+  const copy = LANDING_COPY[activeLang] || LANDING_COPY['en'];
 
-  const handleLanguageToggle = (lang) => {
-    setSelectedLanguage(lang);
-    if (onLanguageChange) {
-      onLanguageChange(lang);
+  const handleLanguageToggle = (code) => {
+    setOverrideLang(code);
+    if (setLanguage) {
+      try {
+        setLanguage(code);
+      } catch (e) {}
     }
+    if (onLanguageChange) onLanguageChange(code);
   };
 
-  const isEn = selectedLanguage === 'en';
+  const handleReturnHome = () => {
+    window.location.hash = '#/home';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50/60 text-slate-800 selection:bg-teal-600 selection:text-white font-sans antialiased relative overflow-x-hidden">
-      {/* Subtle Indigenous Textile Weave SVG Lattice Pattern Overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-[0.03] z-0"
-        aria-hidden="true"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230D9488' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}
-      />
-
-      {/* Decorative Soft Ambient Glows */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-200/30 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
-      <div className="absolute top-32 right-10 w-96 h-96 bg-amber-200/30 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
-
-      {/* 1. Home Navigation Bar */}
-      <nav className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-30 px-6 py-3.5 shadow-soft">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+    <div className="min-h-screen flex flex-col font-sans" style={{ backgroundColor: 'var(--surface-page)', color: 'var(--ink-primary)' }}>
+      {/* 1. Header (Minimal, flat with Logo, Nav links, Hamburger, and LanguageSwitcher) */}
+      <header
+        className="px-6 py-4 flex items-center justify-between border-b shadow-flat relative z-20"
+        style={{ borderColor: 'var(--border-hairline)', backgroundColor: 'var(--surface-card)' }}
+      >
+        <div className="flex items-center space-x-3.5">
           <button
             type="button"
-            onClick={() => {
-              window.location.hash = '#/home';
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            onClick={handleReturnHome}
             aria-label="NeuroSetu Home"
-            className="flex items-center space-x-3 text-left hover:opacity-90 transition rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+            className="flex items-center space-x-3 text-left cursor-pointer bg-transparent border-none p-0 focus:outline-hidden"
           >
-            <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200/80 flex items-center justify-center text-teal-700 font-black text-xl shadow-inner">
+            <div
+              className="w-11 h-11 flex items-center justify-center font-bold text-2xl rounded-btn shadow-flat"
+              style={{ backgroundColor: 'var(--color-muga)', color: 'var(--ink-primary)' }}
+            >
               ন
             </div>
             <div>
-              <span className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                NeuroSetu <span className="text-[10px] font-bold text-teal-700 px-2 py-0.5 rounded-full bg-teal-50 border border-teal-200 tracking-wide uppercase">NER Edition</span>
-              </span>
-              <span className="text-[10px] text-slate-500 font-medium block">
-                {isEn ? 'North East Dementia Healthcare' : 'উত্তৰ-পূৰ্বাঞ্চলৰ ডিমেনচিয়া স্বাস্থ্য সেৱা'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                  NeuroSetu
+                </span>
+                <span
+                  className="text-[11px] font-bold px-2 py-0.5 rounded-full border"
+                  style={{ backgroundColor: 'var(--surface-sunken)', borderColor: 'var(--border-hairline)', color: 'var(--color-bamboo)' }}
+                >
+                  নিওৰোসেতু
+                </span>
+              </div>
+              <p className="text-xs font-medium" style={{ color: 'var(--ink-secondary)' }}>
+                North East Dementia Healthcare
+              </p>
             </div>
           </button>
+        </div>
 
-          {/* Desktop Nav Items (hidden on screens < sm) */}
-          <div className="hidden sm:flex items-center flex-wrap gap-2.5">
-            {/* Quick Language Toggle */}
-            <div className="flex items-center bg-slate-100 border border-slate-200/80 rounded-xl p-0.5 text-xs">
-              <button
-                type="button"
-                onClick={() => handleLanguageToggle('en')}
-                className={`px-2.5 py-1 rounded-lg font-semibold transition ${isEn ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLanguageToggle('as')}
-                className={`px-2.5 py-1 rounded-lg font-semibold transition ${!isEn && selectedLanguage === 'as' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                অসমীয়া
-              </button>
-            </div>
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onLaunchHub}
+            className="px-3.5 py-2 rounded-btn text-xs font-bold border transition shadow-flat hover:bg-slate-50 cursor-pointer"
+            style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--ink-primary)', minHeight: '44px' }}
+          >
+            {copy.gameSuite}
+          </button>
 
-            {/* Extended Multilingual Selector */}
-            <select
-              value={selectedLanguage}
-              onChange={(e) => handleLanguageToggle(e.target.value)}
-              className="bg-white text-slate-700 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-teal-500 cursor-pointer shadow-xs"
-              aria-label="More Languages"
-            >
-              <option value="en">🇬🇧 English</option>
-              <option value="as">🌿 অসমীয়া (Assamese)</option>
-              <option value="bn">🌸 বাংলা (Bengali)</option>
-              <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
-              <option value="mni">🌺 মৈতৈলোন্ (Manipuri)</option>
-              <option value="lus">🌄 Mizo (Mizoram)</option>
-              <option value="kha">🌧️ Khasi (Meghalaya)</option>
-              <option value="grt">🥁 Garo (A·chik)</option>
-              <option value="brx">🌾 बर’ (Bodo)</option>
-            </select>
-
-            {onLaunchHub && (
-              <button
-                type="button"
-                onClick={onLaunchHub}
-                className="text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 px-3 py-1.5 rounded-xl transition cursor-pointer"
-              >
-                🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
-              </button>
-            )}
-
-            {onOpenSetup && (
-              <button
-                type="button"
-                onClick={onOpenSetup}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 transition"
-              >
-                {isEn ? 'Profile Setup' : 'প্ৰফাইল ছেটিংছ'}
-              </button>
-            )}
-
-            {onLaunchDashboard && (
-              <button
-                type="button"
-                onClick={onLaunchDashboard}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-1.5 transition"
-              >
-                {isEn ? 'ASHA Dashboard' : 'আশা ডেচবৰ্ড'}
-              </button>
-            )}
-
-            {onLaunchFamilyGames && (
-              <button
-                type="button"
-                onClick={onLaunchFamilyGames}
-                className="text-xs font-semibold text-teal-700 hover:text-teal-900 px-3 py-1.5 transition cursor-pointer"
-              >
-                👨‍👩‍👧‍👦 {isEn ? 'Family Portal' : 'পৰিয়াল প’ৰ্টেল'}
-              </button>
-            )}
-          </div>
-
-
-          {/* Mobile Hamburger Toggle (< sm) */}
-          <div className="flex sm:hidden items-center gap-2">
+          {onOpenSetup && (
             <button
               type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle navigation menu"
-              aria-expanded={isMobileMenuOpen}
-              className="min-h-touch min-w-touch px-3 py-1.5 text-slate-700 bg-white border border-slate-200 rounded-xl flex items-center gap-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
+              onClick={onOpenSetup}
+              className="px-3.5 py-2 rounded-btn text-xs font-bold border transition shadow-flat hover:bg-slate-50 cursor-pointer"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--ink-secondary)', minHeight: '44px' }}
             >
-              <span className="text-base leading-none" aria-hidden="true">{isMobileMenuOpen ? '✕' : '☰'}</span>
-              <span>{isMobileMenuOpen ? (isEn ? 'Close' : 'বন্ধ') : (isEn ? 'Menu' : 'মেনু')}</span>
+              {copy.profileSetup}
+            </button>
+          )}
+
+          {onLaunchDashboard && (
+            <button
+              type="button"
+              onClick={onLaunchDashboard}
+              className="px-3.5 py-2 rounded-btn text-xs font-bold border transition shadow-flat hover:bg-slate-50 cursor-pointer"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--color-bamboo)', minHeight: '44px' }}
+            >
+              {copy.ashaClinical}
+            </button>
+          )}
+
+          <div className="flex items-center gap-1 border rounded-btn p-1" style={{ backgroundColor: 'var(--surface-sunken)', borderColor: 'var(--border-hairline)' }}>
+            <button
+              type="button"
+              onClick={() => handleLanguageToggle('en')}
+              className="px-2.5 py-1 rounded-btn text-xs font-bold transition cursor-pointer"
+              style={{
+                backgroundColor: activeLang === 'en' ? 'var(--surface-card)' : 'transparent',
+                color: 'var(--ink-primary)',
+                minHeight: '36px'
+              }}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLanguageToggle('as')}
+              className="px-2.5 py-1 rounded-btn text-xs font-bold transition cursor-pointer"
+              style={{
+                backgroundColor: activeLang === 'as' ? 'var(--surface-card)' : 'transparent',
+                color: 'var(--ink-primary)',
+                minHeight: '36px'
+              }}
+            >
+              অসমীয়া
             </button>
           </div>
+
+          <LanguageSwitcher variant="clinical" placement="header" onSelect={(code) => handleLanguageToggle(code)} />
         </div>
 
-        {/* Mobile Dropdown Menu (< sm) */}
-        {isMobileMenuOpen && (
-          <div className="sm:hidden mt-3 pt-3 border-t border-slate-200/80 space-y-2.5 max-w-6xl mx-auto animate-fadeIn">
-            <div className="flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-slate-200">
-              <span className="text-xs text-slate-500 font-semibold">{isEn ? 'Language:' : 'ভাষা:'}</span>
-              <select
-                value={selectedLanguage}
-                onChange={(e) => handleLanguageToggle(e.target.value)}
-                className="bg-slate-50 text-slate-700 border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none focus:border-teal-500"
-                aria-label="Select Language"
-              >
-                <option value="en">🇬🇧 English</option>
-                <option value="as">🌿 অসমীয়া (Assamese)</option>
-                <option value="bn">🌸 বাংলা (Bengali)</option>
-                <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
-                <option value="mni">🌺 মৈতৈলোন্ (Manipuri)</option>
-                <option value="lus">🌄 Mizo (Mizoram)</option>
-                <option value="kha">🌧️ Khasi (Meghalaya)</option>
-                <option value="grt">🥁 Garo (A·chik)</option>
-                <option value="brx">🌾 बर’ (Bodo)</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 gap-1.5">
-              {onLaunchHub && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onLaunchHub();
-                  }}
-                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 rounded-xl transition"
-                >
-                  🌾 {isEn ? 'Game Suite (15 Games)' : 'খেলৰ কেন্দ্ৰ (১৫ খেল)'}
-                </button>
-              )}
-
-              {onOpenSetup && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onOpenSetup();
-                  }}
-                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition"
-                >
-                  ⚙️ {isEn ? 'Profile Setup' : 'প্ৰফাইল ছেটিংছ'}
-                </button>
-              )}
-
-              {onLaunchDashboard && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onLaunchDashboard();
-                  }}
-                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition"
-                >
-                  📊 {isEn ? 'ASHA Dashboard' : 'আশা ডেচবৰ্ড'}
-                </button>
-              )}
-
-              {onLaunchFamilyGames && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onLaunchFamilyGames();
-                  }}
-                  className="min-h-touch w-full text-left py-2 px-3 text-xs font-semibold text-teal-700 hover:bg-teal-50 rounded-xl transition"
-                >
-                  👨‍👩‍👧‍👦 {isEn ? 'Family Portal' : 'পৰিয়াল প’ৰ্টেল'}
-                </button>
-              )}
-            </div>
-
-          </div>
-        )}
-      </nav>
-
-      {/* 2. Hero Section - Asymmetric Layout with Cultural Heritage Tapestry */}
-      <section className="relative z-10 px-6 pt-12 pb-16 sm:pt-16 sm:pb-24 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-          {/* Left Column (7 cols): Main Cultural Narrative & Consolidated Batch 2 CTAs */}
-          <div className="lg:col-span-7 space-y-6 text-left">
-            {/* Heritage Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-xs font-semibold text-teal-700 shadow-soft">
-              <span className="text-sm">🌿</span>
-              <span>{isEn ? 'Culturally Grounded Cognitive Healthcare for North East India' : 'উত্তৰ-পূৰ্বাঞ্চলৰ আঞ্চলিক ডিমেনচিয়া স্বাস্থ্য সেৱা'}</span>
-            </div>
-
-            {/* Main Headline (Exact text required for tests) */}
-            <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
-              {isEn ? 'Cognitive Games That Speak Your Language.' : 'ঘৰুৱা চিনাকি পৰিৱেশত স্মৃতিৰ সেঁতু।'}
-            </h1>
-
-            {/* Description Subtitle (Exact text required for tests) */}
-            <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
-              {isEn
-                ? 'Culturally rooted reminiscence therapy and cognitive games, tailored with authentic Assamese, Mizo, and Manipuri folklore, instruments, and textile motifs — engineered to function 100% offline in rural North East India.'
-                : 'ভাৰতৰ উত্তৰ-পূৰ্বাঞ্চলৰ গ্ৰাম্য অঞ্চলৰ বাবে প্ৰস্তুত কৰা ১০০% অফলাইন, মাতৃভাষা-আধাৰিত সাংস্কৃতিক স্মৃতি আৰু জ্ঞানীয় স্বাস্থ্য প্লেটফৰ্ম।'}
-            </p>
-
-            {/* Batch 2 Consolidated Call-to-Actions (Strictly Preserved) */}
-            <div className="flex flex-wrap items-center gap-3.5 pt-2">
-              {onLaunchPatient && (
-                <button
-                  type="button"
-                  onClick={onLaunchPatient}
-                  className="min-h-[50px] px-6 py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-2xl text-sm font-bold shadow-soft hover:shadow-soft-lg transition active:scale-95 flex items-center gap-2 cursor-pointer border border-teal-400/30"
-                >
-                  <span>🎮 {isEn ? 'Launch Patient Experience' : 'ৰোগীৰ খেল আৰম্ভ কৰক'}</span>
-                </button>
-              )}
-
-              {onOpenRoleSelector && (
-                <button
-                  type="button"
-                  onClick={onOpenRoleSelector}
-                  className="min-h-[50px] px-6 py-3.5 bg-white hover:bg-slate-50 border border-teal-200 text-teal-700 hover:text-teal-900 rounded-2xl text-sm font-semibold shadow-soft transition active:scale-95 flex items-center gap-2 cursor-pointer"
-                >
-                  <span>👥 {isEn ? 'Select Role & Log In' : 'ভূমিকা বাছক আৰু প্ৰৱেশ কৰক'}</span>
-                </button>
-              )}
-
-              {onLaunchDashboard && (
-                <button
-                  type="button"
-                  onClick={onLaunchDashboard}
-                  className="min-h-[50px] px-6 py-3.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-2xl text-sm font-semibold shadow-soft transition active:scale-95 flex items-center gap-2"
-                >
-                  <span>📊 {isEn ? 'View ASHA Triage Dashboard' : 'আশা ট্ৰায়াজ ডেচবৰ্ড'}</span>
-                </button>
-              )}
-            </div>
-
-            {/* Hero Clinical Certification Strip */}
-            <div className="pt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-              <span className="flex items-center gap-1.5 text-teal-600 font-medium">✓ WCAG 2.1 AA Gerontology-Tuned</span>
-              <span className="flex items-center gap-1.5 text-teal-600 font-medium">✓ Zero-Punitive Errorless Learning</span>
-              <span className="flex items-center gap-1.5 text-slate-600">
-                ✓ Elderline (<a href="tel:14567" className="text-teal-600 hover:text-teal-700 underline font-semibold">14567</a>) SOS Routing
-              </span>
-              <span className="flex items-center gap-1.5 text-teal-600 font-medium">✓ 100% Offline Service Worker PWA</span>
-            </div>
-          </div>
-
-          {/* Right Column (5 cols): Authentic Cultural Heritage Tapestry Showcase Card */}
-          <div className="lg:col-span-5">
-            <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-soft space-y-5 relative overflow-hidden text-left">
-              {/* Gamusa-inspired red & gold woven border header accent */}
-              <div className="h-1.5 w-full bg-gradient-to-r from-red-600 via-amber-400 to-red-600 rounded-full" />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-teal-600 uppercase tracking-widest block">
-                    {isEn ? 'Culturally Calibrated' : 'সাংস্কৃতিক আধাৰ'}
-                  </span>
-                  <h3 className="text-lg font-black text-slate-900 mt-0.5">
-                    {isEn ? 'North East Memory Tapestry' : 'উত্তৰ-পূৰ্বাঞ্চলৰ ঐতিহ্য'}
-                  </h3>
-                </div>
-                <span className="text-2xl" role="img" aria-label="North East Heritage">🌺</span>
-              </div>
-
-              {/* Cultural Stimuli Chip Grid */}
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2.5">
-                  <span className="text-xl">🥁</span>
-                  <div>
-                    <p className="font-bold text-slate-800">Bihu Rhythm</p>
-                    <p className="text-[10px] text-slate-500">Dhol, Pepa, Gogona</p>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2.5">
-                  <span className="text-xl">🧵</span>
-                  <div>
-                    <p className="font-bold text-slate-800">Golden Muga</p>
-                    <p className="text-[10px] text-slate-500">Kingkhap Motifs</p>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2.5">
-                  <span className="text-xl">🌸</span>
-                  <div>
-                    <p className="font-bold text-slate-800">Kopou Phool</p>
-                    <p className="text-[10px] text-slate-500">Spring Blossom Recall</p>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2.5">
-                  <span className="text-xl">🛶</span>
-                  <div>
-                    <p className="font-bold text-slate-800">Majuli Riverway</p>
-                    <p className="text-[10px] text-slate-500">Village Ferry Path</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Multilingual Voice Guidance Callout */}
-              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-xs">
-                <span className="text-xl">🌾</span>
-                <div>
-                  <span className="font-bold text-amber-800 block">
-                    Multilingual Voice Guidance
-                  </span>
-                  <span className="text-[11px] text-amber-600">
-                    North East memory games and culturally grounded prompts
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Mobile Nav Toggle Button */}
+        <div className="flex md:hidden items-center gap-2">
+          <LanguageSwitcher variant="clinical" placement="header" onSelect={(code) => handleLanguageToggle(code)} />
+          <button
+            type="button"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen(prev => !prev)}
+            className="p-2.5 rounded-btn border shadow-flat cursor-pointer flex items-center justify-center transition"
+            style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', minWidth: '44px', minHeight: '44px', color: 'var(--ink-primary)' }}
+          >
+            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-      </section>
+      </header>
 
-      {/* 3. 4-Pillar Feature Matrix */}
-      <section className="relative z-10 px-6 py-16 bg-slate-100/60 border-y border-slate-200/80">
-        <div className="max-w-6xl mx-auto space-y-10">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-600">
-              Core Architecture
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-              Engineered for the Realities of Rural Dementia Care
-            </h2>
-          </div>
+      {/* Mobile Navigation Drawer */}
+      {isMenuOpen && (
+        <div
+          className="md:hidden border-b px-6 py-4 space-y-3 relative z-20 shadow-soft"
+          style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)' }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              handleReturnHome();
+            }}
+            className="w-full text-left py-2.5 px-3 rounded-btn text-sm font-bold transition hover:bg-slate-100"
+            style={{ minHeight: '44px', color: 'var(--ink-primary)' }}
+          >
+            {copy.home}
+          </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Pillar 1: Multilingual Game Experience */}
-            <div className="p-5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-soft border-t-2 border-t-amber-500/60">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-xl">
-                🌐
-              </div>
-              <h3 className="font-bold text-slate-900 text-sm">Multilingual Audio Guidance</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                ASHA workers and elderly patients navigate recall activities with regional language support and culturally familiar cues.
-              </p>
-            </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              if (onLaunchPatient) onLaunchPatient();
+              else if (onOpenRoleSelector) onOpenRoleSelector();
+            }}
+            className="w-full text-left py-2.5 px-3 rounded-btn text-sm font-bold transition hover:bg-slate-100"
+            style={{ minHeight: '44px', color: 'var(--ink-primary)' }}
+          >
+            {copy.patientUi}
+          </button>
 
-            {/* Pillar 2: Offline Resilience */}
-            <div className="p-5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-soft border-t-2 border-t-teal-500/60">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center text-xl">
-                📶
-              </div>
-              <h3 className="font-bold text-slate-900 text-sm">Zero-Connectivity PWA</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                Runs entirely offline with Service Worker caching and IndexedDB storage. Automatic delta synchronization pushes when online.
-              </p>
-            </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsMenuOpen(false);
+              if (onLaunchHub) onLaunchHub();
+            }}
+            className="w-full text-left py-2.5 px-3 rounded-btn text-sm font-bold transition hover:bg-slate-100"
+            style={{ minHeight: '44px', color: 'var(--ink-primary)' }}
+          >
+            {copy.gameSuite}
+          </button>
 
-            {/* Pillar 3: Cultural Reminiscence */}
-            <div className="p-5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-soft border-t-2 border-t-red-500/60">
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center text-xl">
-                🌾
-              </div>
-              <h3 className="font-bold text-slate-900 text-sm">8 NER State Traditions</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                Stimuli tailored with authentic instruments (Dhol, Pepa, Gogona), textiles (Muga, Puanchei), and occupational routines.
-              </p>
-            </div>
+          {onOpenSetup && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                onOpenSetup();
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-btn text-sm font-bold transition hover:bg-slate-100"
+              style={{ minHeight: '44px', color: 'var(--ink-secondary)' }}
+            >
+              {copy.profileSetup}
+            </button>
+          )}
 
-            {/* Pillar 4: Biomarker Telemetry */}
-            <div className="p-5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-soft border-t-2 border-t-emerald-500/60">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center text-xl">
-                📈
-              </div>
-              <h3 className="font-bold text-slate-900 text-sm">Passive Biomarkers</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-normal">
-                Dynamic Difficulty Adjustment (DDA) tracks response latency and motor tremor silently to flag longitudinal decline.
-              </p>
-            </div>
-          </div>
+          {onLaunchDashboard && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                onLaunchDashboard();
+              }}
+              className="w-full text-left py-2.5 px-3 rounded-btn text-sm font-bold transition hover:bg-slate-100"
+              style={{ minHeight: '44px', color: 'var(--color-bamboo)' }}
+            >
+              {copy.ashaClinical}
+            </button>
+          )}
         </div>
-      </section>
+      )}
 
-      {/* 4. Cultural Memory Heritage Section */}
-      <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto space-y-10">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-600">
-            Localized Reminiscence Therapy
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-            Stimuli That Resonate with NER Heritage
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto font-normal">
-            Reminiscence therapy triggers deeply consolidated procedural and episodic memories by presenting stimuli from the patient’s formative youth.
+      {/* 2. Header Kingkhap Rule (6-8px Motif Strip) */}
+      <div
+        className="w-full h-2"
+        style={{
+          backgroundImage: 'url(/assets/motifs/kingkhap.svg)',
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: 'contain'
+        }}
+      />
+
+      {/* 3. Hero Section: Single-Column, Full-Width with Subtle Vertical Depth & Atmospheric Background */}
+      <section
+        className="relative w-full overflow-hidden flex-1 flex flex-col justify-center"
+        style={{
+          background: 'linear-gradient(180deg, var(--surface-page) 0%, var(--surface-page) 75%, var(--surface-sunken) 100%)'
+        }}
+      >
+        {/* Texture Layer 1: Watermark repeating motif at 9% opacity, 200px tile size */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'url(/assets/motifs/kingkhap.svg)',
+            backgroundRepeat: 'repeat',
+            backgroundSize: '200px 200px',
+            opacity: 0.09
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Atmosphere: Radial --muga-wash vignette glow in top-right (550px radius, 18% opacity, blur-3xl) */}
+        <div
+          className="absolute -top-24 -right-24 w-[550px] h-[550px] pointer-events-none rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, var(--muga-wash) 0%, transparent 70%)',
+            opacity: 0.18
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Texture Layer 2: Single focal accent motif (Kopou Phool) bleeding off bottom corner (500px, 14% opacity) */}
+        <img
+          src="/assets/motifs/kopou.svg"
+          alt=""
+          className="absolute -bottom-16 -right-16 w-[500px] h-[500px] pointer-events-none select-none"
+          style={{ opacity: 0.14 }}
+          aria-hidden="true"
+        />
+
+        {/* Hero Content Column (Single Column, Left-Aligned, Full Width max-6xl) */}
+        <div className="relative z-10 max-w-6xl w-full mx-auto px-6 py-12 md:py-16 space-y-8 text-left">
+          {/* Cultural Eyebrow Badge */}
+          <div>
+            <div
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border shadow-xs"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--color-bamboo)' }}
+            >
+              <span>🌾</span>
+              <span>{copy.badge}</span>
+            </div>
+          </div>
+
+          {/* Primary H1 Headline */}
+          <h1
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight max-w-4xl"
+            style={{ color: 'var(--ink-primary)' }}
+          >
+            {copy.headline}
+          </h1>
+
+          {/* Lead Paragraph */}
+          <p
+            className="text-base sm:text-lg md:text-xl font-normal leading-relaxed max-w-3xl"
+            style={{ color: 'var(--ink-secondary)' }}
+          >
+            {copy.lead}
           </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="p-5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-soft">
-            <span className="text-2xl block">🥁</span>
-            <h4 className="font-bold text-slate-900 text-sm">Regional Instruments & Festivals</h4>
-            <p className="text-xs text-slate-500 font-normal leading-relaxed">
-              Dhol, Pepa, Gogona, and Kopou Phool orchids evoke joyful Rongali Bihu and regional springtime celebrations.
-            </p>
-          </div>
+          {/* Consolidated 3 Primary Hero CTAs */}
+          <div className="flex flex-wrap items-center gap-3.5 pt-2">
+            <button
+              type="button"
+              onClick={onLaunchPatient || onOpenRoleSelector}
+              className="flex items-center justify-center gap-3 px-8 py-4 rounded-btn font-bold text-lg transition-transform active:scale-95 shadow-flat cursor-pointer border-2"
+              style={{
+                backgroundColor: 'var(--color-muga)',
+                color: 'var(--ink-primary)',
+                borderColor: 'var(--color-muga-dark)',
+                minHeight: '56px'
+              }}
+            >
+              <Play size={22} className="fill-current" />
+              <span>{copy.launchPatient}</span>
+            </button>
 
-          <div className="p-5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-soft">
-            <span className="text-2xl block">🧵</span>
-            <h4 className="font-bold text-slate-900 text-sm">Traditional Handloom Motifs</h4>
-            <p className="text-xs text-slate-500 font-normal leading-relaxed">
-              Golden Muga silk Kingkhap motifs, Mizo Puanchei chequered shawls, and Naga warrior textiles.
-            </p>
-          </div>
-
-          <div className="p-5 bg-white border border-slate-200/80 rounded-2xl space-y-2.5 shadow-soft">
-            <span className="text-2xl block">☕</span>
-            <h4 className="font-bold text-slate-900 text-sm">Daily Living & Routine Sequencing</h4>
-            <p className="text-xs text-slate-500 font-normal leading-relaxed">
-              Chronological tea preparation and agrarian routines reinforce daily executive functioning and independence.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Footer & Helpline Notice */}
-      <footer className="relative z-10 border-t border-slate-200/80 bg-white px-6 py-8">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="space-y-1 text-center sm:text-left">
-            <p className="font-semibold text-slate-700">NeuroSetu (নিওৰোসেতু) — North East India Dementia Stimulation Platform</p>
-            <p>
-              National Toll-Free Senior Helpline:{' '}
-              <a
-                href="tel:14567"
-                className="text-teal-600 hover:text-teal-700 font-bold underline focus:outline-none focus:ring-1 focus:ring-teal-500 rounded"
-              >
-                Elderline (14567)
-              </a>
-            </p>
-            <p className="text-slate-500 text-[11px]">
-              © {new Date().getFullYear()} NeuroSetu. All rights reserved. Smart India Hackathon PS26003.
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {onLaunchPatient && (
+            {onOpenRoleSelector && (
               <button
                 type="button"
-                onClick={onLaunchPatient}
-                className="hover:text-slate-900 underline transition cursor-pointer"
+                onClick={onOpenRoleSelector}
+                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-btn font-bold text-base border shadow-flat transition hover:bg-slate-50 cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--surface-card)',
+                  borderColor: 'var(--border-hairline)',
+                  color: 'var(--ink-primary)',
+                  minHeight: '56px'
+                }}
               >
-                Patient App
+                <Users size={20} color="var(--color-muga-dark)" />
+                <span>{copy.selectRole}</span>
               </button>
             )}
+
             {onLaunchDashboard && (
               <button
                 type="button"
                 onClick={onLaunchDashboard}
-                className="hover:text-slate-900 underline transition cursor-pointer"
+                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-btn font-bold text-base border shadow-flat transition hover:bg-slate-50 cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--surface-card)',
+                  borderColor: 'var(--border-hairline)',
+                  color: 'var(--ink-secondary)',
+                  minHeight: '56px'
+                }}
               >
-                ASHA Dashboard
+                <Activity size={20} color="var(--color-bamboo)" />
+                <span>{copy.viewDashboard}</span>
               </button>
             )}
-            {onOpenSetup && (
-              <button
-                type="button"
-                onClick={onOpenSetup}
-                className="hover:text-slate-900 underline transition cursor-pointer"
-              >
-                Profile Setup
-              </button>
-            )}
+
+            <button
+              type="button"
+              onClick={onEnterPin || onOpenRoleSelector}
+              className="flex items-center justify-center gap-2 px-5 py-4 rounded-btn font-bold text-sm border shadow-flat transition hover:bg-slate-50 cursor-pointer"
+              style={{
+                backgroundColor: 'var(--surface-card)',
+                borderColor: 'var(--border-hairline)',
+                color: 'var(--ink-secondary)',
+                minHeight: '56px'
+              }}
+            >
+              {copy.enterPin}
+            </button>
+          </div>
+
+          {/* Trust-Markers Row */}
+          <div className="pt-2 flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs font-semibold">
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill border"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--ink-primary)' }}
+            >
+              <CheckCircle2 size={15} color="var(--color-bamboo)" />
+              WCAG 2.1 AA Gerontology-Tuned
+            </span>
+
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill border"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--ink-primary)' }}
+            >
+              <CheckCircle2 size={15} color="var(--color-bamboo)" />
+              Zero-Punitive Errorless Learning
+            </span>
+
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill border"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--ink-primary)' }}
+            >
+              <Phone size={14} color="var(--color-gamosa-red)" />
+              <span>Elderline</span>
+              <span>14567</span>
+            </span>
+
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill border"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--ink-primary)' }}
+            >
+              <CheckCircle2 size={15} color="var(--color-bamboo)" />
+              100% Offline Service Worker PWA
+            </span>
+          </div>
+
+          {/* 4-Column Feature Strip Below CTAs / Trust Markers */}
+          <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              className="p-5 rounded-card border shadow-flat space-y-2"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)' }}
+            >
+              <div className="flex items-center gap-2">
+                <Volume2 size={20} color="var(--color-bamboo)" />
+                <h3 className="text-sm font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  Voice-First Multilingual AI
+                </h3>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+                Multilingual Voice Guidance with localized audio hints and speech pacing across 9 regional dialects.
+              </p>
+            </div>
+
+            <div
+              className="p-5 rounded-card border shadow-flat space-y-2"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)' }}
+            >
+              <div className="flex items-center gap-2">
+                <WifiOff size={20} color="var(--color-bamboo)" />
+                <h3 className="text-sm font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  Zero-Connectivity PWA
+                </h3>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+                Reliable edge architecture caching games, audio, and patient states offline in rural primary centres.
+              </p>
+            </div>
+
+            <div
+              className="p-5 rounded-card border shadow-flat space-y-2"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)' }}
+            >
+              <div className="flex items-center gap-2">
+                <Compass size={20} color="var(--color-muga-dark)" />
+                <h3 className="text-sm font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  North East Memory Tapestry
+                </h3>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+                8 NER State traditions, Golden Muga weaves, seasonal festivals, and indigenous domestic artifacts.
+              </p>
+            </div>
+
+            <div
+              className="p-5 rounded-card border shadow-flat space-y-2"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)' }}
+            >
+              <div className="flex items-center gap-2">
+                <BarChart3 size={20} color="var(--color-bamboo)" />
+                <h3 className="text-sm font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  Passive Biomarkers
+                </h3>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+                Subtle response latency analysis, motor tapping tremor, and automated DDA difficulty adjustment.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Cultural Anchors Section */}
+      <section
+        className="w-full py-12 border-t border-b relative z-10"
+        style={{ backgroundColor: 'var(--surface-sunken)', borderColor: 'var(--border-hairline)' }}
+      >
+        <div className="max-w-6xl mx-auto px-6 space-y-8 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                Cultural Anchors
+              </h2>
+              <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
+                Cognitive reminiscence exercises grounded in North Eastern instruments, textiles, and river traditions
+              </p>
+            </div>
+
+            <div
+              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-pill border"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--color-bamboo)' }}
+            >
+              <CheckCircle2 size={16} />
+              <span>Zero-Connectivity PWA</span>
+            </div>
+          </div>
+
+          {/* 4 Cultural Anchor Tiles */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex flex-col items-center p-4 rounded-card border shadow-flat" style={{ borderColor: 'var(--border-hairline)', backgroundColor: 'var(--surface-card)' }}>
+              <img src="/assets/motifs/dhol.svg" alt="Dhol" className="w-16 h-16 mb-2 pointer-events-none" />
+              <span className="text-base font-bold" style={{ color: 'var(--ink-primary)' }}>Dhol</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--ink-secondary)' }}>Bihu Rhythm Recall</span>
+            </div>
+
+            <div className="flex flex-col items-center p-4 rounded-card border shadow-flat" style={{ borderColor: 'var(--border-hairline)', backgroundColor: 'var(--surface-card)' }}>
+              <img src="/assets/motifs/pepa.svg" alt="Pepa" className="w-16 h-16 mb-2 pointer-events-none" />
+              <span className="text-base font-bold" style={{ color: 'var(--ink-primary)' }}>Pepa</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--ink-secondary)' }}>Horn Pitch & Memory</span>
+            </div>
+
+            <div className="flex flex-col items-center p-4 rounded-card border shadow-flat" style={{ borderColor: 'var(--border-hairline)', backgroundColor: 'var(--surface-card)' }}>
+              <img src="/assets/motifs/kopou.svg" alt="Kopou Phool" className="w-16 h-16 mb-2 pointer-events-none" />
+              <span className="text-base font-bold" style={{ color: 'var(--ink-primary)' }}>Kopou Phool</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--ink-secondary)' }}>Seasonal Flora Match</span>
+            </div>
+
+            <div className="flex flex-col items-center p-4 rounded-card border shadow-flat" style={{ borderColor: 'var(--border-hairline)', backgroundColor: 'var(--surface-card)' }}>
+              <img src="/assets/motifs/majuli-ferry.svg" alt="Majuli Riverway" className="w-16 h-16 mb-2 pointer-events-none" />
+              <span className="text-base font-bold" style={{ color: 'var(--ink-primary)' }}>Majuli Riverway</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--ink-secondary)' }}>River Journey Sequence</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Footer & Helpline (Minimal, High Contrast) */}
+      <footer className="w-full px-6 py-8 border-t" style={{ borderColor: 'var(--border-hairline)', backgroundColor: 'var(--surface-card)' }}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 font-medium text-xs" style={{ color: 'var(--ink-secondary)' }}>
+          <div className="flex items-center gap-2">
+            <Heart size={16} color="var(--color-gamosa-red)" />
+            <span>© {currentYear} NeuroSetu. All rights reserved.</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span>24/7 National Senior Citizen Helpline:</span>
+            <a
+              href="tel:14567"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-btn font-bold transition-transform active:scale-95 text-white"
+              style={{
+                backgroundColor: 'var(--color-gamosa-red)',
+                minHeight: '48px'
+              }}
+            >
+              <Phone size={16} />
+              <span>Elderline</span> <span>14567</span>
+            </a>
           </div>
         </div>
       </footer>

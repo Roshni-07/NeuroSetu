@@ -1,0 +1,8 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gogona (Bamboo Jaw Harp) -->
+  <path d="M12 28C12 26 14 24 18 24H46C50 24 52 26 52 28V36C52 38 50 40 46 40H18C14 40 12 38 12 36V28Z" fill="#E8F0E7" stroke="#2D5A27" stroke-width="2"/>
+  <!-- Central Vibrating Tongue -->
+  <path d="M14 32H48M48 30V34" stroke="#D4AF37" stroke-width="3" stroke-linecap="round"/>
+  <!-- String handle -->
+  <path d="M12 32C8 32 6 36 6 42" stroke="#D32F2F" stroke-width="2" stroke-linecap="round"/>
+</svg>

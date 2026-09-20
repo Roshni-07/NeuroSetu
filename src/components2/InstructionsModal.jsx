@@ -1,18 +1,10 @@
 import React from 'react';
+import { ArrowRight, ArrowLeft, Volume2, Sparkles } from 'lucide-react';
 import { sounds } from '../utils/soundEffects.js';
 import SpeakButton from './SpeakButton.jsx';
 import { getUIString } from '../data/gamesLocalization.js';
+import { useI18n } from '../i18n/I18nContext.jsx';
 
-/**
- * InstructionsModal - Displayed before gameplay to orient elderly players
- * 
- * WCAG 2.1 AA / Gerontology-tuned:
- * - 20px+ font size for easy reading
- * - High contrast (dark slate text on soft warm background)
- * - Large 56px+ tap targets
- * - Clear, numbered steps with icons
- * - One-touch Audio Explanation in user's active language
- */
 export default function InstructionsModal({
   isOpen = true,
   onClose,
@@ -23,9 +15,12 @@ export default function InstructionsModal({
   culturalTag = '',
   steps = [],
   tip = '',
-  language = 'en',
+  language = null,
   voiceText = ''
 }) {
+  const { language: globalLang, t } = useI18n();
+  const currentLang = language || globalLang;
+
   if (!isOpen) return null;
 
   const handleStart = () => {
@@ -49,8 +44,8 @@ export default function InstructionsModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onBackToHub, onExit, onClose]);
 
-  const modalHeading = gameName || title || getUIString('howToPlay', language);
-  const modalTip = tip || getUIString('tipRelax', language);
+  const modalHeading = gameName || title || t('howToPlay') || getUIString('howToPlay', currentLang);
+  const modalTip = tip || t('tipRelax') || getUIString('tipRelax', currentLang);
   const speechText = voiceText || `${modalHeading}. ${steps.join('. ')}. ${modalTip}`;
 
   return (
@@ -59,43 +54,54 @@ export default function InstructionsModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
+      style={{ fontFamily: 'var(--font-sans)', color: 'var(--ink-primary)' }}
     >
-      <div className="relative w-full max-w-xl bg-white border-4 border-teal-300 rounded-3xl p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div 
+        className="relative w-full max-w-xl rounded-card p-6 sm:p-8 shadow-flat border-2 space-y-6"
+        style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)' }}
+      >
         {/* Cultural Header Badge */}
         {culturalTag && (
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-teal-100 text-teal-900 text-sm font-bold tracking-wide uppercase mb-3">
-            <span>🌿</span>
+          <div 
+            className="inline-flex items-center space-x-2 px-3 py-1 rounded-pill text-xs font-bold tracking-wide uppercase border"
+            style={{ backgroundColor: 'var(--color-bamboo-light)', color: 'var(--color-bamboo)', borderColor: 'var(--color-bamboo)' }}
+          >
             <span>{culturalTag}</span>
           </div>
         )}
 
         {/* Game Title & Prompt */}
-        <h2 id="modal-title" className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight">
-          {modalHeading}
-        </h2>
-        <div className="flex items-center justify-between gap-2 mt-1">
-          <p className="text-sm sm:text-base text-slate-600 font-medium">
-            {getUIString('howToPlay', language)}:
-          </p>
-          <SpeakButton
-            text={speechText}
-            language={language}
-            label={getUIString('voiceGuide', language)}
-            className="bg-teal-50 border-teal-200 text-teal-800 hover:bg-teal-100 font-bold text-xs"
-          />
+        <div>
+          <h2 id="modal-title" className="text-2xl font-bold leading-tight" style={{ color: 'var(--ink-primary)' }}>
+            {modalHeading}
+          </h2>
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <p className="text-sm font-semibold" style={{ color: 'var(--ink-secondary)' }}>
+              {t('howToPlay')}:
+            </p>
+            <SpeakButton
+              text={speechText}
+              language={currentLang}
+              label={t('audioHelp')}
+            />
+          </div>
         </div>
 
         {/* Steps List */}
-        <div className="my-4 space-y-3">
+        <div className="space-y-3">
           {steps.map((step, idx) => (
             <div
               key={idx}
-              className="flex items-start space-x-3 p-3 rounded-2xl bg-slate-50 border-2 border-slate-200"
+              className="flex items-start space-x-3.5 p-4 rounded-btn border"
+              style={{ backgroundColor: 'var(--surface-page)', borderColor: 'var(--border-hairline)' }}
             >
-              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-teal-700 text-white font-bold text-xl flex items-center justify-center shadow-sm">
+              <div 
+                className="flex-shrink-0 w-9 h-9 rounded-btn font-bold text-base flex items-center justify-center shadow-flat"
+                style={{ backgroundColor: 'var(--color-muga)', color: 'var(--ink-primary)' }}
+              >
                 {idx + 1}
               </div>
-              <div className="text-base sm:text-lg font-semibold text-slate-800 leading-snug pt-1">
+              <div className="text-base sm:text-lg font-semibold leading-snug pt-1" style={{ color: 'var(--ink-primary)' }}>
                 {step}
               </div>
             </div>
@@ -103,13 +109,16 @@ export default function InstructionsModal({
         </div>
 
         {/* Reassuring Tip */}
-        <div className="flex items-center space-x-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-medium text-sm mb-4">
-          <span className="text-xl">🌸</span>
+        <div 
+          className="flex items-center space-x-3 p-3.5 rounded-btn border text-sm font-medium"
+          style={{ backgroundColor: 'var(--surface-sunken)', borderColor: 'var(--border-hairline)', color: 'var(--ink-secondary)' }}
+        >
+          <Sparkles size={20} color="var(--color-muga-dark)" className="shrink-0" />
           <span>{modalTip}</span>
         </div>
 
         {/* Actions: Back to Hub & Big Start Button */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
           {(onBackToHub || onExit || onClose) && (
             <button
               type="button"
@@ -119,21 +128,27 @@ export default function InstructionsModal({
                 else if (onExit) onExit();
                 else if (onClose) onClose();
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 min-h-[48px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl text-sm font-bold shadow-xs transition cursor-pointer"
-              aria-label="Exit to Hub"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 min-h-[48px] rounded-btn text-sm font-bold border border-slate-300 shadow-flat transition cursor-pointer"
+              style={{ backgroundColor: 'var(--surface-card)', borderColor: 'var(--border-hairline)', color: 'var(--ink-secondary)' }}
+              aria-label={onBackToHub || onExit ? '← Exit to Hub' : (t('returnToHome') || 'Return to Home')}
             >
-              <span className="text-lg leading-none">←</span>
-              <span>{getUIString('gamesHub', language) || 'Exit to Hub'}</span>
+              <span>←</span>
+              <span>{onBackToHub || onExit ? 'Exit to Hub' : (t('returnToHome') || 'Return to Home')}</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={handleStart}
-            className="flex-1 min-h-[52px] px-5 py-3 bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-3 cursor-pointer"
+            className="w-full sm:flex-1 min-h-[52px] px-6 py-3 rounded-btn font-bold text-lg shadow-flat active:scale-95 transition-transform flex items-center justify-center space-x-3 cursor-pointer border-2"
+            style={{ 
+              backgroundColor: 'var(--color-muga)', 
+              color: 'var(--ink-primary)',
+              borderColor: 'var(--color-muga-dark)'
+            }}
           >
-            <span>{getUIString('startPlaying', language)}</span>
-            <span className="text-2xl">➔</span>
+            <span>{t('startPlaying')}</span>
+            <ArrowRight size={20} />
           </button>
         </div>
       </div>

@@ -94,5 +94,25 @@ describe('Part 1: Landing Page Visual Redesign & CTA Preservation Audit', () => 
     // Assamese copy
     expect(screen.getByText(/ঘৰুৱা চিনাকি পৰিৱেশত স্মৃতিৰ সেঁতু।/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /ৰোগীৰ খেল আৰম্ভ কৰক/i })).toBeInTheDocument();
+
+    // Toggle back to English
+    const enBtn = screen.getByRole('button', { name: 'English' });
+    fireEvent.click(enBtn);
+    expect(screen.getByText(/Cognitive Games That Speak Your Language\./i)).toBeInTheDocument();
+  });
+
+  it('5. Language switcher dropdown toggles Hindi and Bengali copy dynamically', () => {
+    render(<HomePage />);
+
+    const switcherBtns = screen.getAllByRole('button', { name: /Change Language/i });
+    expect(switcherBtns.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(switcherBtns[0]);
+
+    // Select Hindi
+    const hiOption = screen.getByRole('option', { name: /हिन्दी/i });
+    fireEvent.click(hiOption);
+
+    expect(screen.getByText(/अपनी जानी-पहचानी भाषा और माहौल में स्मृति की देखभाल।/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /मरीज का खेल शुरू करें/i })).toBeInTheDocument();
   });
 });

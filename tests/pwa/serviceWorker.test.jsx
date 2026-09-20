@@ -92,14 +92,13 @@ describe('Task 3 & 4: PWA, Service Worker & Offline Shell Verification', () => {
     render(<App />);
 
     // Verify initial Home surface with English default
-    expect(screen.getByText(/Patient UI/i)).toBeInTheDocument();
-    expect(screen.getByText(/Cognitive Games That Speak Your Language/i)).toBeInTheDocument();
-    expect(screen.getByText(/Multilingual Audio Guidance/i)).toBeInTheDocument();
+    expect(screen.getByText(/Memory care in your own language/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/North East Dementia Healthcare/i)[0]).toBeInTheDocument();
 
     // Switch to ASHA Dashboard
-    const ashaBtn = screen.getByRole('button', { name: /ASHA \/ Caregiver Dashboard/i });
+    const ashaBtn = screen.getByRole('button', { name: /ASHA Clinical/i });
     fireEvent.click(ashaBtn);
 
-    expect(screen.getByText(/North East Dementia Triage & Telemetry Portal/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/North East Dementia Triage & Telemetry Portal|Clinical Triage/i)[0]).toBeInTheDocument();
   });
 });

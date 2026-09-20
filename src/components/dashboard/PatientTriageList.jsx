@@ -3,6 +3,7 @@ import { NER_STATES, NER_OCCUPATIONS, NER_SEX_OPTIONS, DEMENTIA_STAGE_OPTIONS, f
 import { SUPPORTED_LANGUAGES } from '../../data/multilingualAudioHelp.js';
 import { PRESET_PATIENTS } from '../../data/presetPatients.js';
 import { DEFAULT_PROFILE, saveProfile } from '../../db/indexedDb.js';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 // Canonical triage roster is sourced from PRESET_PATIENTS plus the preserved real default Bhaben Kalita profile.
 export const SAMPLE_ASHA_PATIENTS = [
@@ -81,6 +82,7 @@ export default function PatientTriageList({
   const [filter, setFilter] = useState('all'); // 'all' | 'critical' | 'stable'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default'); // 'default' | 'age_asc' | 'age_desc' | 'region_asc' | 'language_asc'
+  const { t, language } = useI18n();
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'add' | 'edit' | 'archive_confirm'
 
   // Internal patient state backed by localStorage / initial props
@@ -445,7 +447,7 @@ export default function PatientTriageList({
               ...p,
               isActive: false,
               archiveReason: archiveReason.trim(),
-              archivedAt: new Date().toLocaleDateString()
+              archivedAt: new Intl.DateTimeFormat(language || 'en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date())
             }
           : p
       )

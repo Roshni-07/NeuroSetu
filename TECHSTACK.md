@@ -14,7 +14,7 @@
 | PWA / offline shell | `vite-plugin-pwa` (Workbox under the hood) | Real Service Worker caching — required, judges test airplane mode |
 | Styling | Tailwind CSS | Enforces consistent spacing/contrast tokens fast, no design system overhead |
 | Local persistence | IndexedDB via `idb` library | Native browser offline storage, no backend dependency for core gameplay |
-| Speech (ASR/TTS) | Bhashini REST APIs (Assamese/Manipuri primary) | Government-backed, free for hackathons via Udbhav/Sahyogi |
+| Speech (ASR/TTS) | Indian Language Speech REST APIs (Assamese/Manipuri primary) | Government-backed, free for hackathons via Udbhav/Sahyogi |
 | Backend/DB | Supabase (Postgres + REST + Auth, free tier) | Zero-infra managed backend, replaces custom server |
 | Sync mechanism | Browser Background Sync API → Supabase | Native browser capability, no custom queue/broker needed |
 | Hosting (frontend) | Vercel | One-command deploy, PWA-friendly |
@@ -30,7 +30,7 @@ These are built for real. No scripting, no pre-recorded fakery. Test each live, 
 | Feature | Real Implementation | Test Before Demo |
 |---|---|---|
 | Offline app load | Service Worker caches app shell + active game assets | Load app in airplane mode, confirm full functionality |
-| Voice input | Live Bhashini ASR call (pick Assamese or Manipuri, go deep not wide) OR on-device keyword-spotting (~20 words) — choose ONE path | Run 5+ live voice attempts, confirm consistent recognition |
+| Voice input | Live Regional Speech ASR call (pick Assamese or Manipuri, go deep not wide) OR on-device keyword-spotting (~20 words) — choose ONE path | Run 5+ live voice attempts, confirm consistent recognition |
 | Dynamic Difficulty Adjustment | Real rule-based logic: 2 consecutive errors OR >15s response latency → reduce difficulty tier | Trigger both conditions live, confirm UI responds correctly |
 | Local persistence | Real IndexedDB writes, confirm data survives page reload | Reload mid-session, verify state restored |
 | Sync to dashboard | Real Supabase push once connectivity returns | Demo offline → online transition, show dashboard update live |
@@ -46,7 +46,7 @@ These are explicitly presented as roadmap/future scope in the pitch — never de
 |---|---|
 | BLE Mesh / Wi-Fi Direct / SMS to ASHA | Static slide, framed as "Phase 2" |
 | Voice prosody/sentiment biomarker analysis | Precomputed sample trend chart on dashboard — not live inference |
-| Khasi / Mizo / Garo voice support | Mention as Bhashini-roadmap-dependent; don't attempt live (beta-accuracy risk) |
+| Khasi / Mizo / Garo voice support | Mention as Regional Speech roadmap-dependent; don't attempt live (beta-accuracy risk) |
 | Elderline (14567) SOS routing | UI shows intent flow ("Connecting to 14567...") without real telephony backend |
 | Encryption at rest (SQLCipher-equivalent) | Named as v2 requirement in pitch; plain IndexedDB used now — no false security claims |
 

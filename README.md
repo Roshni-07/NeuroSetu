@@ -54,9 +54,8 @@ NeuroSetu is a Progressive Web App that turns daily cognitive exercise into a fa
 ## 🚧 Roadmap
 
 - Click-to-call in the Family and Caregiver Portal
-- Multilingual support: Assamese, Bodo, Manipuri, Bengali (Nepali as stretch)
-- Bhashini integration for Indian-language voice (API access pending)
-- Offline voice fallback using AI4Bharat Indic-TTS
+- Multilingual speech integration for Indian-language voice
+- Offline voice fallback using Indic-TTS
 - Cross-game, per-game adaptive personalization
 - Weighted cross-domain adaptive scoring heuristic for triage support
 

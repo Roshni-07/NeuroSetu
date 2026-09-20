@@ -3,6 +3,7 @@ import { NER_STATES, NER_OCCUPATIONS, NER_SEX_OPTIONS, DEMENTIA_STAGE_OPTIONS, r
 import { SUPPORTED_LANGUAGES } from '../../data/multilingualAudioHelp.js';
 import { saveProfile } from '../../db/indexedDb.js';
 import { setProfilePin, validatePinFormat, createSession } from '../../services/authService.js';
+import { useI18n } from '../../i18n/I18nContext.jsx';
 
 export default function PatientOnboardingModal({
   isOpen = false,
@@ -12,6 +13,7 @@ export default function PatientOnboardingModal({
   onSave = null,
   initialProfile = null
 }) {
+  const { t, setLanguage } = useI18n();
   const [step, setStep] = useState(1);
   const maxSteps = isInitialSignup ? 6 : 5;
 
@@ -182,6 +184,10 @@ export default function PatientOnboardingModal({
     };
 
     await saveProfile(profileToSave);
+
+    if (profileToSave.language) {
+      setLanguage(profileToSave.language);
+    }
 
     if (isInitialSignup && formData.pin) {
       await setProfilePin(formData.pin);

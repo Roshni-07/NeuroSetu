@@ -1,0 +1,46 @@
+:root {
+  /* Surfaces — flat, no gradients */
+  --surface-page:    #FAF8F4;
+  --surface-card:    #FFFFFF;
+  --surface-sunken:  #F1EDE5;
+  --border-hairline: #E2DCD0;
+
+  /* Ink */
+  --ink-primary:   #1C1C1C;
+  --ink-secondary: #4A453D;
+  --ink-inverse:   #FFFFFF;
+
+  /* Brand Colors (Culturally Grounded) */
+  --color-muga:       #D4AF37;  /* Muga silk gold */
+  --muga-gold:        #D4AF37;  /* Muga silk gold alias */
+  --color-muga-dark:  #B5952F;
+  --muga-wash:        rgba(212, 175, 55, 0.18); /* Muga gold ambient glow / wash */
+  --color-bamboo:     #2D5A27;  /* Deep bamboo green */
+  --color-bamboo-light:#E8F0E7;
+  --color-gamosa-red: #D32F2F;  /* Used ONLY for critical/SOS */
+  
+  /* Geometry */
+  --radius-card:   12px;
+  --radius-button: 8px;
+  --radius-pill:   999px;
+  
+  --shadow-flat:   0 4px 0 rgba(0,0,0,0.1); /* No soft dropshadows. Hard edges for clarity */
+  
+  /* Typography */
+  --font-sans: 'Inter', 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-indic-bengali: 'Noto Sans Bengali', sans-serif;
+  --font-indic-devanagari: 'Noto Sans Devanagari', sans-serif;
+  --font-current: var(--font-sans);
+}
+
+.script-bengali {
+  font-family: var(--font-indic-bengali), var(--font-sans);
+}
+
+.script-devanagari {
+  font-family: var(--font-indic-devanagari), var(--font-sans);
+}
+
+.script-latin {
+  font-family: var(--font-sans);
+}
