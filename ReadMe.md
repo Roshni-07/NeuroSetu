@@ -13,7 +13,7 @@
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-**[🚀 Live Demo](https://synaptyx-neurosethu-neredition.vercel.app/#/home)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)**
+**[🚀 Live Demo](https://synaptyx-neurosethu-neredition.vercel.app/#/home)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)** · **[🏗 Architecture](./docs/ARCHITECTURE.md)** · **[🎬 Demo Script](./docs/DEMO_SCRIPT.md)**
 
 </div>
 
@@ -64,11 +64,30 @@ NeuroSetu is a Progressive Web App that turns daily cognitive exercise into a fa
 
 ## 📸 Screenshots
 
-<!-- Replace with real screenshots. Put files in /public/screenshots/ -->
-
-| Patient Roadmap | Game Play | ASHA Dashboard |
+| Patient Roadmap | Festival Memory Match | ASHA Dashboard |
 |---|---|---|
 | ![Roadmap](./public/screenshots/roadmap.png) | ![Game](./public/screenshots/game.png) | ![ASHA](./public/screenshots/asha.png) |
+
+<details>
+<summary>More games</summary>
+
+| Tea Garden Detective | Finish Grandma's Weave | Identity & Recall |
+|---|---|---|
+| ![Attention](./public/screenshots/game-attention.png) | ![Weave](./public/screenshots/game-weave.png) | ![Family](./public/screenshots/game-family.png) |
+| *Attention & Focus* | *Visual & Spatial* | *Family games* |
+
+</details>
+
+### 🎮 Game Library
+
+| Domain | Games |
+|---|---|
+| 🧠 Memory Training (7) | Grandma's Shopping List · Festival Memory Match · Daily Routine Recall · Memory Trail · Remember the Story · Village Path Home · Whose Morning Is It? |
+| 👁️ Attention & Focus (2) | Find the Difference · Tea Garden Detective |
+| 💡 Reasoning & Planning (4) | What Belongs Here? · Pack the Village Basket · A Day in My Village · Care for Your Companion |
+| 🎨 Visual & Spatial (1) | Finish Grandma's Weave |
+| ❤️ Emotional Wellbeing (1) | Whose Emotion? |
+| 👪 Family Games (4) | Identity & Recall · Category Sorting · Family Tree Builder · Life Story Timeline |
 
 ---
 
@@ -128,12 +147,12 @@ Build for production: `npm run build`
 
 ## 🔑 Demo Credentials
 
-| Role | Login | Password / PIN |
+| Role | Login | PIN / Password |
 |---|---|---|
-| Patient 1 | | `100100` |
-| Patient 2 | | `200200` |
-| Patient 3 | | `300300` |
-| Patient 4 | | `400400` |
+| Patient 1 | PIN only | `100100` |
+| Patient 2 | PIN only | `200200` |
+| Patient 3 | PIN only | `300300` |
+| Patient 4 | PIN only | `400400` |
 | Caregiver | `caregiver` | `caregiver123` |
 | ASHA / Admin | `admin` | `asha123` |
 
@@ -145,11 +164,11 @@ Build for production: `npm run build`
 
 | Name | Role |
 |---|---|
-| **Roshni Barui** | Frontend lead, repo owner |
 | **Sharvesh B** | Frontend, UI/UX |
+| **Roshni Barui** | Frontend lead, repo owner |
 | **Dhanyashree K P** | Family games module, PPT, research |
 | **Anant Mavi** | Backend |
-| **Bhargavi V K** | PPT, research |
+| **Bhargavi Vijaykumar Kulkarni** | PPT, research |
 | **K P Vikas** | PPT, research |
 
 Built for **Smart India Hackathon 2026** · BMS Institute of Technology
