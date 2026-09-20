@@ -27,12 +27,12 @@ Dementia and mild cognitive impairment are underdiagnosed across Northeast India
 
 ## 💡 Our Solution
 
-NeuroSetu is a Progressive Web App that turns daily cognitive exercise into a familiar, culturally rooted routine. It runs fully offline. Patients play short adaptive games. Caregivers and ASHA workers see progress and stay connected.
+NeuroSetu is a Progressive Web App that turns daily cognitive exercise into a familiar, culturally rooted routine. It is built offline-first, so core gameplay keeps working with poor or no connectivity. Patients play short adaptive games. Caregivers and ASHA workers see progress and stay connected.
 
 | For | What NeuroSetu gives |
 |---|---|
 | 👵 **Patients** | Simple PIN login, a visual roadmap, and short daily games that adapt to their level |
-| 👨‍👩‍👧 **Caregivers** | A family portal for staying involved in the patient's routine |
+| 👨‍👩‍👧 **Caregivers and family** | A family portal where photos can be uploaded to support memory games and stay involved in the patient's routine |
 | 🩺 **ASHA workers** | A content manager and patient overview to assign cognitive domains and region packs |
 
 ---
@@ -45,16 +45,18 @@ NeuroSetu is a Progressive Web App that turns daily cognitive exercise into a fa
 - 📅 **Smart daily assignment.** 2 to 5 games per day, scaled to the patient's cognitive stage.
 - 🗺️ **Cultural roadmap.** A themed journey with visual node states for progress.
 - 🔒 **Gentle idle auto-lock** to protect patient data on shared devices.
-- 👪 **Family games** on a fixed weekly calendar.
+- 👪 **Family portal with image upload**, plus family games on a fixed weekly calendar.
 - 🗂️ **ASHA content manager** for region packs and cognitive domain assignment.
 - 🧑‍🤝‍🧑 **Per-patient data isolation.**
+- 🔊 **Voice prompts.** Games read out instructions using Microsoft Edge text-to-speech.
 - 📴 **Offline-first.** IndexedDB storage and a Workbox service worker keep the app usable with no connection.
 
 ## 🚧 Roadmap
 
-- Family and Caregiver Portal with real uploads and click-to-call
+- Click-to-call in the Family and Caregiver Portal
 - Multilingual support: Assamese, Bodo, Manipuri, Bengali (Nepali as stretch)
-- Offline voice prompts using AI4Bharat Indic-TTS
+- Bhashini integration for Indian-language voice (API access pending)
+- Offline voice fallback using AI4Bharat Indic-TTS
 - Cross-game, per-game adaptive personalization
 - Weighted cross-domain adaptive scoring heuristic for triage support
 
@@ -162,14 +164,16 @@ Build for production: `npm run build`
 
 ## 👥 Team Synaptyx
 
-| Name | Role |
+| Name | Contribution |
 |---|---|
-| **Sharvesh B** | Frontend, UI/UX |
-| **Roshni Barui** | Frontend lead, repo owner |
-| **Dhanyashree K P** | Family games module, PPT, research |
-| **Anant Mavi** | Backend |
-| **Bhargavi Vijaykumar Kulkarni** | PPT, research |
-| **K P Vikas** | PPT, research |
+| **Roshni Barui** | Frontend lead: UI/UX, roadmap, portals, game fixes. Repo owner |
+| **Sharvesh B** | Frontend and UI support, voice integration |
+| **Dhanyashree K P** | Family portal, games, roadmap concept, research, PPT |
+| **Anant Mavi** | Backend: Supabase schema and tables, auth, sync, deployment |
+| **Bhargavi V K** | PPT across all rounds, diagrams, research |
+| **K P Vikas** | PPT, research, coordination with teachers |
+
+*Built collaboratively. Code was consolidated into this repository by the repo owner, so the GitHub commit history does not reflect every member's contribution.*
 
 Built for **Smart India Hackathon 2026** · BMS Institute of Technology
 
