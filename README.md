@@ -13,7 +13,7 @@
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-**[🚀 Live Demo](https://neurosetu-synaptyx.vercel.app/)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)** · **[🏗 Architecture](./docs/ARCHITECTURE.md)** · **[🎬 Demo Script](./docs/DEMO_SCRIPT.md)**
+**[🚀 Live Demo](https://neurosetu-synaptyx.vercel.app/)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)** · **[🏗 Architecture](./docs/ARCHITECTURE.md)** ·
 
 </div>
 
