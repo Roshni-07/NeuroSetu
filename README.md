@@ -13,9 +13,17 @@
 ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-**[🚀 Live Demo](https://neurosetu-synaptyx.vercel.app/)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)** · **[🏗 Architecture](./ARCHITECTURE.md)** ·
+**[🚀 Live Demo](https://neurosetu-synaptyx.vercel.app/)** · **[🎥 Intro Video](#-intro-video)** · **[📄 PRD](./PRD.md)** · **[🎨 Design](./DESIGN.md)** · **[🛠 Tech Stack](./TECHSTACK.md)** · **[🏗 Architecture](./ARCHITECTURE.md)**
 
 </div>
+
+---
+
+## 🎥 Intro Video
+
+*A short walkthrough of the problem statement and our solution.*
+
+https://github.com/user-attachments/assets/90a24634-92fc-4ec2-aefe-0f72255e1ce9
 
 ---
 
